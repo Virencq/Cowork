@@ -92,7 +92,13 @@ function extractUpdate(event: any, handlers: StreamHandlers) {
       handlers.onToolResult?.(id, name, update);
     }
   } else if (method === 'session/request_permission' || method === 'session/permission_request') {
-    handlers.onToolApproval?.({ ...p, requestId: String(event?.id ?? p?.requestId ?? '') });
+    handlers.onToolApproval?.({
+      ...p,
+      requestId: String(event?.id ?? p?.requestId ?? ''),
+      toolName: p?.toolName || p?.toolCall?.title || p?.toolCall?.kind || 'tool',
+      args: p?.arguments || p?.toolCall?.rawInput || p?.toolCall?.content || {},
+      reason: p?.reason || p?.description || p?.title,
+    });
   } else if (method === 'session/closed') {
     handlers.onDone?.();
   }
