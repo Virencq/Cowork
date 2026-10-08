@@ -207,7 +207,7 @@ export const useAppStore = create<AppState>()(
         db.deleteSession(id).catch(console.warn)
         // Also delete the session file from disk (pi-server)
         if (piId) {
-          import('../utils/piClient').then((pi) => pi.deleteSession(piId).catch(() => {}))
+          import('../utils/jcodeClient').then((pi) => pi.deleteSession(piId).catch(() => {}))
         }
       },
 
@@ -253,7 +253,7 @@ export const useAppStore = create<AppState>()(
         // Also delete session files from disk
         const piIds = sessions.flatMap(({ piId }) => piId ? [piId] : [])
         if (piIds.length > 0) {
-          import('../utils/piClient').then((pi) =>
+          import('../utils/jcodeClient').then((pi) =>
             Promise.all(piIds.map((piId) => pi.deleteSession(piId).catch(() => {}))).catch(() => {}),
           )
         }
