@@ -1,4 +1,6 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useState, useEffect } from 'react'
+import type { VirtuosoHandle } from 'react-virtuoso'
+import { ArrowDown } from 'lucide-react'
 import { Virtuoso } from 'react-virtuoso'
 import { useAppStore } from '../../stores'
 import { MessageItem } from './MessageItem'
@@ -15,7 +17,25 @@ interface MessageListProps {
 export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
   const messages = useAppStore((state) => state.sessionMessages[sessionId]) ?? EMPTY_MESSAGES
   const streamingMessage = useAppStore((state) => state.streamingMessage[sessionId])
-  const virtuosoRef = useRef(null)
+  const virtuosoRef = useRef<VirtuosoHandle>(null)
+  const [atBottom, setAtBottom] = useState(true)
+
+  const scrollToBottom = () => {
+    virtuosoRef.current?.scrollToIndex({
+      index: Math.max(0, groupedMessages.length - 1),
+      align: 'end',
+      behavior: 'smooth',
+    })
+  }
+
+  // Always follow a newly-sent user message. Once the user deliberately scrolls
+  // upward, streaming output will no longer yank the viewport away from them.
+  useEffect(() => {
+    const last = groupedMessages[groupedMessages.length - 1]
+    if (last?.info.role === 'user') {
+      requestAnimationFrame(scrollToBottom)
+    }
+  }, [groupedMessages.length])
 
   const groupedMessages = useMemo(() => {
     const rawMessages = [...messages]
@@ -60,16 +80,18 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
   }
 
   return (
-    <div className="flex-1 overflow-hidden pt-4">
+    <div className="relative flex-1 overflow-hidden pt-4">
       <Virtuoso
         ref={virtuosoRef}
         data={groupedMessages}
-        followOutput="smooth"
+        followOutput={(isAtBottom) => isAtBottom ? 'smooth' : false}
         alignToBottom
+        atBottomThreshold={24}
+        atBottomStateChange={setAtBottom}
         initialTopMostItemIndex={groupedMessages.length - 1}
         className="flex-1 h-full chat-scroll-area"
         components={{
-          Footer: () => <div className="h-4" />
+          Footer: () => <div className="h-2" />
         }}
         itemContent={(index, message) => {
           const isStreaming = 
@@ -89,6 +111,17 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
           )
         }}
       />
+      {!atBottom && (
+        <button
+          type="button"
+          onClick={scrollToBottom}
+          aria-label="Scroll to bottom"
+          title="Scroll to bottom"
+          className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full border border-border bg-surface px-3 py-2 shadow-lg transition-all hover:bg-surface-secondary"
+        >
+          <ArrowDown size={16} />
+        </button>
+      )}
     </div>
   )
 }
