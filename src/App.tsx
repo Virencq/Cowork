@@ -343,10 +343,10 @@ function App() {
   const activeSessionMessageCount = useAppStore((s) => activeSessionId ? (s.sessionMessages[activeSessionId]?.length ?? 0) : 0)
   const [page, setPage] = useState<Page>('chat')
   const [showSettings, setShowSettings] = useState(false)
-  const [leftWidth, setLeftWidth] = useState(262)
-  const [rightWidth, setRightWidth] = useState(330)
-  const [rightOpen, setRightOpen] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [leftWidth, setLeftWidth] = useState(() => Number(localStorage.getItem('cowork-left-width')) || 262)
+  const [rightWidth, setRightWidth] = useState(() => Number(localStorage.getItem('cowork-right-width')) || 330)
+  const [rightOpen, setRightOpen] = useState(() => localStorage.getItem('cowork-right-open') !== 'false')
+  const [sidebarOpen, setSidebarOpen] = useState(() => localStorage.getItem('cowork-sidebar-open') !== 'false')
   const [pageHistory, setPageHistory] = useState<Page[]>(['chat'])
   const [historyIndex, setHistoryIndex] = useState(0)
 
@@ -358,6 +358,11 @@ function App() {
       return next
     })
   }, [historyIndex])
+
+  useEffect(() => { localStorage.setItem('cowork-left-width', String(leftWidth)) }, [leftWidth])
+  useEffect(() => { localStorage.setItem('cowork-right-width', String(rightWidth)) }, [rightWidth])
+  useEffect(() => { localStorage.setItem('cowork-right-open', String(rightOpen)) }, [rightOpen])
+  useEffect(() => { localStorage.setItem('cowork-sidebar-open', String(sidebarOpen)) }, [sidebarOpen])
 
   useTaskScheduler()
   useTelegramChatSync()
