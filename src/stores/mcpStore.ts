@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import type { MCPServerConfig, MCPServerStatus, MCPTool, MCPResource } from '../types/mcp';
-import { getBaseUrl, waitForServer } from '../utils/jcodeClient';
+import { waitForServer } from '../utils/jcodeClient';
 import {
   redactMCPServersForPersistence,
   splitMCPServerSecrets,
@@ -177,13 +177,7 @@ export const useMCPStore = create<MCPState>()(
         // Disconnect from the correct backend without re-adding a status entry
         // after the config has been removed.
         const server = get().servers.find((item) => item.name === name);
-        if (server?.type === 'sse' || server?.type === 'http') {
-          ensurePiServer().then(() => fetch(`${getBaseUrl()}/mcp-sse/disconnect`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name }),
-          })).catch(() => {});
-        } else {
+        if (server?.type === 'stdio') {
           invoke('mcp_disconnect', { name }).catch(() => {});
         }
         invoke('mcp_secret_delete', { name }).catch(() => {});
@@ -296,21 +290,7 @@ export const useMCPStore = create<MCPState>()(
         const { servers } = get();
         const server = servers.find((s) => s.name === name);
 
-        // SSE/HTTP type: disconnect via pi-server
-        if (server && (server.type === 'sse' || server.type === 'http')) {
-          try {
-            await ensurePiServer();
-            const base = getBaseUrl();
-            await fetch(`${base}/mcp-sse/disconnect`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name }),
-            });
-          } catch {
-            // Ignore disconnect errors
-          }
-        } else {
-          // stdio type: disconnect via Rust backend
+        if (server?.type === 'stdio') {
           try {
             await invoke('mcp_disconnect', { name });
           } catch {
