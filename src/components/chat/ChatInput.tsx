@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Send, Square, X, File, Paperclip, Mic, LoaderCircle, AudioLines, PhoneCall } from 'lucide-react'
 import { TextField, TextArea } from "@heroui/react"
+import { open as openFileDialog } from '@tauri-apps/plugin-dialog'
 import { Button, Card } from '../ui'
 import { runtimeInfo } from '../../utils/jcodeClient'
 import {
@@ -104,6 +105,33 @@ export function ChatInput({
 
   // File attachments are now added via drag-and-drop only
   // (clicking files opens the preview panel instead)
+
+  const pickFiles = useCallback(async () => {
+    if (!isTauriRuntime() || disabled || isStreaming) return
+    try {
+      const selected = await openFileDialog({
+        multiple: true,
+        directory: false,
+        title: 'Attach files',
+      })
+      const paths = Array.isArray(selected) ? selected : selected ? [selected] : []
+      if (paths.length === 0) return
+      setAttachments((prev) => {
+        const existing = new Set(prev.map((a) => a.path))
+        return [
+          ...prev,
+          ...paths
+            .filter((path) => !existing.has(path))
+            .map((path) => ({
+              path,
+              name: path.split(/[\\/]/).filter(Boolean).pop() || path,
+            })),
+        ]
+      })
+    } catch (error) {
+      console.warn('[ChatInput] file picker failed:', error)
+    }
+  }, [disabled, isStreaming])
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault()
@@ -748,7 +776,7 @@ export function ChatInput({
               <div className={isHero ? "flex items-center justify-between h-11 px-4 border-t border-[#eeeae6]" : "flex items-center p-2"}>
                 {isHero ? (
                   <>
-                    <button type="button" className="h-8 w-8 rounded-md grid place-items-center text-[#342f2a] hover:bg-[#f2efec]" title="Add files">
+                    <button type="button" onClick={() => void pickFiles()} className="h-8 w-8 rounded-md grid place-items-center text-[#342f2a] hover:bg-[#f2efec]" title="Add files" aria-label="Add files">
                       <span className="text-[22px] leading-none">+</span>
                     </button>
                     <div className="flex items-center gap-2">
