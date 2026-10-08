@@ -733,7 +733,7 @@ export function ChatView({ embedded = false }: { embedded?: boolean }) {
 
       {/* File preview panel */}
       <AnimatePresence>
-        {filePreview && (
+        {!embedded && filePreview && (
           <motion.div
             key="file-preview"
             initial={{ width: 0, opacity: 0 }}
