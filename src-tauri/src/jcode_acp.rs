@@ -136,7 +136,7 @@ pub fn jcode_status() -> Result<Value, String> {
 
 #[tauri::command]
 pub fn jcode_sync_mcp_config(servers: Value) -> Result<Value, String> {
-    let home = dirs::home_dir().ok_or("Unable to resolve the user home directory.")?;
+    let home = std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME")).map(std::path::PathBuf::from).ok_or("Unable to resolve the user home directory.")?;
     let dir = home.join(".jcode");
     std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create JCode config directory: {e}"))?;
     let path = dir.join("mcp.json");
