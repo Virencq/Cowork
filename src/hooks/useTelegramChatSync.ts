@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { getBaseUrl } from '../utils/piClient'
+import { getBaseUrl } from '../utils/jcodeClient'
 import { createSession, getSession, saveMessage, updateSession } from '../utils/database'
 import { useAppStore } from '../stores'
 
