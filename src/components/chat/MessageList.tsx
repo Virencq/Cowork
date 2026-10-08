@@ -63,7 +63,7 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
     virtuosoRef.current?.scrollToIndex({
       index: Math.max(0, groupedMessages.length - 1),
       align: 'end',
-      behavior: 'smooth',
+      behavior: 'auto',
     })
   }
 
@@ -85,7 +85,7 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
       <Virtuoso
         ref={virtuosoRef}
         data={groupedMessages}
-        followOutput={(isAtBottom) => isAtBottom ? 'smooth' : false}
+        followOutput={(isAtBottom) => isAtBottom ? 'auto' : false}
         alignToBottom
         atBottomThreshold={24}
         atBottomStateChange={setAtBottom}
