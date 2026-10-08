@@ -74,8 +74,8 @@ function ResizeHandle({ side, onDrag }: { side: 'left' | 'right'; onDrag: (delta
   return <div onPointerDown={start} className={`absolute top-0 bottom-0 w-1 cursor-col-resize hover:bg-[#d97745]/25 z-30 ${side === 'left' ? 'right-0' : 'left-0'}`} />
 }
 
-function LeftNav({ width, onWidth, page, onPage, onNew }: {
-  width: number; onWidth: (n: number) => void; page: Page; onPage: (p: Page) => void; onNew: () => void
+function LeftNav({ width, onWidth, page, onPage, onNew, onSettings }: {
+  width: number; onWidth: (n: number) => void; page: Page; onPage: (p: Page) => void; onNew: () => void; onSettings: () => void
 }) {
   const sessions = useAppStore((s) => s.sessions)
   const activeSessionId = useAppStore((s) => s.activeSessionId)
@@ -219,10 +219,10 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
         {visibleTasks.length===0 && <div className="px-3 py-3 text-[11px] text-[#a09a94]">{filterPinned ? 'No pinned tasks' : 'No tasks yet'}</div>}
       </div>
 
-      <div className="mt-auto border-t border-[#ece9e5] px-3 py-3">
-        <button className="w-full flex items-center justify-between text-left text-[11px] text-[#7d766f]">
+      <div className="mt-auto border-t border-[#ece9e5] px-3 py-2">
+        <button onClick={onSettings} className="w-full flex items-center justify-between rounded-md px-1 py-2 text-left text-[11px] text-[#7d766f] hover:bg-[#f3f1ef] hover:text-[#302c28]" title="Open Settings">
           <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full bg-[#e7e4e0] grid place-items-center text-[9px]">✦</span>NW · Gateway</span>
-          <ChevronRight size={13}/>
+          <Settings size={13}/>
         </button>
       </div>
     </aside>
@@ -393,7 +393,7 @@ function App() {
     <div className="h-screen w-screen overflow-hidden bg-[#faf9f7] text-[#302c28]">
       <CoworkTitleBar />
       <div className="h-full flex">
-        <LeftNav width={leftWidth} onWidth={setLeftWidth} page={page} onPage={setPage} onNew={newTask} />
+        <LeftNav width={leftWidth} onWidth={setLeftWidth} page={page} onPage={setPage} onNew={newTask} onSettings={() => setShowSettings(true)} />
         <main className="relative min-w-0 flex-1 pt-11 flex flex-col bg-[#faf9f7]">
           <div className="min-h-0 flex-1 flex">
             <div className="min-w-0 flex-1 flex flex-col">
