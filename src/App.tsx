@@ -144,6 +144,10 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
 
       {/* Task navigation */}
       <div className="mt-3 px-3">
+        <button onClick={() => { setFilterPinned(false); onPage('tasks') }} className="home-nav-row">
+          <span className="inline-flex items-center gap-2"><Clock3 size={14}/>Scheduled</span>
+          <ChevronRight size={14}/>
+        </button>
         <button onClick={() => setFilterPinned(v => !v)} className={`home-nav-row ${filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
           <span className="inline-flex items-center gap-2"><Pin size={14}/>Pinned</span>
           <ChevronRight size={14}/>
