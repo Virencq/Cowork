@@ -40,7 +40,6 @@ fn push_diagnostic(diagnostics: &Arc<Mutex<Vec<String>>>, stream: &str, line: St
 struct MCPServerProcess {
     name: String,
     child: Child,
-    #[cfg(windows)]
     response_rx: mpsc::Receiver<Result<String, String>>,
     writer: ChildStdin,
     tools: Vec<MCPTool>,
@@ -73,8 +72,6 @@ impl MCPServerProcess {
             .spawn()
             .map_err(|e| format!("Failed to spawn MCP server '{}': {}", name, e))?;
 
-        #[cfg(windows)]
-
         let stdin = child.stdin.take().ok_or("Failed to capture stdin")?;
         let stdout = child.stdout.take().ok_or("Failed to capture stdout")?;
         let stderr = child.stderr.take().ok_or("Failed to capture stderr")?;
@@ -86,7 +83,6 @@ impl MCPServerProcess {
         let mut process = Self {
             name: name.to_string(),
             child,
-            #[cfg(windows)]
             response_rx,
             writer,
             tools: Vec::new(),
