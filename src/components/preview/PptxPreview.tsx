@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getBaseUrl } from '../../utils/piClient'
+import { getBaseUrl } from '../../utils/jcodeClient'
 
 interface PptxPreviewProps {
   filePath: string
