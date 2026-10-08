@@ -7,7 +7,7 @@ use tauri::{AppHandle, Emitter, State};
 #[serde(rename_all = "camelCase")]
 pub struct JCodeEvent { pub session_id: String, pub event: Value }
 
-struct SessionProcess { child: Child, stdin: Arc<Mutex<ChildStdin>>, session_id: String }
+pub(crate) struct SessionProcess { child: Child, stdin: Arc<Mutex<ChildStdin>>, session_id: String }
 pub struct JCodeState(pub Arc<Mutex<HashMap<String, SessionProcess>>>);
 
 #[derive(Debug, Deserialize)]
