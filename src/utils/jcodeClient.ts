@@ -86,6 +86,19 @@ export async function syncMcpConfig(servers: unknown[]) {
   return invoke<{ path: string; servers: number }>('jcode_sync_mcp_config', { servers })
 }
 
+export interface JCodeRuntimeInfo {
+  installed: boolean
+  path?: string
+  provider?: string | null
+  model?: string | null
+  effort?: string | null
+  raw?: string
+}
+
+export async function runtimeInfo(): Promise<JCodeRuntimeInfo> {
+  return invoke<JCodeRuntimeInfo>('jcode_runtime_info')
+}
+
 export function getBaseUrl() { return ''; }
 export async function waitForServer(..._args: any[]) { return true; }
 
