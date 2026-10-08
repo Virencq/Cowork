@@ -317,7 +317,7 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
               { id: 'websearch', icon: Globe, label: 'Web Search' },
               { id: 'appearance', icon: theme === 'light' ? Sun : Moon, label: 'Appearance' },
               { id: 'library', icon: Upload, label: 'Import & Library' },
-            ]            ].map((item) => (
+            ].map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
