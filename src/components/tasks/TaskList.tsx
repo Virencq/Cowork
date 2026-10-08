@@ -49,7 +49,7 @@ export function TaskList({ onCreateTask }: TaskListProps) {
   }, [tasks, query]);
 
   const deliverLabel = (d: string) => {
-    if (d === DELIVER_CHAT) return Chat;
+    if (d === DELIVER_CHAT) return 'Chat';
     if (d === DELIVER_SILENT) return '';
     return platformNameMap[d] || d;
   };
@@ -95,7 +95,7 @@ export function TaskList({ onCreateTask }: TaskListProps) {
                 <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-quaternary" />
                 <input
                   type="text" value={query} onChange={(e) => setQuery(e.target.value)}
-                  placeholder=Search scheduled tasks
+                  placeholder="Search scheduled tasks"
                   className="w-full pl-8 pr-3 py-2 rounded-lg bg-surface-secondary/50 border border-border-light text-[12px] text-text placeholder:text-text-quaternary outline-none focus:border-accent/30"
                 />
               </div>
@@ -133,14 +133,14 @@ export function TaskList({ onCreateTask }: TaskListProps) {
                         {formatNextRun(task.nextRunAt)}
                       </span>
                       <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => setDetailTask(task)} className="p-1.5 rounded-md hover:bg-accent/10 text-text-quaternary hover:text-accent" title=History>
+                        <button onClick={() => setDetailTask(task)} className="p-1.5 rounded-md hover:bg-accent/10 text-text-quaternary hover:text-accent" title="History">
                           <Eye size={13} />
                         </button>
                         <button onClick={() => toggleTask(task.id)}
                           className={`p-1.5 rounded-md ${task.enabled ? 'text-text-tertiary hover:text-text' : 'text-text-quaternary hover:text-accent'} hover:bg-surface-secondary`}>
                           {task.enabled ? <Pause size={13} /> : <Play size={13} />}
                         </button>
-                        <button onClick={() => triggerRun(task.id)} className="p-1.5 rounded-md hover:bg-green-500/10 text-text-quaternary hover:text-green-500" title=Run now>
+                        <button onClick={() => triggerRun(task.id)} className="p-1.5 rounded-md hover:bg-green-500/10 text-text-quaternary hover:text-green-500" title="Run now">
                           <Zap size={13} />
                         </button>
                         <button onClick={() => removeTask(task.id)} className="p-1.5 rounded-md hover:bg-red-500/10 text-text-quaternary hover:text-red-500">
