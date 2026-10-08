@@ -346,7 +346,7 @@ export function ChatView() {
       const sm = useAppStore.getState().streamingMessage[sid]
       const accumulatedParts = sm?.parts || []
       const textPart = accumulatedParts.find(p => p.type === 'text')
-      if (textPart && 'text' in textPart) {
+      if (textPart && 'text' in textPart && result.text) {
         (textPart as any).text = result.text
       }
       // If no text part was created during streaming, ensure one exists
