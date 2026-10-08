@@ -4,7 +4,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import {
   Archive, CalendarClock, ChevronLeft, ChevronRight, FolderKanban, History, FileCode2,
   Lightbulb, Menu, Plus, Search, Settings, Sparkles, X, SlidersHorizontal,
-  PanelRight, Clock3, MoreHorizontal, Pin, Pencil, Archive, Trash2, MailOpen, FolderPlus, Check, X, Plus
+  PanelRight, Clock3, MoreHorizontal, Pin, Pencil, Trash2, MailOpen, FolderPlus, Check
 } from 'lucide-react'
 import { ChatView } from './components/chat'
 import { SettingsModal } from './components/settings'
