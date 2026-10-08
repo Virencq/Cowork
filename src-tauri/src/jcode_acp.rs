@@ -115,16 +115,31 @@ pub fn jcode_prompt(state: State<'_, JCodeState>, session_id: String, prompt: St
 pub fn jcode_cancel(state: State<'_, JCodeState>, session_id: String) -> Result<(), String> {
     let sessions = state.0.lock().map_err(|e| e.to_string())?;
     let session = sessions.get(&session_id).ok_or_else(|| format!("JCode session not found: {session_id}"))?;
-    send_rpc(&session.stdin, 101, "session/cancel", json!({"sessionId":session.session_id}))
+    let request_id = session.next_request_id.fetch_add(1, Ordering::Relaxed);
+    send_rpc(
+        &session.stdin,
+        request_id,
+        "session/cancel",
+        json!({"sessionId": session.session_id}),
+    )
 }
 
 #[tauri::command]
 pub fn jcode_close_session(state: State<'_, JCodeState>, session_id: String) -> Result<(), String> {
     let mut sessions = state.0.lock().map_err(|e| e.to_string())?;
     if let Some(mut session) = sessions.remove(&session_id) {
-        let _ = send_rpc(&session.stdin, 102, "session/close", json!({"sessionId":session.session_id}));
-        let _ = session.child.wait();
+        // Never block the UI indefinitely waiting for an ACP process to exit.
+        // JCode receives the close request, then the process is terminated
+        // explicitly if it does not exit on its own.
+        let request_id = session.next_request_id.fetch_add(1, Ordering::Relaxed);
+        let _ = send_rpc(
+            &session.stdin,
+            request_id,
+            "session/close",
+            json!({"sessionId": session.session_id}),
+        );
         let _ = session.child.kill();
+        let _ = session.child.wait();
     }
     Ok(())
 }
