@@ -7,6 +7,7 @@ export interface ContextStatus { type: string; [key: string]: unknown; }
 export interface JCodePromptOptions {
   systemPrompt?: string;
   providerID?: string;
+  providerAPI?: string;
   modelID?: string;
   thinkingLevel?: string;
   apiKey?: string;
@@ -83,7 +84,7 @@ export async function createSession(workspaceDir?: string): Promise<{ id: string
 export function getBaseUrl() { return ''; }
 export async function waitForServer(..._args: any[]) { return true; }
 
-export async function fetchModels(_providerId?: string, _apiKey?: string, _baseUrl?: string, _providerApi?: string) {
+export async function fetchModels(..._args: any[]) {
   return [] as Array<{ id: string; name: string }>;
 }
 
