@@ -148,10 +148,6 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings }: {
 
       {/* Task navigation */}
       <div className="mt-3 px-3">
-        <button onClick={() => { setFilterPinned(false); onPage('tasks') }} className="home-nav-row">
-          <span className="inline-flex items-center gap-2"><Clock3 size={14}/>Scheduled</span>
-          <ChevronRight size={14}/>
-        </button>
         <button onClick={() => setFilterPinned(v => !v)} className={`home-nav-row ${filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
           <span className="inline-flex items-center gap-2"><Pin size={14}/>Pinned</span>
           <ChevronRight size={14}/>
@@ -340,6 +336,7 @@ function App() {
   const setActiveSession = useAppStore((s) => s.setActiveSession)
   const setWorkspaceDir = useAppStore((s) => s.setWorkspaceDir)
   const activeSessionId = useAppStore((s) => s.activeSessionId)
+  const activeSessionMessageCount = useAppStore((s) => activeSessionId ? (s.sessionMessages[activeSessionId]?.length ?? 0) : 0)
   const [page, setPage] = useState<Page>('chat')
   const [showSettings, setShowSettings] = useState(false)
   const [leftWidth, setLeftWidth] = useState(262)
@@ -413,7 +410,7 @@ function App() {
               {page === 'customize' && <WorkspaceLibraryPage initialSection="skills" />}
               {page === 'artifacts' && <ArtifactsPage />}
             </div>
-            {page === 'chat' && activeSessionId && (useAppStore.getState().sessionMessages[activeSessionId]?.length ?? 0) > 0 && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} />}
+            {page === 'chat' && activeSessionId && activeSessionMessageCount > 0 && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} />}
           </div>
         </main>
       </div>
