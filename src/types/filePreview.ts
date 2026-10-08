@@ -16,7 +16,7 @@ export interface FilePreviewState {
 }
 
 const CODE_EXTS = new Set([
-  'ts', 'tsx', 'js', 'jsx', 'json', 'css', 'scss', 'less',
+  'ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs', 'json', 'css', 'scss', 'less',
   'html', 'htm', 'py', 'rs', 'go', 'java', 'c', 'cpp', 'h', 'hpp',
   'yaml', 'yml', 'toml', 'xml', 'sh', 'bash', 'sql',
   'graphql', 'prisma', 'vue', 'svelte', 'astro',
