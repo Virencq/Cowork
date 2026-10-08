@@ -5,7 +5,6 @@ use tauri::{AppHandle, Emitter, State};
 
 #[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
-#[serde(rename_all = "camelCase")]
 pub struct JCodeEvent { pub session_id: String, pub event: Value }
 
 pub(crate) struct SessionProcess { child: Child, stdin: Arc<Mutex<ChildStdin>>, session_id: String, next_request_id: AtomicU64, pending: Arc<Mutex<HashMap<u64, Sender<Result<Value, String>>>>> }
