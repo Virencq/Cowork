@@ -8,7 +8,7 @@ import {
   saveSubagent,
   type SubagentInfo,
   type SubagentRunInfo,
-} from '../../utils/piClient'
+} from '../../utils/jcodeClient'
 import { Card } from '../ui'
 
 const BUILTIN_TOOLS = [
