@@ -591,7 +591,7 @@ export function ChatInput({
 
   return (
     <div
-      className="w-full max-w-(--spacing-chat-max) mx-auto px-5 pb-3"
+      className={isHero ? "w-full mx-auto px-0 pb-0" : "w-full max-w-(--spacing-chat-max) mx-auto px-5 pb-3"}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
