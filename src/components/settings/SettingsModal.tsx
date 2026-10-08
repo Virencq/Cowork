@@ -345,7 +345,7 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
                 <div className="w-2 h-2 rounded-full bg-green-500" />
               </div>
               <span className="text-[11px] font-semibold text-text-secondary">
-                Online
+                JCode-managed
               </span>
             </div>
           </div>
