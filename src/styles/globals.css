@@ -195,6 +195,25 @@ textarea[data-slot="input"] {
   word-break: break-word !important;
 }
 
+/* ── Cowork hero composer: keep HeroUI wrappers compact ── */
+.cowork-hero-input,
+.cowork-hero-input [data-slot="input-wrapper"],
+.cowork-hero-input [data-slot="inner-wrapper"],
+.cowork-hero-input [data-slot="input"] {
+  height: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
+}
+.cowork-hero-input [data-slot="input-wrapper"] {
+  overflow: hidden !important;
+}
+.cowork-hero-input textarea {
+  height: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
+  resize: none !important;
+}
+
 /* ── Button Styles ── */
 .btn-primary {
   display: inline-flex;
