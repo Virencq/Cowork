@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
 import { useSkillStore } from '../../stores/skillStore'
 import { FileArchive, Loader2, Check, AlertCircle } from 'lucide-react'
 
 export function SkillDropZone() {
-  const { t } = useTranslation()
   const { installSkillZip } = useSkillStore()
   const [dragging, setDragging] = useState(false)
   const [status, setStatus] = useState<'idle' | 'installing' | 'done' | 'error'>('idle')
@@ -64,7 +62,7 @@ export function SkillDropZone() {
     }
 
     setStatus('installing')
-    setStatusText(t('skills.installing'))
+    setStatusText('Installing skill…')
 
     try {
       const bytes = await zipFile.arrayBuffer()
@@ -72,11 +70,11 @@ export function SkillDropZone() {
       await installSkillZip(zipBase64)
 
       setStatus('done')
-      setStatusText(t('skills.installed'))
+      setStatusText('Skill installed')
       setTimeout(reset, 2000)
     } catch (err) {
       setStatus('error')
-      setStatusText(err instanceof Error ? err.message : t('skills.zipParseError'))
+      setStatusText(err instanceof Error ? err.message : 'Could not read the skill ZIP.')
       setTimeout(reset, 3000)
     }
   }, [t, installSkillZip, reset])
@@ -106,8 +104,8 @@ export function SkillDropZone() {
         {status === 'idle' && (
           <>
             <FileArchive className="w-16 h-16 text-[var(--color-accent)] mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-[var(--color-text)]">{t('skills.dropTitle')}</h3>
-            <p className="text-sm text-[var(--color-text-secondary)] mt-1">{t('skills.dropDesc')}</p>
+            <h3 className="text-xl font-bold text-[var(--color-text)]">Drop a skill ZIP here</h3>
+            <p className="text-sm text-[var(--color-text-secondary)] mt-1">Drop a skill package here to install it.</p>
           </>
         )}
         {status === 'installing' && (
