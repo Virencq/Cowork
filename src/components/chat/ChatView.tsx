@@ -185,7 +185,15 @@ export function ChatView() {
         updateSessionTitle(sid, content.slice(0, 40) + (content.length > 40 ? '...' : ''))
       }
 
-      // Create or reuse Pi session
+      // Synchronize configured stdio connectors into JCode's own MCP config.
+      // JCode ACP currently reads MCP from ~/.jcode/mcp.json rather than host-supplied mcpServers.
+      try {
+        await JCode.syncMcpConfig(useMCPStore.getState().servers)
+      } catch (error) {
+        console.warn('[Cowork] Could not sync MCP config to JCode:', error)
+      }
+
+      // Create or reuse JCode session
       let pid = (useAppStore.getState().sessions.find(s => s.id === sid) as any)?.piId ?? null
       if (!pid) {
         try {
