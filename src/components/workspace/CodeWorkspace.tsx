@@ -125,7 +125,7 @@ export function CodeWorkspace({ onExitCode }: { onExitCode: () => void }) {
               <ChatView embedded />
             </div>
           </aside>
-        )}}
+        )}
       </div>
     </div>
   )
