@@ -1,0 +1,45 @@
+name: Import S-Loop baseline
+
+on:
+  push:
+    branches: [sloop-import]
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    if: ${{ !contains(github.event.head_commit.message, '[sloop-imported]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Cowork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Import S-Loop source
+        run: |
+          git clone --depth 1 --branch master https://github.com/JeffGuo7/s-loop.git /tmp/s-loop
+          rsync -a --delete-excluded \
+            --exclude='.git/' \
+            --exclude='README.md' \
+            --exclude='README.zh-CN.md' \
+            /tmp/s-loop/ ./
+
+      - name: Remove runtime and language components we do not use
+        run: |
+          rm -rf src-tauri/pi-server
+          rm -f src-tauri/src/pi_server.rs
+          rm -f src/utils/piClient.ts
+          rm -f src/pet-main.tsx
+          rm -rf pet
+          rm -rf src/i18n
+          rm -f README.zh-CN.md
+
+      - name: Commit imported baseline
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Import S-Loop baseline [sloop-imported]" || exit 0
+          git push origin HEAD:sloop-import
