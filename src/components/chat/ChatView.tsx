@@ -540,7 +540,7 @@ export function ChatView() {
         <div className="min-h-full flex flex-col">
           <div className="flex-1 flex flex-col items-center pt-[250px] px-8">
             <div className="mb-11 flex items-center justify-center gap-3">
-              <SLoopMark size="hero" />
+              <SLoopMark size="md" className="!h-10 !w-10" />
               <h1 className="font-serif text-[39px] leading-none tracking-[-0.04em] text-[#171411]">
                 You’re here!
               </h1>
