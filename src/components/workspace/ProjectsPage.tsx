@@ -4,7 +4,7 @@ import { open } from '@tauri-apps/plugin-dialog'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useAppStore } from '../../stores'
 
-export function ProjectsPage() {
+export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id: string; name: string; path?: string }) => void }) {
   const projects = useWorkspaceStore(s => s.projects)
   const addProject = useWorkspaceStore(s => s.addProject)
   const setWorkspaceDir = useAppStore(s => s.setWorkspaceDir)
@@ -49,8 +49,15 @@ export function ProjectsPage() {
           <div className="grid grid-cols-2 gap-6">
             {visible.map(project => (
               <div key={project.id} className="group relative h-[78px] rounded-xl border border-[#e2ded9] bg-white px-4 py-3 hover:border-[#cfc8c0] hover:shadow-sm transition">
-                <button onClick={() => { if (project.path) setWorkspaceDir(project.path) }} className="absolute inset-0 rounded-xl text-left"/>
-                <div className="relative pointer-events-none flex items-start justify-between">
+                <button
+                  onClick={() => {
+                    if (onOpenProject) onOpenProject(project)
+                    else if (project.path) setWorkspaceDir(project.path)
+                  }}
+                  className="absolute inset-0 z-0 rounded-xl text-left"
+                  aria-label={`Open project ${project.name}`}
+                />
+                <div className="relative z-10 pointer-events-none flex items-start justify-between">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-[14px] font-semibold text-[#191613]">
                       <span className="truncate">{project.name}</span>
@@ -59,7 +66,7 @@ export function ProjectsPage() {
                     <div className="mt-2 text-[11px] text-[#958e87]">{new Date(project.updatedAt).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</div>
                   </div>
                 </div>
-                <button onClick={() => setPinned(s => { const n = new Set(s); n.has(project.id) ? n.delete(project.id) : n.add(project.id); return n })} className="absolute right-3 top-3 h-7 w-7 grid place-items-center rounded-md hover:bg-[#f2efec] text-[#7b746d]" title="Pin project"><MoreHorizontal size={16}/></button>
+                <button onClick={(e) => { e.stopPropagation(); setPinned(s => { const n = new Set(s); n.has(project.id) ? n.delete(project.id) : n.add(project.id); return n })} className="absolute right-3 top-3 h-7 w-7 grid place-items-center rounded-md hover:bg-[#f2efec] text-[#7b746d]" title="Pin project"><MoreHorizontal size={16}/></button>
                 <div className="absolute right-4 bottom-3 flex items-center gap-1 text-[11px] text-[#6f6861] pointer-events-none"><FolderOpen size={13}/><span className="max-w-[160px] truncate">{project.name}</span></div>
               </div>
             ))}
