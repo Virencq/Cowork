@@ -72,15 +72,16 @@ function nextRun(task: ScheduledTask, from = Date.now()) {
   return nextScheduledRunAt(task.schedule, from)
 }
 
-function runtimePrompt(task: ScheduledTask) {
+function runtimePrompt(task: ScheduledTask, context: string[] = []) {
   return [
     task.agentRuntime?.agentSystemPrompt,
     task.agentRuntime?.agentSkillsBlock,
+    context.length ? `## Previous scheduled task output\n${context.join('\\n\\n')}\n\nUse this only as task context; do not repeat it unless relevant.` : '',
     task.prompt,
-  ].filter((part) => part?.trim()).join('\n\n')
+  ].filter((part) => part?.trim()).join('\\n\\n')
 }
 
-async function executeTask(task: ScheduledTask): Promise<string> {
+async function executeTask(task: ScheduledTask, context: string[] = []): Promise<string> {
   const session = await JCode.createSession(task.workspaceDir)
   let output = ''
   const unsubscribe = await JCode.subscribeStream(session.id, {
@@ -88,7 +89,7 @@ async function executeTask(task: ScheduledTask): Promise<string> {
   })
 
   try {
-    const result = await JCode.prompt(session.id, runtimePrompt(task), {
+    const result = await JCode.prompt(session.id, runtimePrompt(task, context), {
       workspaceDir: task.workspaceDir,
       workspaceRoots: task.agentRuntime?.workspaceRoots,
       permissionMode: task.agentRuntime?.permissionMode,
@@ -223,7 +224,14 @@ export const useTaskStore = create<TaskState>()((set, get) => {
       persist(tasks, get().outputs)
 
       try {
-        const content = await executeTask(current)
+        if (current.deliver !== 'chat' && current.deliver !== 'silent') {
+          throw new Error('External platform delivery is not connected to the JCode-only runtime yet. Use Chat or Silent delivery.')
+        }
+        const context = (current.contextFrom || [])
+          .flatMap((taskId) => get().outputs[taskId] || [])
+          .slice(0, 10)
+          .map((output) => output.content)
+        const content = await executeTask(current, context)
         const finished = Date.now()
         const output: TaskOutput = { timestamp: new Date(finished).toISOString(), content: content || '(JCode completed without text output.)' }
         const outputs = { ...get().outputs, [id]: [output, ...(get().outputs[id] || [])].slice(0, 20) }
