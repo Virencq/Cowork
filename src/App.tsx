@@ -125,9 +125,29 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
         </button>
       </div>
 
-      <div className="px-3">
-        <button onClick={() => onPage('tasks')} className="home-nav-row"><span>Scheduled</span><ChevronRight size={14}/></button>
-        <button onClick={() => onPage('tasks')} className="home-nav-row"><span>Pinned</span><ChevronRight size={14}/></button>
+      {/* Global Cowork navigation */}
+      <nav className="px-3 space-y-0.5">
+        <button onClick={() => onPage('projects')} className={`home-nav-row ${page === 'projects' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
+          <span className="inline-flex items-center gap-2"><FolderKanban size={14}/>Projects</span>
+        </button>
+        <button onClick={() => onPage('artifacts')} className={`home-nav-row ${page === 'artifacts' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
+          <span className="inline-flex items-center gap-2"><FileCode2 size={14}/>Artifacts</span>
+        </button>
+        <button onClick={() => { setFilterPinned(false); onPage('tasks') }} className={`home-nav-row ${page === 'tasks' && !filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
+          <span className="inline-flex items-center gap-2"><CalendarClock size={14}/>Scheduled</span>
+          <ChevronRight size={14}/>
+        </button>
+        <button onClick={() => onPage('customize')} className={`home-nav-row ${page === 'customize' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
+          <span className="inline-flex items-center gap-2"><Sparkles size={14}/>Customize</span>
+        </button>
+      </nav>
+
+      {/* Task navigation */}
+      <div className="mt-3 px-3">
+        <button onClick={() => { setFilterPinned(true); onPage('chat') }} className={`home-nav-row ${filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
+          <span className="inline-flex items-center gap-2"><Pin size={14}/>Pinned</span>
+          <ChevronRight size={14}/>
+        </button>
       </div>
 
       <div className="mt-2 px-3">
