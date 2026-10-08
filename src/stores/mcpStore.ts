@@ -237,94 +237,16 @@ export const useMCPStore = create<MCPState>()(
 
         get().setServerStatus(name, { status: 'connecting', tools: [], resources: [] });
 
-        // SSE/HTTP type: connect via pi-server
+        // JCode ACP currently consumes MCP from on-disk stdio configuration.
+        // Do not pretend HTTP/SSE servers are connected through the removed
+        // S-Loop sidecar; surface the capability boundary explicitly.
         if (server.type === 'sse' || server.type === 'http') {
-          try {
-            await ensurePiServer();
-            const base = getBaseUrl();
-            const secrets = server.hasStoredSecrets || server.auth?.type === 'oauth'
-              ? await loadServerSecrets(name)
-              : {};
-            const res = await fetch(`${base}/mcp-sse/connect`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                name: server.name,
-                url: server.url,
-                headers: { ...(secrets.headers || {}), ...(server.headers || {}) },
-                auth: server.auth?.type === 'oauth'
-                  ? {
-                      ...server.auth,
-                      credentials: secrets.oauth || {},
-                      redirectUrl: `${base}/mcp-oauth/callback/${encodeURIComponent(server.name)}`,
-                    }
-                  : server.auth,
-                toolFilter: server.toolFilter,
-                // Older S-Loop versions inferred every URL as `sse`. Treat
-                // that persisted value as auto-detect so existing configs also
-                // get the modern-first path.
-                transport: server.type === 'sse' ? 'http' : server.type,
-              }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Connection failed');
-
-            if (data.authRequired && data.authorizationUrl) {
-              get().setServerStatus(name, {
-                status: 'auth-required',
-                authorizationUrl: data.authorizationUrl,
-                error: undefined,
-                tools: [],
-                resources: [],
-              });
-              await openUrl(data.authorizationUrl);
-              void (async () => {
-                for (let attempt = 0; attempt < 120; attempt += 1) {
-                  await new Promise((resolve) => setTimeout(resolve, 1000));
-                  try {
-                    const statusResponse = await fetch(`${base}/mcp-sse/status`);
-                    if (!statusResponse.ok) continue;
-                    const statuses = await statusResponse.json();
-                    const connected = statuses.find(
-                      (item: { name?: string; status?: string }) =>
-                        item.name === name && item.status === 'connected',
-                    );
-                    if (!connected) continue;
-                    await syncOAuthCredentials(name);
-                    useMCPStore.getState().setServerStatus(name, {
-                      status: 'connected',
-                      transport: connected.transport,
-                      authorizationUrl: undefined,
-                      error: undefined,
-                      tools: mapRemoteTools(connected.tools || []),
-                      resources: mapRemoteResources(connected.resources || []),
-                    });
-                    return;
-                  } catch {
-                    // Keep polling while the browser authorization flow is active.
-                  }
-                }
-              })();
-              return;
-            }
-
-            await syncOAuthCredentials(name);
-            get().setServerStatus(name, {
-              status: 'connected',
-              transport: data.transport,
-              authorizationUrl: undefined,
-              error: undefined,
-              tools: mapRemoteTools(data.tools || []),
-              resources: mapRemoteResources(data.resources || []),
-            });
-          } catch (error) {
-            get().setServerStatus(name, {
-              status: 'error',
-              error: error instanceof Error ? error.message : String(error),
-              tools: [],
-              resources: [],
-            });
-          }
+          get().setServerStatus(name, {
+            status: 'error',
+            error: 'HTTP/SSE MCP is not supported by the JCode ACP runtime. Use a stdio MCP server.',
+            tools: [],
+            resources: [],
+          });
           return;
         }
 
@@ -420,31 +342,13 @@ export const useMCPStore = create<MCPState>()(
           return;
         }
 
-        // SSE/HTTP: refresh via pi-server status
         if (server.type === 'sse' || server.type === 'http') {
-          try {
-            await ensurePiServer();
-            const base = getBaseUrl();
-            const res = await fetch(`${base}/mcp-sse/status`);
-            if (res.ok) {
-              const sseStatuses = await res.json();
-              const sseServer = sseStatuses.find((s: any) => s.name === name);
-              if (sseServer) {
-                await syncOAuthCredentials(name);
-                get().setServerStatus(name, {
-                  status: 'connected',
-                  transport: sseServer.transport,
-                  authorizationUrl: undefined,
-                  error: undefined,
-                  tools: mapRemoteTools(sseServer.tools || []),
-                  resources: mapRemoteResources(sseServer.resources || []),
-                });
-                return;
-              }
-            }
-          } catch {}
-          // Not connected, try to connect
-          get().connectServer(name);
+          get().setServerStatus(name, {
+            status: 'error',
+            error: 'HTTP/SSE MCP is not supported by the JCode ACP runtime. Use a stdio MCP server.',
+            tools: [],
+            resources: [],
+          });
           return;
         }
 
@@ -484,32 +388,18 @@ export const useMCPStore = create<MCPState>()(
           }
         }
 
-        // Fetch remote MCP status only when remote servers are configured. This
-        // keeps stdio-only startup fast and avoids waiting for pi-server in
-        // browser/unit-test environments.
-        if (enabledServers.some((server) => server.type === 'sse' || server.type === 'http')) {
-          try {
-            await ensurePiServer();
-            const base = getBaseUrl();
-            const res = await fetch(`${base}/mcp-sse/status`);
-            if (res.ok) {
-              const sseStatuses = await res.json();
-              for (const s of sseStatuses) {
-                if (s.status === 'connected') {
-                  await syncOAuthCredentials(s.name);
-                }
-                statusMap[s.name] = {
-                  name: s.name,
-                  status: s.status || (s.connected ? 'connected' : 'error'),
-                  error: s.error || undefined,
-                  authorizationUrl: s.authorizationUrl || undefined,
-                  transport: s.transport,
-                  tools: mapRemoteTools(s.tools || []),
-                  resources: mapRemoteResources(s.resources || []),
-                };
-              }
-            }
-          } catch {}
+        // JCode currently supports stdio MCP servers only. Mark configured
+        // remote entries explicitly instead of probing a removed sidecar.
+        for (const server of enabledServers) {
+          if (server.type === 'sse' || server.type === 'http') {
+            statusMap[server.name] = {
+              name: server.name,
+              status: 'error',
+              error: 'HTTP/SSE MCP is not supported by the JCode ACP runtime. Use a stdio MCP server.',
+              tools: [],
+              resources: [],
+            };
+          }
         }
 
         // Publish the snapshot before starting asynchronous connections. This
