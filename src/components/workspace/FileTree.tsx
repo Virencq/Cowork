@@ -22,7 +22,7 @@ interface FileTreeProps {
 function getFileIcon(name: string): LucideIcon {
   const ext = name.split('.').pop()?.toLowerCase() || ''
   const imgExts = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico', 'bmp']
-  const codeExts = ['ts', 'tsx', 'js', 'jsx', 'json', 'css', 'scss', 'html', 'py', 'rs', 'go', 'java', 'c', 'cpp', 'h', 'hpp', 'yaml', 'yml', 'toml', 'xml', 'sh', 'bash', 'sql', 'graphql', 'prisma']
+  const codeExts = ['ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs', 'json', 'css', 'scss', 'html', 'py', 'rs', 'go', 'java', 'c', 'cpp', 'h', 'hpp', 'yaml', 'yml', 'toml', 'xml', 'sh', 'bash', 'sql', 'graphql', 'prisma']
   const docExts = ['md', 'mdx', 'txt', 'pdf', 'doc', 'docx', 'csv', 'xlsx']
   const arcExts = ['zip', 'tar', 'gz', 'rar', '7z']
   const mediaExts = ['mp3', 'wav', 'ogg', 'flac']
