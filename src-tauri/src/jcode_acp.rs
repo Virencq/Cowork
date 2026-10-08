@@ -52,7 +52,7 @@ fn start_reader(app: AppHandle, session_key: String, stdout: std::process::Child
             let line = line.trim();
             if line.is_empty() { continue; }
             let Ok(value) = serde_json::from_str::<Value>(line) else { continue };
-            if value.get("method").and_then(Value::as_str).is_some() {
+            if value.get("method").and_then(Value::as_str).is_some() || value.get("result").is_some() || value.get("error").is_some() {
                 let _ = app.emit("jcode://event", JCodeEvent { session_id: session_key.clone(), event: value });
             }
         }
@@ -77,7 +77,7 @@ pub fn jcode_start_session(app: AppHandle, state: State<'_, JCodeState>, workspa
     send_rpc(&stdin, 1, "initialize", json!({
         "protocolVersion": 1,
         "clientInfo": {"name":"Cowork","version":"0.1.0"},
-        "capabilities": {}
+        "clientCapabilities": {"fs": {"readTextFile": true, "writeTextFile": true}, "terminal": true}
     }))?;
     let _ = read_until_response(&mut reader, 1)?;
 
@@ -96,7 +96,7 @@ pub fn jcode_start_session(app: AppHandle, state: State<'_, JCodeState>, workspa
 pub fn jcode_prompt(state: State<'_, JCodeState>, session_id: String, prompt: String) -> Result<(), String> {
     let sessions = state.0.lock().map_err(|e| e.to_string())?;
     let session = sessions.get(&session_id).ok_or_else(|| format!("JCode session not found: {session_id}"))?;
-    send_rpc(&session.stdin, 3, "session/prompt", json!({"sessionId":session.session_id,"prompt":[{"type":"text","text":prompt}]}))
+    send_rpc(&session.stdin, 100, "session/prompt", json!({"sessionId":session.session_id,"prompt":[{"type":"text","text":prompt}]}))
 }
 
 #[tauri::command]
