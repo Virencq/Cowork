@@ -155,7 +155,8 @@ export const useAppStore = create<AppState>()(
             id: r.id,
             title: r.title,
             model: r.model,
-            piId: r.pi_id || undefined,
+            // ACP session IDs belong to the child JCode process and are invalid after restart.
+            piId: undefined,
             createdAt: r.created_at,
             updatedAt: r.updated_at,
           }))
