@@ -4,6 +4,7 @@ import { useSkillStore } from '../../stores/skillStore'
 import { FileArchive, Loader2, Check, AlertCircle } from 'lucide-react'
 
 export function SkillDropZone() {
+  const { t } = useTranslation()
   const { installSkillZip } = useSkillStore()
   const [dragging, setDragging] = useState(false)
   const [status, setStatus] = useState<'idle' | 'installing' | 'done' | 'error'>('idle')
