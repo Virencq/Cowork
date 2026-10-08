@@ -1,23 +1,14 @@
 import { create } from 'zustand'
-import { getBaseUrl } from '../utils/jcodeClient'
-import { sendPlatformMessage } from '../utils/platformClient'
-import type { ScheduledTask, TaskAgentRuntime, TaskDelivery, TaskSchedule } from '../types/task'
-import type { PlatformId } from '../types/platform'
+import type { ScheduledTask, TaskExecution, TaskSchedule, TaskDelivery, TaskAgentRuntime } from '../types/task'
+import { nextScheduledRunAt } from '../types/task'
 import type { KiloMessage } from '../types'
+import * as JCode from '../utils/jcodeClient'
+import { useAppStore } from './appStore'
 
-interface TaskState {
-  tasks: ScheduledTask[]
-  loading: boolean
-  error: string | null
-  refresh: () => Promise<void>
-  createTask: (data: CreateTaskInput) => Promise<ScheduledTask | null>
-  removeTask: (id: string) => Promise<void>
-  toggleTask: (id: string) => Promise<void>
-  triggerRun: (id: string) => Promise<void>
-  fetchOutput: (id: string) => Promise<{ timestamp: string; content: string; file?: string }[]>
-}
+const STORAGE_KEY = 'cowork-scheduled-tasks-v1'
+const OUTPUT_KEY = 'cowork-scheduled-task-outputs-v1'
 
-export interface CreateTaskInput {
+type CreateTaskInput = {
   name: string
   prompt: string
   schedule: TaskSchedule
@@ -32,181 +23,245 @@ export interface CreateTaskInput {
   enabled?: boolean
 }
 
-const BASE = () => getBaseUrl()
+type TaskOutput = {
+  timestamp: string
+  content: string
+  file?: string
+}
 
-async function deliverTaskResults(tasks: ScheduledTask[]) {
-  const pending = tasks.filter((task) =>
-    task.lastRunId &&
-    task.lastRunId !== task.deliveredRunId &&
-    task.deliver !== 'silent' &&
-    (task.lastStatus === 'completed' || task.lastStatus === 'failed')
-  )
+interface TaskState {
+  tasks: ScheduledTask[]
+  outputs: Record<string, TaskOutput[]>
+  loading: boolean
+  error: string | null
+  refresh: () => Promise<void>
+  tick: () => Promise<void>
+  createTask: (data: CreateTaskInput) => Promise<ScheduledTask | null>
+  removeTask: (id: string) => Promise<void>
+  toggleTask: (id: string) => Promise<void>
+  triggerRun: (id: string) => Promise<void>
+  fetchOutput: (id: string) => Promise<TaskOutput[]>
+}
 
-  if (pending.length === 0) return
-
-  const { useAppStore } = await import('./appStore')
-
-  for (const task of pending) {
-    try {
-      const outputsRes = await fetch(`${BASE()}/tasks/${task.id}/output`)
-      const outputs = outputsRes.ok ? await outputsRes.json() as Array<{ content: string }> : []
-      const latest = outputs[0]?.content?.trim()
-      if (!latest) continue
-
-      if (task.deliver === 'chat') {
-        const now = Date.now()
-        const messageId = `task-${task.id}-${task.lastRunId}`
-        const appStore = useAppStore.getState()
-        let sessionId = task.deliverSessionId
-        if (!sessionId) {
-          sessionId = appStore.createSession()
-        }
-        if (!appStore.sessions.some((session) => session.id === sessionId)) {
-          await appStore.loadFromDb()
-        }
-        if (!useAppStore.getState().sessions.some((session) => session.id === sessionId)) {
-          sessionId = useAppStore.getState().createSession()
-        }
-
-        const message: KiloMessage = {
-          info: {
-            id: messageId,
-            sessionID: sessionId,
-            role: 'assistant',
-            time: { created: now, completed: now },
-          },
-          parts: [
-            {
-              id: `${messageId}-text`,
-              type: 'text',
-              text: latest,
-              sessionID: sessionId,
-              messageID: messageId,
-              time: { created: now, completed: now },
-            },
-          ],
-        }
-        useAppStore.getState().addMessage(sessionId, message)
-
-        await fetch(`${BASE()}/tasks/${task.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            deliverSessionId: sessionId,
-            deliveredRunId: task.lastRunId,
-            deliveryError: undefined,
-          }),
-        })
-      } else {
-        await sendPlatformMessage(task.deliver as PlatformId, latest)
-        await fetch(`${BASE()}/tasks/${task.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            deliveredRunId: task.lastRunId,
-            deliveryError: undefined,
-          }),
-        })
-      }
-    } catch (err) {
-      await fetch(`${BASE()}/tasks/${task.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          deliveryError: err instanceof Error ? err.message : String(err),
-        }),
-      }).catch(() => {})
-    }
+function loadTasks(): ScheduledTask[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
   }
 }
 
-export const useTaskStore = create<TaskState>()((set, get) => ({
-  tasks: [],
-  loading: false,
-  error: null,
+function loadOutputs(): Record<string, TaskOutput[]> {
+  try {
+    const raw = localStorage.getItem(OUTPUT_KEY)
+    const parsed = raw ? JSON.parse(raw) : {}
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
 
-  refresh: async () => {
-    set({ loading: true, error: null })
-    try {
-      const res = await fetch(`${BASE()}/tasks`)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const tasks = await res.json()
-      await deliverTaskResults(tasks)
-      const refreshed = await fetch(`${BASE()}/tasks`)
-      const finalTasks = refreshed.ok ? await refreshed.json() : tasks
-      set({ tasks: finalTasks, loading: false })
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : String(err), loading: false })
-    }
-  },
+function save(tasks: ScheduledTask[], outputs: Record<string, TaskOutput[]>) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks))
+  localStorage.setItem(OUTPUT_KEY, JSON.stringify(outputs))
+}
 
-  createTask: async (data) => {
-    try {
-      const res = await fetch(`${BASE()}/tasks/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const task = await res.json()
-      set((s) => ({ tasks: [...s.tasks, task] }))
+function nextRun(task: ScheduledTask, from = Date.now()) {
+  return nextScheduledRunAt(task.schedule, from)
+}
+
+function runtimePrompt(task: ScheduledTask) {
+  return [
+    task.agentRuntime?.agentSystemPrompt,
+    task.agentRuntime?.agentSkillsBlock,
+    task.prompt,
+  ].filter((part) => part?.trim()).join('\n\n')
+}
+
+async function executeTask(task: ScheduledTask): Promise<string> {
+  const session = await JCode.createSession(task.workspaceDir)
+  let output = ''
+  const unsubscribe = await JCode.subscribeStream(session.id, {
+    onText: (_partId, delta) => { output += delta },
+  })
+
+  try {
+    const result = await JCode.prompt(session.id, runtimePrompt(task), {
+      workspaceDir: task.workspaceDir,
+      workspaceRoots: task.agentRuntime?.workspaceRoots,
+      permissionMode: task.agentRuntime?.permissionMode,
+      permissionRules: task.agentRuntime?.permissionRules,
+    })
+    if (result.error) throw new Error(result.error)
+    return output || result.text || ''
+  } finally {
+    unsubscribe()
+    await JCode.deleteSession(session.id).catch(() => {})
+  }
+}
+
+function deliverToChat(task: ScheduledTask, content: string) {
+  const store = useAppStore.getState()
+  let sessionId = task.deliverSessionId
+  if (!sessionId || !store.sessions.some((session) => session.id === sessionId)) {
+    sessionId = store.createSession()
+  }
+  const now = Date.now()
+  const messageId = `task-${task.id}-${now}`
+  const message: KiloMessage = {
+    info: { id: messageId, sessionID: sessionId, role: 'assistant', time: { created: now, completed: now } },
+    parts: [{
+      id: `${messageId}-text`,
+      type: 'text',
+      text: content,
+      sessionID: sessionId,
+      messageID: messageId,
+      time: { created: now, completed: now },
+    }],
+  }
+  store.addMessage(sessionId, message)
+  return sessionId
+}
+
+export const useTaskStore = create<TaskState>()((set, get) => {
+  const persist = (tasks: ScheduledTask[], outputs: Record<string, TaskOutput[]>) => {
+    set({ tasks, outputs })
+    save(tasks, outputs)
+  }
+
+  return {
+    tasks: loadTasks(),
+    outputs: loadOutputs(),
+    loading: false,
+    error: null,
+
+    refresh: async () => {
+      set({ loading: true, error: null })
+      try {
+        const tasks = loadTasks()
+        const outputs = loadOutputs()
+        set({ tasks, outputs, loading: false })
+      } catch (error) {
+        set({ error: error instanceof Error ? error.message : String(error), loading: false })
+      }
+    },
+
+    tick: async () => {
+      const tasks = get().tasks
+      const now = Date.now()
+      const due = tasks.filter((task) =>
+        task.enabled &&
+        task.nextRunAt !== null &&
+        task.nextRunAt <= now &&
+        task.lastStatus !== 'running'
+      )
+      for (const task of due) {
+        await get().triggerRun(task.id)
+      }
+    },
+
+    createTask: async (data) => {
+      const now = Date.now()
+      const task: ScheduledTask = {
+        id: crypto.randomUUID(),
+        name: data.name.trim() || 'Scheduled task',
+        prompt: data.prompt.trim(),
+        schedule: data.schedule,
+        skills: data.skills || [],
+        agentRuntime: data.agentRuntime,
+        contextFrom: data.contextFrom || [],
+        model: data.model,
+        provider: data.provider,
+        workspaceDir: data.workspaceDir,
+        deliver: data.deliver || 'chat',
+        deliverSessionId: data.deliverSessionId,
+        enabled: data.enabled ?? true,
+        nextRunAt: nextScheduledRunAt(data.schedule, now),
+        lastRunAt: null,
+        lastStartedAt: null,
+        lastFinishedAt: null,
+        lastStatus: 'pending',
+        createdAt: now,
+      }
+      persist([...get().tasks, task], get().outputs)
       return task
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : String(err) })
-      return null
-    }
-  },
+    },
 
-  removeTask: async (id) => {
-    try {
-      await fetch(`${BASE()}/tasks/${id}`, { method: 'DELETE' })
-      set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }))
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : String(err) })
-    }
-  },
+    removeTask: async (id) => {
+      const tasks = get().tasks.filter((task) => task.id !== id)
+      const outputs = { ...get().outputs }
+      delete outputs[id]
+      persist(tasks, outputs)
+    },
 
-  toggleTask: async (id) => {
-    const task = get().tasks.find((t) => t.id === id)
-    if (!task) return
-    try {
-      await fetch(`${BASE()}/tasks/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: !task.enabled }),
+    toggleTask: async (id) => {
+      const tasks = get().tasks.map((task) => {
+        if (task.id !== id) return task
+        const enabled = !task.enabled
+        return {
+          ...task,
+          enabled,
+          lastStatus: enabled ? task.lastStatus : 'cancelled',
+          nextRunAt: enabled ? nextRun(task, Date.now()) : null,
+        }
       })
-      set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, enabled: !t.enabled } : t)) }))
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : String(err) })
-    }
-  },
+      persist(tasks, get().outputs)
+    },
 
-  triggerRun: async (id) => {
-    try {
-      const appStore = await import('./appStore')
-      const state = appStore.useAppStore.getState()
-      const apiKey = state.providerConfigs[state.activeProvider]?.apiKey || ''
-      const model = state.providerConfigs[state.activeProvider]?.model || ''
-      await fetch(`${BASE()}/tasks/run/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          apiKey,
-          defaultProvider: state.activeProvider,
-          defaultModel: model,
-          projectDir: state.workspaceDir || undefined,
-        }),
-      })
-      setTimeout(() => get().refresh(), 2000)
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : String(err) })
-    }
-  },
+    triggerRun: async (id) => {
+      const current = get().tasks.find((task) => task.id === id)
+      if (!current || current.lastStatus === 'running') return
 
-  fetchOutput: async (id: string) => {
-    try {
-      const res = await fetch(`${BASE()}/tasks/${id}/output`)
-      return res.ok ? await res.json() : []
-    } catch { return [] }
-  },
-}))
+      const started = Date.now()
+      let tasks = get().tasks.map((task) =>
+        task.id === id
+          ? { ...task, lastStatus: 'running' as const, lastStartedAt: started, lastTrigger: 'manual' as const, lastRunAt: started }
+          : task
+      )
+      persist(tasks, get().outputs)
+
+      try {
+        const content = await executeTask(current)
+        const finished = Date.now()
+        const output: TaskOutput = { timestamp: new Date(finished).toISOString(), content: content || '(JCode completed without text output.)' }
+        const outputs = { ...get().outputs, [id]: [output, ...(get().outputs[id] || [])].slice(0, 20) }
+
+        tasks = get().tasks.map((task) => {
+          if (task.id !== id) return task
+          const repeatCompleted = (task.repeat?.completed || 0) + 1
+          const reachedLimit = task.repeat?.times != null && repeatCompleted >= task.repeat.times
+          const next = reachedLimit || task.schedule.kind === 'once' ? null : nextRun(task, finished)
+          return {
+            ...task,
+            lastStatus: 'completed' as const,
+            lastFinishedAt: finished,
+            lastRunId: `run-${finished}`,
+            nextRunAt: next,
+            enabled: reachedLimit || task.schedule.kind === 'once' ? false : task.enabled,
+            repeat: task.repeat ? { ...task.repeat, completed: repeatCompleted } : task.repeat,
+          }
+        })
+
+        const liveTask = tasks.find((task) => task.id === id)
+        if (liveTask?.deliver === 'chat' && content) {
+          const sessionId = deliverToChat(liveTask, content)
+          tasks = tasks.map((task) => task.id === id ? { ...task, deliverSessionId: sessionId } : task)
+        }
+
+        persist(tasks, outputs)
+      } catch (error) {
+        const finished = Date.now()
+        tasks = get().tasks.map((task) =>
+          task.id === id
+            ? { ...task, lastStatus: 'failed' as const, lastFinishedAt: finished, lastError: error instanceof Error ? error.message : String(error), nextRunAt: task.schedule.kind === 'once' ? null : nextRun(task, finished) }
+            : task
+        )
+        persist(tasks, get().outputs)
+      }
+    },
+
+    fetchOutput: async (id) => get().outputs[id] || [],
+  }
+})
