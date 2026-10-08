@@ -408,8 +408,13 @@ export function ChatView() {
 
   const handleDeleteMessage = useCallback((message: KiloMessage) => {
     if (!activeSessionId) return
-    deleteMessage(activeSessionId, message.info.id)
-  }, [activeSessionId, deleteMessage])
+    if (message.info.role === 'user') {
+      // Keep the conversation coherent: deleting a prompt also removes its following response/tool work.
+      deleteMessagesFrom(activeSessionId, message.info.id)
+    } else {
+      deleteMessage(activeSessionId, message.info.id)
+    }
+  }, [activeSessionId, deleteMessage, deleteMessagesFrom])
 
   const abort = useCallback(() => {
     if (activeJCodeSessionId) {
