@@ -519,27 +519,6 @@ export function Sidebar({
             collapsed={collapsed}
           />
           <NavItem
-            icon={Target}
-            label={t('sidebar.goals')}
-            active={currentPage === 'goal'}
-            onClick={() => onNavigate('goal')}
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={Send}
-            label={t('sidebar.platformHub')}
-            active={currentPage === 'platforms'}
-            onClick={() => onNavigate('platforms')}
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={PawPrint}
-            label={t('sidebar.pet')}
-            active={currentPage === 'pet'}
-            onClick={() => onNavigate('pet')}
-            collapsed={collapsed}
-          />
-          <NavItem
             icon={Puzzle}
             label={t('sidebar.extensions')}
             active={currentPage === 'extensions'}
