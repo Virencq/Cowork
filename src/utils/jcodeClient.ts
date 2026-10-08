@@ -16,7 +16,8 @@ export interface JCodePromptOptions {
   permissionMode?: string;
   permissionRules?: unknown;
   images?: Array<{ data: string; mimeType: string }>;
-  webSearchConfig?: unknown;\n  allowedSseMcpToolNames?: string[];
+  webSearchConfig?: unknown;
+  allowedSseMcpToolNames?: string[];\n  allowedSseMcpToolNames?: string[];
 }
 
 export interface StreamHandlers {
