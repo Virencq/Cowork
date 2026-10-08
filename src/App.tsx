@@ -94,10 +94,10 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
 
   const tasks = sessions
     .filter(s => !archived.has(s.id))
-    .filter(s => !filterPinned || pinned.has(s.id))
     .filter(s => !taskQuery || (s.title || '').toLowerCase().includes(taskQuery.toLowerCase()))
     .sort((a,b) => b.updatedAt-a.updatedAt)
     .slice(0, 20)
+  const visibleTasks = filterPinned ? tasks.filter(s => pinned.has(s.id)) : tasks
   const pinnedTasks = tasks.filter(s => pinned.has(s.id))
   const scheduledTasks = tasks.filter(s => false)
 
@@ -144,7 +144,7 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
 
       {/* Task navigation */}
       <div className="mt-3 px-3">
-        <button onClick={() => { setFilterPinned(true); onPage('chat') }} className={`home-nav-row ${filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
+        <button onClick={() => setFilterPinned(v => !v)} className={`home-nav-row ${filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
           <span className="inline-flex items-center gap-2"><Pin size={14}/>Pinned</span>
           <ChevronRight size={14}/>
         </button>
@@ -170,7 +170,7 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
       </div>
 
       <div className="px-2 mt-1 overflow-auto min-h-0 pb-28">
-        {tasks.map(s => (
+        {visibleTasks.map(s => (
           <div key={s.id} className="relative group">
             {renaming === s.id ? (
               <div className="flex items-center gap-1 px-2 py-1">
@@ -203,7 +203,7 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
             )}
           </div>
         ))}
-        {tasks.length===0 && <div className="px-3 py-3 text-[11px] text-[#a09a94]">No tasks yet</div>}
+        {visibleTasks.length===0 && <div className="px-3 py-3 text-[11px] text-[#a09a94]">{filterPinned ? 'No pinned tasks' : 'No tasks yet'}</div>}
       </div>
 
       <div className="mt-auto border-t border-[#ece9e5] px-3 py-3">
