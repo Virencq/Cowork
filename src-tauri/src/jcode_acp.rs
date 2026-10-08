@@ -131,6 +131,59 @@ pub fn jcode_status() -> Result<Value, String> {
     }
 }
 
+
+#[tauri::command]
+pub fn jcode_runtime_info() -> Result<Value, String> {
+    let executable = find_jcode()?;
+    let output = Command::new(&executable)
+        .args(["--quiet", "provider", "current", "--json"])
+        .output()
+        .map_err(|e| format!("Failed to query JCode provider: {e}"))?;
+
+    let raw = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let mut provider = None::<String>;
+    let mut model = None::<String>;
+    let mut effort = None::<String>;
+    if let Ok(value) = serde_json::from_str::<Value>(&raw) {
+        fn find_string(value: &Value, keys: &[&str]) -> Option<String> {
+            match value {
+                Value::Object(map) => {
+                    for key in keys {
+                        if let Some(Value::String(v)) = map.get(*key) { if !v.is_empty() { return Some(v.clone()); } }
+                    }
+                    for child in map.values() { if let Some(v) = find_string(child, keys) { return Some(v); } }
+                }
+                Value::Array(items) => for child in items { if let Some(v) = find_string(child, keys) { return Some(v); } },
+                _ => {}
+            }
+            None
+        }
+        provider = find_string(&value, &["provider", "providerId", "provider_id"]);
+        model = find_string(&value, &["model", "modelId", "model_id"]);
+        effort = find_string(&value, &["effort", "thinkingLevel", "reasoningEffort"]);
+    }
+
+    if model.is_none() {
+        // Some JCode builds expose the current selection as human-readable output.
+        let text = if raw.is_empty() { String::from_utf8_lossy(&output.stderr).to_string() } else { raw.clone() };
+        for line in text.lines() {
+            let lower = line.to_ascii_lowercase();
+            if model.is_none() && lower.contains("model") {
+                if let Some((_, value)) = line.split_once(':') { let value = value.trim(); if !value.is_empty() { model = Some(value.to_string()); } }
+            }
+        }
+    }
+
+    Ok(json!({
+        "installed": true,
+        "path": executable.to_string_lossy(),
+        "provider": provider,
+        "model": model,
+        "effort": effort,
+        "raw": raw
+    }))
+}
+
 #[tauri::command]
 pub fn jcode_sync_mcp_config(servers: Value) -> Result<Value, String> {
     let home = std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME")).map(std::path::PathBuf::from).ok_or("Unable to resolve the user home directory.")?;
