@@ -13,7 +13,7 @@ export interface StreamHandlers {
   onThinking?: (delta: string) => void;
   onToolCall?: (id: string, name: string, args: unknown) => void;
   onToolResult?: (id: string, name: string, result: unknown) => void;
-  onToolApproval?: (request: any) => void;
+  onToolApproval?: (request: any) => void;\n  onMcpToolRequest?: (request: any) => void;
   onStatus?: (status: ContextStatus) => void;
   onDone?: () => void;
 }
@@ -61,10 +61,10 @@ export async function createSession(workspaceDir?: string): Promise<{ id: string
 }
 export function getBaseUrl() { return ''; }
 
-export async function prompt(sessionId: string, text: string, options: JCodePromptOptions = {}) {
+export async function fetchModels(_providerId?: string, _apiKey?: string, _baseUrl?: string, _providerApi?: string) { return [] as Array<{ id: string; name: string }>; }\nexport async function fetchProviders() { return []; }\nexport async function fetchModelCapabilities(_providerId: string, _modelId: string, _providerApi?: string, _baseUrl?: string) { return { reasoning: true, supportedThinkingLevels: ['off','minimal','low','medium','high','xhigh','max'], recommendedThinkingLevel: 'medium' }; }\nexport async function waitForServer() { return true; }\nexport async function sendToolApproval(_sessionId: string, _requestId: string, _decision: string) {}\n\nexport interface SubagentInfo { name: string; description: string; model?: string; tools: string[]; source: 'builtin' | 'user'; }\nexport interface SubagentRunInfo { runId: string; agent: string; task: string; status: string; usage: { input: number; output: number; turns: number }; budget: { maxTurns: number; maxTokens: number }; durationMs?: number; errorMessage?: string; stopReason?: string; }\nexport async function fetchSubagents(_projectDir?: string): Promise<SubagentInfo[]> { return []; }\nexport async function fetchSubagentRuns(_limit = 12): Promise<SubagentRunInfo[]> { return []; }\nexport async function saveSubagent(_name: string, _config: unknown) { return { ok: true }; }\nexport async function deleteSubagent(_name: string, _projectDir?: string) {}\nexport async function cancelSubagentRun(_runId: string) {}\n\nexport async function prompt(sessionId: string, text: string, options: JCodePromptOptions = {}) {
   const finalPrompt = options.systemPrompt ? options.systemPrompt + '\\n\\n' + text : text;
   await invoke('jcode_prompt', { sessionId, prompt: finalPrompt });
-  return { text: '' };
+  return { text: '', error: undefined as string | undefined };
 }
 export async function abortSession(sessionId: string) { await invoke('jcode_cancel', { sessionId }); }
 export async function deleteSession(sessionId: string) { await invoke('jcode_close_session', { sessionId }); }
