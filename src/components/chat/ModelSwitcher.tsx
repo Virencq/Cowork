@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Cpu, ChevronUp, Search, Check } from 'lucide-react'
 import { useAppStore } from '../../stores'
-import * as Pi from '../../utils/piClient'
+import * as Pi from '../../utils/jcodeClient'
 
 interface ModelSwitcherProps {
   providerId: string
