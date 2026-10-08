@@ -317,11 +317,26 @@ export const useAgentStore = create<AgentStore>()(
       }),
       merge: (persisted, current) => {
         const merged = { ...current, ...(persisted as Partial<AgentStore>) }
-        merged.agents = merged.agents?.map((agent) =>
-          migrateAgentProfile(
+        merged.agents = merged.agents?.map((agent) => {
+          const migrated = migrateAgentProfile(
             migrateAgentWorkspaceRoots(agent) as unknown as Record<string, unknown>,
-          ) as unknown as Agent,
-        )
+          ) as unknown as Agent
+          if (
+            migrated.id === DEFAULT_AGENT_ID &&
+            (migrated.name === 'S-Loop' || /通用助手/.test(migrated.description || ''))
+          ) {
+            return {
+              ...migrated,
+              name: 'Cowork Assistant',
+              description: 'General-purpose AI assistant for workspace tasks, coding, research, and automation.',
+              identity: createAgentProfile(
+                'Cowork Assistant',
+                'General-purpose AI assistant for workspace tasks, coding, research, and automation.',
+              ).identity,
+            }
+          }
+          return migrated
+        })
         // Guarantee the default agent always exists and stays first
         const hasDefault = merged.agents?.some((a) => a.id === DEFAULT_AGENT_ID)
         if (!merged.agents || merged.agents.length === 0) {
