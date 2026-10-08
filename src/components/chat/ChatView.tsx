@@ -10,8 +10,6 @@ import type { ImageAttachment } from './ChatInput'
 import { Cpu, Paperclip, FolderTree, MessagesSquare, ShieldCheck, ShieldAlert, ShieldOff, Bot, ChevronUp, Sparkles, ArrowUp, FolderKanban, ChevronDown, Asterisk } from 'lucide-react'
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
-import { ModelSwitcher } from './ModelSwitcher'
-import { ReasoningLevelSelector } from './ReasoningLevelSelector'
 import { FilePreviewPanel } from '../preview'
 import { SLoopMark } from '../ui'
 import * as JCode from '../../utils/jcodeClient'
@@ -38,8 +36,6 @@ export function ChatView() {
   const {
     activeSessionId,
     sessions,
-    providerConfigs,
-    activeProvider,
     workspaceDir,
     leftPanelMode,
     setLeftPanelMode,
@@ -51,12 +47,19 @@ export function ChatView() {
     commitStreamingMessage,
     addMessage,
     updateSessionTitle,
-    providerList,
   } = useAppStore()
-  const activeAgentModel = useAgentStore((state) => {
-    if (!state.activeAgentId) return ''
-    return state.agents.find((agent) => agent.id === state.activeAgentId)?.model || ''
-  })
+  const [jcodeRuntime, setJcodeRuntime] = useState<{ provider?: string | null; model?: string | null; effort?: string | null } | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    const refresh = () => {
+      void JCode.runtimeInfo().then(info => {
+        if (!cancelled) setJcodeRuntime(info)
+      }).catch(() => undefined)
+    }
+    refresh()
+    const timer = window.setInterval(refresh, 15000)
+    return () => { cancelled = true; window.clearInterval(timer) }
+  }, [])
 
   const [error, setError] = useState<string | null>(null)
   const [contextStatus, setContextStatus] = useState<JCode.ContextStatus | null>(null)
@@ -168,12 +171,8 @@ export function ChatView() {
         return
       }
 
-      // JCode is the runtime and owns provider/model selection. Cowork does not
-      // require a separate provider API key or model configuration.
-      const providerConfig = activeProvider ? providerConfigs[activeProvider] : undefined
-      const model = providerConfig?.model
-        ? { providerID: activeProvider!, modelID: providerConfig.model }
-        : undefined
+      // JCode is the runtime and owns provider/model selection. Cowork never supplies
+      // provider credentials, provider IDs, or model IDs to ACP.
 
       // Add user message
       const uid = Math.random().toString(36).substring(2, 15)
@@ -304,16 +303,10 @@ export function ChatView() {
 
       // Optional UI hints are forwarded to the JCode adapter when present.
       // An empty model is valid: JCode will use its configured default model.
-      const effectiveModel = activeAgent?.model
-        ? { providerID: activeProvider!, modelID: activeAgent.model }
-        : model
-      const reasoningLevel = providerConfig?.reasoningEfforts?.[effectiveModel?.modelID || ''] || 'medium'
-
       startStreaming(sid, 'pending-' + Date.now())
 
       usePetStore.getState().onThinking()
 
-      const providerInfo = providerList.find((p) => p.id === activeProvider)
       const agentSystemPrompt = assembleAgentRuntimePrompt(
         activeAgent
           ? assembleAgentSystemPrompt(activeAgent, {
@@ -327,10 +320,6 @@ export function ChatView() {
 
       const result = await JCode.prompt(pid!, enrichedContent, {
         systemPrompt: agentSystemPrompt,
-        providerID: effectiveModel?.providerID,
-        modelID: effectiveModel?.modelID,
-        thinkingLevel: reasoningLevel,
-        apiKey: providerConfig?.apiKey,
         workspaceDir: workspaceDir ?? undefined,
         workspaceRoots: activeAgent?.workspaceRoots || [],
         webSearchConfig: useWebSearchStore.getState().getActiveConfig(),
@@ -340,16 +329,7 @@ export function ChatView() {
           : undefined,
         permissionMode: activeAgent?.permissionMode,
         permissionRules: activeAgent?.permissionRules,
-        providerAPI: providerInfo?.api,
-        providerConfig: {
-          ...(providerInfo?.api ? { api: providerInfo.api } : {}),
-          baseUrl: providerConfig?.baseUrl || '',
-          supportsVision: providerConfig?.supportsVision === true,
-          reasoningEfforts: providerConfig?.reasoningEfforts,
-          reasoningSupport: providerConfig?.reasoningSupport || 'auto',
-          thinkingFormat: providerConfig?.thinkingFormat || 'auto',
-        },
-        images,  // pass image data to pi-server
+        images,
       })
 
       if (result.error) {
@@ -397,7 +377,7 @@ export function ChatView() {
       useAppStore.getState().incrementFileTreeVersion()
       usePetStore.getState().onResponded()
     },
-    [activeSessionId, activeProvider, providerConfigs, providerList, session, t, startStreaming, finishStreaming, commitStreamingMessage, addMessage, updateSessionTitle, appendStreamingDelta, subscribeStream, isReadOnlySession],
+    [activeSessionId, session, t, startStreaming, finishStreaming, commitStreamingMessage, addMessage, updateSessionTitle, appendStreamingDelta, subscribeStream, isReadOnlySession],
   )
 
   const activeJCodeSessionId = activeSessionId
@@ -784,23 +764,15 @@ export function ChatView() {
                   )
                 })()}
                 <span className="opacity-15 w-px h-4 bg-current mx-1" />
-                {/* Model + Provider + Agent */}
                 <Cpu size={12} className="text-accent/60" />
-                <ModelSwitcher
-                  providerId={activeProvider!}
-                  currentModel={providerConfigs[activeProvider]?.model || ''}
-                  providerApi={providerList.find(p => p.id === activeProvider)?.api}
-                  apiKey={providerConfigs[activeProvider]?.apiKey}
-                  baseUrl={providerConfigs[activeProvider]?.baseUrl}
-                />
-                <ReasoningLevelSelector
-                  providerId={activeProvider!}
-                  modelId={activeAgentModel || providerConfigs[activeProvider]?.model || ''}
-                  providerApi={providerList.find(p => p.id === activeProvider)?.api}
-                  baseUrl={providerConfigs[activeProvider]?.baseUrl}
-                />
-                <span className="opacity-15 w-px h-4 bg-current mx-1" />
-                <span className="font-bold uppercase tracking-[0.2em]">{activeProvider}</span>
+                <span className="font-bold">{jcodeRuntime?.model || 'JCode'}</span>
+                <span className="text-text-tertiary">{jcodeRuntime?.effort || 'Default'}</span>
+                {jcodeRuntime?.provider && (
+                  <>
+                    <span className="opacity-15 w-px h-4 bg-current mx-1" />
+                    <span className="font-bold uppercase tracking-[0.12em]">{jcodeRuntime.provider}</span>
+                  </>
+                )}
                 {(() => {
                   const agent = useAgentStore.getState().activeAgentId ? useAgentStore.getState().agents.find(a => a.id === useAgentStore.getState().activeAgentId) : null
                   return agent ? <><span className="opacity-15 w-px h-4 bg-current mx-1" /><Bot size={12} strokeWidth={2.5} className="text-accent/60" /><span className="font-bold">{agent.name}</span></> : null
