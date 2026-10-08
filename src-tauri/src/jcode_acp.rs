@@ -231,6 +231,15 @@ pub fn jcode_sync_mcp_config(servers: Value) -> Result<Value, String> {
         }
     }
 
+    // Keep track of only the servers managed by Cowork. This lets us remove a
+    // server when the user disables/deletes it without touching MCP entries
+    // configured independently in JCode.
+    let managed_path = dir.join("cowork-mcp-managed.json");
+    let previously_managed: Vec<String> = std::fs::read_to_string(&managed_path)
+        .ok()
+        .and_then(|raw| serde_json::from_str::<Vec<String>>(&raw).ok())
+        .unwrap_or_default();
+
     let mut config = if path.exists() {
         std::fs::read_to_string(&path)
             .ok()
@@ -245,11 +254,21 @@ pub fn jcode_sync_mcp_config(servers: Value) -> Result<Value, String> {
         let root = config.as_object_mut().ok_or("Invalid JCode MCP config.")?;
         let existing = root.entry("mcpServers").or_insert_with(|| json!({}));
         let map = existing.as_object_mut().ok_or("JCode mcpServers must be an object.")?;
-        for (name, server) in mcp_servers {
-            map.insert(name, server);
+
+        for name in previously_managed {
+            map.remove(&name);
+        }
+        for (name, server) in &mcp_servers {
+            map.insert(name.clone(), server.clone());
         }
         map.len()
     };
+
+    let managed_names: Vec<String> = mcp_servers.keys().cloned().collect();
+    std::fs::write(
+        &managed_path,
+        serde_json::to_vec_pretty(&managed_names).map_err(|e| e.to_string())?,
+    ).map_err(|e| format!("Failed to write Cowork MCP state: {e}"))?;
 
     let content = serde_json::to_vec_pretty(&config).map_err(|e| e.to_string())?;
     std::fs::write(&path, content)
