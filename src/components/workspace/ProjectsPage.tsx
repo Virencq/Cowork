@@ -66,7 +66,20 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                     <div className="mt-2 text-[11px] text-[#958e87]">{new Date(project.updatedAt).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</div>
                   </div>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); setPinned(s => { const n = new Set(s); n.has(project.id) ? n.delete(project.id) : n.add(project.id); return n })} className="absolute right-3 top-3 h-7 w-7 grid place-items-center rounded-md hover:bg-[#f2efec] text-[#7b746d]" title="Pin project"><MoreHorizontal size={16}/></button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setPinned(s => {
+                      const n = new Set(s)
+                      n.has(project.id) ? n.delete(project.id) : n.add(project.id)
+                      return n
+                    })
+                  }}
+                  className="absolute right-3 top-3 h-7 w-7 grid place-items-center rounded-md hover:bg-[#f2efec] text-[#7b746d]"
+                  title="Pin project"
+                >
+                  <MoreHorizontal size={16}/>
+                </button>
                 <div className="absolute right-4 bottom-3 flex items-center gap-1 text-[11px] text-[#6f6861] pointer-events-none"><FolderOpen size={13}/><span className="max-w-[160px] truncate">{project.name}</span></div>
               </div>
             ))}
