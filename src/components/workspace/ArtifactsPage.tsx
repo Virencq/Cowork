@@ -33,7 +33,7 @@ export function ArtifactsPage() {
         )}
         <div className="flex items-center gap-5 mt-5 mb-6 text-[13px]">
           <button onClick={() => setFilter('all')} className={`pb-2 border-b-2 ${filter === 'all' ? 'border-[#e5e1dd] font-semibold text-[#27231f]' : 'border-transparent text-[#777069]'}`}>All</button>
-          <button onClick={() => setFilter('pinned')} className={`pb-2 border-b-2 ${filter === 'pinned' ? 'border-[#e5e1dd] font-semibold text-[#27231f]' : 'border-transparent text-[#777069'}`}>Pinned</button>
+          <button onClick={() => setFilter('pinned')} className={`pb-2 border-b-2 ${filter === 'pinned' ? 'border-[#e5e1dd] font-semibold text-[#27231f]' : 'border-transparent text-[#777069]'}`}>Pinned</button>
         </div>
         {visible.length ? (
           <div className="grid grid-cols-3 gap-5">
