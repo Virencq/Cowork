@@ -165,12 +165,12 @@ export function ChatView() {
         return
       }
 
+      // JCode is the runtime and owns provider/model selection. Cowork does not
+      // require a separate provider API key or model configuration.
       const providerConfig = activeProvider ? providerConfigs[activeProvider] : undefined
-
       const model = providerConfig?.model
         ? { providerID: activeProvider!, modelID: providerConfig.model }
         : undefined
-      if (!model) { setError(t('chat.errors.noModel')); return }
 
       // Add user message
       const uid = Math.random().toString(36).substring(2, 15)
@@ -282,6 +282,8 @@ export function ChatView() {
         enrichedContent = `${header}\n---\n${blocks.join('\n\n')}\n---\n\n${content}`
       }
 
+      // Optional UI hints are forwarded to the JCode adapter when present.
+      // An empty model is valid: JCode will use its configured default model.
       const effectiveModel = activeAgent?.model
         ? { providerID: activeProvider!, modelID: activeAgent.model }
         : model
