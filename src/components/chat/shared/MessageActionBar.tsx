@@ -2,12 +2,17 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { CopyButton } from './CopyButton'
 import { SpeechButton } from './SpeechButton'
+import { Copy, Pencil, Trash2 } from 'lucide-react'
 
 interface MessageActionBarProps {
   content?: string
   timestamp?: number
   align?: 'start' | 'end'
   speakable?: boolean
+  editable?: boolean
+  deletable?: boolean
+  onEdit?: () => void
+  onDelete?: () => void
 }
 
 function formatRelativeTime(ts: number, t: TFunction): string {
@@ -31,12 +36,24 @@ export function MessageActionBar({ content, timestamp, align = 'start', speakabl
           {formatRelativeTime(timestamp, t)}
         </span>
       )}
-      {content && <CopyButton text={content} label={t('chat.copy.copy')} />}
+      {content && <CopyButton text={content} />}
       {content && speakable && (
         <SpeechButton
           text={content}
           label={i18n.resolvedLanguage?.startsWith('zh') ? '朗读' : 'Speak'}
         />
+      )}
+      {editable && onEdit && (
+        <button type="button" onClick={onEdit} className="message-action-button" aria-label={t('chat.actions.edit')} title={t('chat.actions.edit')}>
+          <Pencil size={13} />
+          <span>{t('chat.actions.edit')}</span>
+        </button>
+      )}
+      {deletable && onDelete && (
+        <button type="button" onClick={onDelete} className="message-action-button message-action-danger" aria-label={t('chat.actions.delete')} title={t('chat.actions.delete')}>
+          <Trash2 size={13} />
+          <span>{t('chat.actions.delete')}</span>
+        </button>
       )}
     </div>
   )
