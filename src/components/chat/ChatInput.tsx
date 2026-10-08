@@ -69,6 +69,8 @@ export function ChatInput({
   const { t, i18n } = useTranslation()
   const [input, setInput] = useState('')
   const [attachments, setAttachments] = useState<FileAttachment[]>([])
+  const [showAddMenu, setShowAddMenu] = useState(false)
+  const addMenuRef = useRef<HTMLDivElement>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [dictation, setDictation] = useState<VoiceInputStatus | null>(null)
   const [dictationBusy, setDictationBusy] = useState(false)
@@ -105,6 +107,22 @@ export function ChatInput({
 
   // File attachments are now added via drag-and-drop only
   // (clicking files opens the preview panel instead)
+
+  useEffect(() => {
+    if (!showAddMenu) return
+    const close = (event: MouseEvent) => {
+      if (!addMenuRef.current?.contains(event.target as Node)) setShowAddMenu(false)
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowAddMenu(false)
+    }
+    document.addEventListener('mousedown', close)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [showAddMenu])
 
   const pickFiles = useCallback(async () => {
     if (!isTauriRuntime() || disabled || isStreaming) return
@@ -791,9 +809,58 @@ export function ChatInput({
               <div className={isHero ? "flex items-center justify-between h-11 px-4 border-t border-[#eeeae6]" : "flex items-center p-2"}>
                 {isHero ? (
                   <>
-                    <button type="button" onClick={() => void pickFiles()} className="h-8 w-8 rounded-md grid place-items-center text-[#342f2a] hover:bg-[#f2efec]" title="Add files" aria-label="Add files">
-                      <span className="text-[22px] leading-none">+</span>
-                    </button>
+                    <div ref={addMenuRef} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddMenu((open) => !open)}
+                        className="h-8 w-8 rounded-md grid place-items-center text-[#342f2a] hover:bg-[#f2efec]"
+                        title="Add"
+                        aria-label="Add"
+                        aria-expanded={showAddMenu}
+                      >
+                        <span className="text-[22px] leading-none">+</span>
+                      </button>
+                      {showAddMenu && (
+                        <div className="absolute bottom-10 left-0 z-50 w-64 overflow-hidden rounded-xl border border-[#ddd7d1] bg-white p-1.5 shadow-xl">
+                          <button
+                            type="button"
+                            onClick={() => { setShowAddMenu(false); void pickFiles() }}
+                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-[#302c28] hover:bg-[#f5f2ef]"
+                          >
+                            <Paperclip size={16} />
+                            <span>Add files or photos</span>
+                            <span className="ml-auto text-[10px] text-[#aaa39c]">Ctrl+U</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowAddMenu(false)}
+                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-[#302c28] hover:bg-[#f5f2ef]"
+                          >
+                            <span className="w-4 text-center">✦</span>
+                            <span>Skills</span>
+                            <span className="ml-auto text-[#aaa39c]">›</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowAddMenu(false)}
+                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-[#302c28] hover:bg-[#f5f2ef]"
+                          >
+                            <span className="w-4 text-center">▦</span>
+                            <span>Connectors</span>
+                            <span className="ml-auto text-[#aaa39c]">›</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowAddMenu(false)}
+                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-[#302c28] hover:bg-[#f5f2ef]"
+                          >
+                            <span className="w-4 text-center">⌘</span>
+                            <span>Plugins</span>
+                            <span className="ml-auto text-[#aaa39c]">›</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[12px] font-medium text-[#302c28]">{jcodeRuntime?.model || 'JCode'}</span>
                       <span className="text-[12px] text-[#8f8880]">{jcodeRuntime?.effort || 'Default'}</span>
