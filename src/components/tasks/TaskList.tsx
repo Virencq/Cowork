@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import { useTaskStore } from '../../stores';
 import { Plus, Trash2, Play, Pause, Zap, Search, Calendar, Eye, Bot } from 'lucide-react';
 import { useState, useMemo } from 'react';
@@ -11,13 +10,13 @@ interface TaskListProps {
   onCreateTask: () => void;
 }
 
-function formatNextRun(timestamp: number | null, t: ReturnType<typeof useTranslation>['t']): string {
+function formatNextRun(timestamp: number | null): string {
   if (!timestamp) return '—';
   const diff = timestamp - Date.now();
-  if (diff < 0) return t('tasks.overdue');
-  if (diff < 60000) return t('tasks.inMinute');
-  if (diff < 3600000) return t('tasks.inMinutes', { n: Math.floor(diff / 60000) });
-  if (diff < 86400000) return t('tasks.inHours', { n: Math.floor(diff / 3600000) });
+  if (diff < 0) return 'Overdue';
+  if (diff < 60000) return 'in less than a minute';
+  if (diff < 3600000) return `in ${Math.floor(diff / 60000)} min`;
+  if (diff < 86400000) return `in ${Math.floor(diff / 3600000)} hr`;
   return new Date(timestamp).toLocaleString();
 }
 
@@ -36,7 +35,6 @@ const DELIVER_CHAT = 'chat';
 const DELIVER_SILENT = 'silent';
 
 export function TaskList({ onCreateTask }: TaskListProps) {
-  const { t } = useTranslation();
   const { tasks, toggleTask, removeTask, triggerRun } = useTaskStore();
   const [detailTask, setDetailTask] = useState<ScheduledTask | null>(null);
   const [query, setQuery] = useState('');
@@ -51,7 +49,7 @@ export function TaskList({ onCreateTask }: TaskListProps) {
   }, [tasks, query]);
 
   const deliverLabel = (d: string) => {
-    if (d === DELIVER_CHAT) return t('tasks.deliverChat');
+    if (d === DELIVER_CHAT) return Chat;
     if (d === DELIVER_SILENT) return '';
     return platformNameMap[d] || d;
   };
@@ -61,12 +59,12 @@ export function TaskList({ onCreateTask }: TaskListProps) {
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-4 sm:pb-5">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text">{t('tasks.title')}</h1>
-          <p className="text-[12px] text-text-tertiary mt-0.5">{t('tasks.description')}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-text">{Scheduled tasks}</h1>
+          <p className="text-[12px] text-text-tertiary mt-0.5">{Automated tasks and recurring work}</p>
         </div>
         <MagicButton onClick={onCreateTask} className="gap-2 px-4 py-2 rounded-xl shadow shadow-accent/10 hover:shadow-accent/20 group">
           <Plus size={15} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-300" />
-          <span className="font-bold text-[13px]">{t('tasks.newTask')}</span>
+          <span className="font-bold text-[13px]">{New task}</span>
         </MagicButton>
       </div>
 
@@ -80,14 +78,14 @@ export function TaskList({ onCreateTask }: TaskListProps) {
                 <Calendar size={44} className="text-accent/50" strokeWidth={1.5} />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-text mb-2">{t('tasks.emptyTitle')}</h3>
-            <p className="text-[14px] text-text-tertiary max-w-sm leading-relaxed">{t('tasks.emptyDesc')}</p>
+            <h3 className="text-xl font-bold text-text mb-2">{No scheduled tasks}</h3>
+            <p className="text-[14px] text-text-tertiary max-w-sm leading-relaxed">{Create a recurring task and let JCode run it on schedule.}</p>
             <button
               onClick={onCreateTask}
               className="mt-8 inline-flex items-center gap-2.5 px-7 py-3 rounded-2xl bg-accent text-white text-[14px] font-bold shadow-xl shadow-accent/20 hover:shadow-accent/40 hover:-translate-y-0.5 transition-all duration-300"
             >
               <Plus size={17} strokeWidth={2.5} />
-              {t('tasks.createFirst')}
+              {Create your first task}
             </button>
           </div>
         ) : (
@@ -97,7 +95,7 @@ export function TaskList({ onCreateTask }: TaskListProps) {
                 <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-quaternary" />
                 <input
                   type="text" value={query} onChange={(e) => setQuery(e.target.value)}
-                  placeholder={t('tasks.filterPlaceholder')}
+                  placeholder={Search scheduled tasks}
                   className="w-full pl-8 pr-3 py-2 rounded-lg bg-surface-secondary/50 border border-border-light text-[12px] text-text placeholder:text-text-quaternary outline-none focus:border-accent/30"
                 />
               </div>
@@ -132,17 +130,17 @@ export function TaskList({ onCreateTask }: TaskListProps) {
                         )}
                       </div>
                       <span className="shrink-0 text-[10px] text-text-quaternary tabular-nums hidden md:block">
-                        {formatNextRun(task.nextRunAt, t)}
+                        {formatNextRun(task.nextRunAt)}
                       </span>
                       <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => setDetailTask(task)} className="p-1.5 rounded-md hover:bg-accent/10 text-text-quaternary hover:text-accent" title={t('tasks.history')}>
+                        <button onClick={() => setDetailTask(task)} className="p-1.5 rounded-md hover:bg-accent/10 text-text-quaternary hover:text-accent" title={History}>
                           <Eye size={13} />
                         </button>
                         <button onClick={() => toggleTask(task.id)}
                           className={`p-1.5 rounded-md ${task.enabled ? 'text-text-tertiary hover:text-text' : 'text-text-quaternary hover:text-accent'} hover:bg-surface-secondary`}>
                           {task.enabled ? <Pause size={13} /> : <Play size={13} />}
                         </button>
-                        <button onClick={() => triggerRun(task.id)} className="p-1.5 rounded-md hover:bg-green-500/10 text-text-quaternary hover:text-green-500" title={t('tasks.runNow')}>
+                        <button onClick={() => triggerRun(task.id)} className="p-1.5 rounded-md hover:bg-green-500/10 text-text-quaternary hover:text-green-500" title={Run now}>
                           <Zap size={13} />
                         </button>
                         <button onClick={() => removeTask(task.id)} className="p-1.5 rounded-md hover:bg-red-500/10 text-text-quaternary hover:text-red-500">
