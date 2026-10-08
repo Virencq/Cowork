@@ -633,28 +633,37 @@ export function ChatView() {
         <div className="flex-1 min-h-0 relative bg-transparent">
           <AnimatePresence mode="wait">
             {isEmpty ? (
-              <motion.div key="empty" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="h-full flex flex-col items-center justify-center px-10 relative">
-                <div className="text-center relative z-10 w-full flex flex-col items-center">
-                  <p className="section-eyebrow mb-6">{t('chat.welcome.subtitle')}</p>
-                  <div className="flex justify-center w-full mb-7">
-                    <SLoopMark size="hero" />
+              <motion.div
+                key="empty-task"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="h-full flex flex-col items-center justify-center px-8"
+              >
+                <div className="w-full max-w-[674px]">
+                  <div className="mb-8 text-center">
+                    <h2 className="font-serif text-[34px] leading-tight tracking-[-0.035em] text-[#171411]">
+                      What can I help you with?
+                    </h2>
+                    <p className="mt-2 text-[13px] text-[#8f8880]">
+                      Start a task and JCode will work through it with you.
+                    </p>
                   </div>
-                  <h2 className="text-3xl sm:text-[38px] font-semibold tracking-[-0.035em] text-text leading-tight mb-3 text-center">{t('chat.welcome.howCanIHelp')}</h2>
-                  <p className="text-sm text-text-secondary max-w-xl leading-6 font-normal text-center">{t('chat.welcome.emptyDesc')}</p>
+                  <ChatInput
+                    onSubmit={handleSubmit}
+                    onAbort={abort}
+                    isStreaming={false}
+                    variant="hero"
+                    placeholder="What would you like me to do?"
+                  />
+                  <div className="mt-2 h-9 flex items-center gap-2 px-4 text-[12px] text-[#6e675f]">
+                    <FolderKanban size={14}/>
+                    <span>Project or folder</span>
+                    <ChevronDown size={13}/>
+                    <span className="ml-auto text-[#a39d96]">ⓘ</span>
+                  </div>
                 </div>
               </motion.div>
             ) : (
-              <motion.div key={activeSessionId} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }} className="h-full flex flex-col w-full max-w-(--spacing-chat-max) mx-auto relative overflow-hidden">
-                {session && (session.sourceLabel || session.readOnly) && (
-                  <div className="sticky top-0 z-10 px-4 pt-4">
-                    <div className="rounded-lg border border-border bg-surface px-4 py-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[13px] font-bold tracking-tight text-text">{session.title}</span>
-                        {session.sourceLabel && (
-                          <span className="inline-flex items-center rounded-full border border-accent/20 bg-accent/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-accent">
-                            {session.sourceLabel}
-                          </span>
-                        )}
                         {session.readOnly && (
                           <span className="inline-flex items-center rounded-full border border-border-light bg-surface-secondary/70 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">
                             {t('chat.session.readOnly')}
