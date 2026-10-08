@@ -25,6 +25,7 @@ interface WorkspaceLibraryState {
   artifacts: CoworkArtifact[]
   addProject: (project: Omit<CoworkProject, 'id' | 'createdAt' | 'updatedAt'>) => void
   upsertProject: (project: CoworkProject) => void
+  updateProject: (id: string, updates: Partial<Omit<CoworkProject, 'id' | 'createdAt'>>) => void
   addArtifact: (artifact: Omit<CoworkArtifact, 'id' | 'createdAt' | 'updatedAt'>) => void
   upsertArtifact: (artifact: CoworkArtifact) => void
   importBundle: (bundle: {
@@ -48,6 +49,9 @@ export const useWorkspaceStore = create<WorkspaceLibraryState>()(
         projects: s.projects.some((p) => p.id === project.id)
           ? s.projects.map((p) => p.id === project.id ? project : p)
           : [...s.projects, project],
+      })),
+      updateProject: (id, updates) => set((s) => ({
+        projects: s.projects.map((p) => p.id === id ? { ...p, ...updates, updatedAt: Date.now() } : p),
       })),
       addArtifact: (artifact) => set((s) => {
         const now = Date.now()
