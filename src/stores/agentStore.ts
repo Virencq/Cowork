@@ -31,11 +31,11 @@ const DEFAULT_AGENT_ID = 'agent_default'
 function createDefaultAgent(): Agent {
   return {
     id: DEFAULT_AGENT_ID,
-    name: 'S-Loop',
-    description: '通用助手，理解上下文、调度技能、编排工具。',
+    name: 'Cowork Assistant',
+    description: 'General-purpose AI assistant for workspace tasks, coding, research, and automation.',
     avatar: '🤖',
     instructions: 'You are a helpful assistant. Use available tools when needed.',
-    ...createAgentProfile('S-Loop', '通用助手，理解上下文、调度技能、编排工具。'),
+    ...createAgentProfile('Cowork Assistant', 'General-purpose AI assistant for workspace tasks, coding, research, and automation.'),
     rules: 'Use available tools when needed. Ask before destructive actions.',
     model: '',
     skills: [],
