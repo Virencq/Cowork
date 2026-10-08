@@ -78,12 +78,17 @@ function prettifyProviderId(id: string): string {
 function JCodeRuntimeSettings() {
   const [status, setStatus] = useState<{ installed: boolean; path?: string; error?: string } | null>(null)
   const [checking, setChecking] = useState(false)
+  const [runtime, setRuntime] = useState<{ provider?: string | null; model?: string | null; effort?: string | null } | null>(null)
 
   const check = async () => {
     setChecking(true)
-    try { setStatus(await Pi.status()) }
-    catch (error) { setStatus({ installed: false, error: error instanceof Error ? error.message : 'Unable to check JCode' }) }
-    finally { setChecking(false) }
+    try {
+      const [nextStatus, nextRuntime] = await Promise.all([Pi.status(), Pi.runtimeInfo()])
+      setStatus(nextStatus)
+      setRuntime(nextRuntime)
+    } catch (error) {
+      setStatus({ installed: false, error: error instanceof Error ? error.message : 'Unable to check JCode' })
+    } finally { setChecking(false) }
   }
 
   useEffect(() => { void check() }, [])
@@ -127,7 +132,18 @@ function JCodeRuntimeSettings() {
               <div className="text-[10px] uppercase tracking-widest text-text-quaternary">Process</div>
               <div className="mt-1 text-[12px] font-semibold text-text">Installed CLI</div>
             </div>
+            <div className="rounded-lg border border-border bg-surface-secondary p-3">
+              <div className="text-[10px] uppercase tracking-widest text-text-quaternary">Provider</div>
+              <div className="mt-1 text-[12px] font-semibold text-text truncate">{runtime?.provider || 'Managed by JCode'}</div>
+            </div>
+            <div className="rounded-lg border border-border bg-surface-secondary p-3">
+              <div className="text-[10px] uppercase tracking-widest text-text-quaternary">Model</div>
+              <div className="mt-1 text-[12px] font-semibold text-text truncate">{runtime?.model || 'Managed by JCode'}</div>
+            </div>
           </div>
+          {runtime?.effort && (
+            <div className="mt-3 text-[11px] text-text-tertiary">Reasoning effort: <span className="font-semibold text-text-secondary">{runtime.effort}</span></div>
+          )}
         </div>
 
         <div className="rounded-xl border border-border bg-surface p-5">
