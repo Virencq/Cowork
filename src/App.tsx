@@ -307,7 +307,7 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
           <div className="mt-1 text-[11px] text-[#9a938c]">Project memory</div>
         </div>
         <div className="px-5 pb-5 text-[12px] leading-5 text-[#777068]">
-          Ask JCode to remember project-specific information. Saved memory will appear here.
+          JCode manages persistent memory for its sessions. Use /memory in chat to inspect or change memory behavior.
         </div>
       </section>
 
