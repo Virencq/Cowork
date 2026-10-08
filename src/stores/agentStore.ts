@@ -323,7 +323,7 @@ export const useAgentStore = create<AgentStore>()(
           ) as unknown as Agent
           if (
             migrated.id === DEFAULT_AGENT_ID &&
-            (migrated.name === 'S-Loop' || /通用助手/.test(migrated.description || ''))
+            migrated.name === 'S-Loop'
           ) {
             return {
               ...migrated,
