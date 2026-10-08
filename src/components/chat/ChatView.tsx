@@ -7,7 +7,7 @@ import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
 import { invoke } from '@tauri-apps/api/core'
 import type { ImageAttachment } from './ChatInput'
-import { Cpu, Paperclip, FolderTree, MessagesSquare, ShieldCheck, ShieldAlert, ShieldOff, Bot, ChevronUp, Sparkles, ArrowUp, FolderKanban, ChevronDown } from 'lucide-react'
+import { Cpu, Paperclip, FolderTree, MessagesSquare, ShieldCheck, ShieldAlert, ShieldOff, Bot, ChevronUp, Sparkles, ArrowUp, FolderKanban, ChevronDown, Asterisk } from 'lucide-react'
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { ModelSwitcher } from './ModelSwitcher'
@@ -538,9 +538,9 @@ export function ChatView() {
     return (
       <div className="flex-1 h-full overflow-auto bg-white">
         <div className="min-h-full flex flex-col">
-          <div className="flex-1 flex flex-col items-center pt-[250px] px-8">
+          <div className="flex-1 flex flex-col items-center pt-[264px] px-8">
             <div className="mb-11 flex items-center justify-center gap-3">
-              <SLoopMark size="md" className="!h-10 !w-10" />
+              <div className="h-10 w-10 grid place-items-center text-[#df7650]"><Asterisk size={39} strokeWidth={1.7}/></div>
               <h1 className="font-serif text-[39px] leading-none tracking-[-0.04em] text-[#171411]">
                 You’re here!
               </h1>
