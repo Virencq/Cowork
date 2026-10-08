@@ -16,7 +16,7 @@ export interface JCodePromptOptions {
   permissionMode?: string;
   permissionRules?: unknown;
   images?: Array<{ data: string; mimeType: string }>;
-  webSearchConfig?: unknown;
+  webSearchConfig?: unknown;\n  allowedSseMcpToolNames?: string[];
 }
 
 export interface StreamHandlers {
@@ -80,17 +80,17 @@ export async function createSession(workspaceDir?: string): Promise<{ id: string
 }
 
 export function getBaseUrl() { return ''; }
-export async function waitForServer() { return true; }
+export async function waitForServer(..._args: any[]) { return true; }
 
 export async function fetchModels(_providerId?: string, _apiKey?: string, _baseUrl?: string, _providerApi?: string) {
   return [] as Array<{ id: string; name: string }>;
 }
 
-export async function fetchProviders() {
+export async function fetchProviders(): Promise<any[]> {
   return [];
 }
 
-export async function fetchModelCapabilities(_providerId: string, _modelId: string, _providerApi?: string, _baseUrl?: string) {
+export async function fetchModelCapabilities(..._args: any[]): Promise<any> {
   return {
     reasoning: true,
     supportedThinkingLevels: ['off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
@@ -121,7 +121,7 @@ export async function subscribeStream(sessionId: string, handlers: StreamHandler
 }
 
 export async function sendMcpToolResponse(_sessionId: string, _requestId: string, _result: unknown, _error?: string) {}
-export async function sendToolApproval(_sessionId: string, _requestId: string, _decision: string) {}
+export async function sendToolApproval(_sessionId: string, _requestId: string, _decision: any) {}
 export function installJCodeFetchInterceptor() {}
 export function setServerConnection(_url: string, _token: string) {}
 export async function syncRuntimeConfig(_config: unknown) {}
