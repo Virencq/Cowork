@@ -538,7 +538,7 @@ export function ChatView() {
     return (
       <div className="flex-1 h-full overflow-auto bg-white">
         <div className="min-h-full flex flex-col">
-          <div className="flex-1 flex flex-col items-center pt-[214px] px-8">
+          <div className="flex-1 flex flex-col items-center pt-[250px] px-8">
             <div className="mb-11 flex items-center justify-center gap-3">
               <SLoopMark size="hero" />
               <h1 className="font-serif text-[39px] leading-none tracking-[-0.04em] text-[#171411]">
@@ -571,11 +571,12 @@ export function ChatView() {
                 <button className="text-[12px] text-[#8b847d] hover:text-[#4d4741]">Clear active</button>
               </div>
               {homeSessions.length > 0 ? (
-                <div className="rounded-lg border border-[#ebe7e3] bg-white px-3 py-2">
+                <div className="px-1">
                   {homeSessions.slice(0, 1).map(session => (
                     <button key={session.id} onClick={() => { useAppStore.getState().setActiveSession(session.id) }}
-                      className="w-full text-left flex items-center gap-3 px-1 py-1.5 hover:bg-[#faf8f6] rounded-md">
+                      className="w-full text-left flex items-center gap-3 py-1.5 hover:bg-[#faf8f6] rounded-md">
                       <span className="text-[#8c857e]">☷</span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#3b82f6]"/>
                       <div className="min-w-0">
                         <div className="text-[12px] text-[#39342f] truncate">{session.title || 'Untitled task'}</div>
                         <div className="text-[11px] text-[#99928a]">recently</div>
@@ -591,9 +592,7 @@ export function ChatView() {
               )}
 
               <div className="mt-12 mb-2 text-[12px] text-[#8b847d]">Scheduled</div>
-              <div className="h-24 flex items-center text-[12px] text-[#aaa39b]">
-                No scheduled tasks
-              </div>
+              <div className="h-24" />
             </div>
           </div>
         </div>
