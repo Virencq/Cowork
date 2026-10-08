@@ -539,15 +539,14 @@ export function ChatView() {
       <div className="flex-1 h-full overflow-auto bg-white">
         <div className="min-h-full flex flex-col">
           <div className="flex-1 flex flex-col items-center pt-[214px] px-8">
-            <div className="mb-7 flex justify-center">
+            <div className="mb-11 flex items-center justify-center gap-3">
               <SLoopMark size="hero" />
+              <h1 className="font-serif text-[39px] leading-none tracking-[-0.04em] text-[#171411]">
+                You’re here!
+              </h1>
             </div>
 
-            <h1 className="text-center font-serif text-[39px] leading-none tracking-[-0.04em] text-[#171411]">
-              You’re here!
-            </h1>
-
-            <div className="mt-11 w-full max-w-[674px]">
+            <div className="w-full max-w-[674px]">
               <ChatInput
                 onSubmit={handleSubmit}
                 onAbort={abort}
@@ -557,19 +556,7 @@ export function ChatView() {
               />
             </div>
 
-            <div className="w-full max-w-[674px] -mt-3">
-              <div className="h-10 rounded-b-[16px] border-x border-b border-[#e3dfdb] bg-white px-5 flex items-center">
-                <button className="text-[#332e29] hover:text-[#d97745]" title="Add files">
-                  <span className="text-[22px] leading-none">+</span>
-                </button>
-                <div className="ml-auto flex items-center gap-2 text-[12px] text-[#403a35]">
-                  <span className="font-medium">Fable 5</span>
-                  <span className="text-[#8d857d]">High</span>
-                  <button className="ml-2 h-8 w-8 rounded-lg border border-[#e5e1dd] bg-white grid place-items-center text-[#b0aaa4]" title="Send">
-                    <ArrowUp size={15}/>
-                  </button>
-                </div>
-              </div>
+            <div className="w-full max-w-[674px] -mt-1">
               <div className="h-9 flex items-center gap-2 px-6 text-[12px] text-[#6e675f]">
                 <FolderKanban size={14}/>
                 <span>Project or folder</span>
