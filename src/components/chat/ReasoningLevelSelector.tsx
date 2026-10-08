@@ -4,7 +4,7 @@ import { Check, ChevronUp, Gauge } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../../stores'
 import type { ReasoningLevel } from '../../types'
-import { fetchModelCapabilities } from '../../utils/piClient'
+import { fetchModelCapabilities } from '../../utils/jcodeClient'
 import {
   getReasoningPreference,
   setReasoningPreference,
