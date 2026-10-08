@@ -12,6 +12,8 @@ import { TasksPage } from './components/tasks'
 import { GoalPage } from './components/goal/GoalPage'
 import { ExtensionsPage } from './components/extensions/ExtensionsPage'
 import { WorkspaceLibraryPage } from './components/workspace/WorkspaceLibraryPage'
+import { ProjectsPage } from './components/workspace/ProjectsPage'
+import { ArtifactsPage } from './components/workspace/ArtifactsPage'
 import { useAppStore } from './stores'
 import { useTaskScheduler, useTelegramChatSync } from './hooks'
 import { useMCPStore } from './stores/mcpStore'
@@ -399,11 +401,11 @@ function App() {
             <div className="min-w-0 flex-1 flex flex-col">
               {page === 'chat' && <ChatView />}
               {page === 'tasks' && <TasksPage />}
-              {page === 'projects' && <WorkspaceLibraryPage initialSection="projects" />}
+              {page === 'projects' && <ProjectsPage />}
               {page === 'ideas' && <div className="flex-1 grid place-items-center"><div className="text-center max-w-md"><Lightbulb className="mx-auto mb-4 text-[#b0a79e]" size={30}/><h2 className="text-xl font-semibold">Ideas</h2><p className="mt-2 text-sm text-[#8c847c]">Capture ideas here and turn them into tasks when ready.</p></div></div>}
               {page === 'extensions' && <ExtensionsPage />}
               {page === 'customize' && <WorkspaceLibraryPage initialSection="skills" />}
-              {page === 'artifacts' && <WorkspaceLibraryPage initialSection="artifacts" />}
+              {page === 'artifacts' && <ArtifactsPage />}
             </div>
             {page === 'chat' && activeSessionId && (useAppStore.getState().sessionMessages[activeSessionId]?.length ?? 0) > 0 && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} />}
           </div>
