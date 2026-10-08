@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { getBaseUrl } from '../utils/piClient'
+import { getBaseUrl } from '../utils/jcodeClient'
 import type { GoalState, GoalSSEEvent } from '../types/goal'
 
 interface GoalStoreState {
