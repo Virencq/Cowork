@@ -94,7 +94,6 @@ export function TaskList({ onCreateTask }: TaskListProps) {
                     <button onClick={() => removeTask(task.id)} className="p-1.5 hover:bg-[#f8e9e6] rounded-md text-[#a35a4c]" title="Delete"><Trash2 size={13}/></button>
                   </div>
                 </div>
-}
               </div>
             ))}
           </div>
