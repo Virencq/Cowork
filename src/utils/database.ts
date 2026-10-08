@@ -144,6 +144,18 @@ export async function saveMessage(
   )
 }
 
+export async function deleteMessage(id: string): Promise<void> {
+  const d = await getDatabase()
+  await d.execute('DELETE FROM messages WHERE id = ?', [id])
+}
+
+export async function deleteMessagesByIds(ids: string[]): Promise<void> {
+  if (ids.length === 0) return
+  const d = await getDatabase()
+  const placeholders = ids.map(() => '?').join(', ')
+  await d.execute(`DELETE FROM messages WHERE id IN (${placeholders})`, ids)
+}
+
 export async function deleteMessagesBySession(sessionId: string): Promise<void> {
   const d = await getDatabase()
   await d.execute('DELETE FROM messages WHERE session_id = ?', [sessionId])
