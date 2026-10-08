@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import {
   Archive, CalendarClock, ChevronLeft, ChevronRight, FolderKanban, History, FileCode2,
   Lightbulb, Menu, Plus, Search, Settings, Sparkles, X, SlidersHorizontal,
@@ -231,7 +232,12 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings }: {
   )
 }
 
-function RightPanel({ width, onWidth, onClose }: { width: number; onWidth: (n: number) => void; onClose: () => void }) {
+function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
+  width: number
+  onWidth: (n: number) => void
+  onClose: () => void
+  onAddScheduled: () => void
+}) {
   const workspaceDir = useAppStore((s) => s.workspaceDir)
   const projects = useWorkspaceStore((s) => s.projects)
   const updateProject = useWorkspaceStore((s) => s.updateProject)
@@ -311,7 +317,16 @@ function RightPanel({ width, onWidth, onClose }: { width: number; onWidth: (n: n
             <div className="text-[13px] font-semibold text-[#302c28]">Context</div>
             <div className="mt-1 text-[11px] text-[#9a938c]">Files and folders available to JCode</div>
           </div>
-          <button className="h-7 w-7 rounded-md hover:bg-[#eee9e3] grid place-items-center text-[#817a72]" title="Add context"><Plus size={15}/></button>
+          <button
+            onClick={async () => {
+              const selected = await openDialog({ directory: true, multiple: false, title: 'Add project context folder' })
+              if (typeof selected === 'string') {
+                useAppStore.getState().setWorkspaceDir(selected)
+              }
+            }}
+            className="h-7 w-7 rounded-md hover:bg-[#eee9e3] grid place-items-center text-[#817a72]"
+            title="Add context folder"
+          ><Plus size={15}/></button>
         </div>
         <div className="px-5 pb-5">
           <div className="rounded-lg border border-[#e7e0d9] bg-white px-3 py-2.5 flex items-center gap-2">
@@ -327,7 +342,7 @@ function RightPanel({ width, onWidth, onClose }: { width: number; onWidth: (n: n
             <div className="text-[13px] font-semibold text-[#302c28]">Scheduled</div>
             <div className="mt-1 text-[11px] text-[#9a938c]">Recurring tasks for this project</div>
           </div>
-          <button className="h-7 w-7 rounded-md hover:bg-[#eee9e3] grid place-items-center text-[#817a72]" title="Add scheduled task"><Plus size={15}/></button>
+          <button onClick={onAddScheduled} className="h-7 w-7 rounded-md hover:bg-[#eee9e3] grid place-items-center text-[#817a72]" title="Add scheduled task"><Plus size={15}/></button>
         </div>
       </section>
     </aside>
@@ -446,7 +461,7 @@ function App() {
               {page === 'customize' && <WorkspaceLibraryPage initialSection="skills" />}
               {page === 'artifacts' && <ArtifactsPage />}
             </div>
-            {page === 'chat' && activeSessionId && activeSessionMessageCount > 0 && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} />}
+            {page === 'chat' && activeSessionId && activeSessionMessageCount > 0 && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} onAddScheduled={() => navigateToPage('tasks')} />}
           </div>
         </main>
       </div>
