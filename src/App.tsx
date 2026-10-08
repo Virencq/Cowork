@@ -18,7 +18,7 @@ import { useWebSearchStore } from './stores/websearchStore'
 import { SkillDropZone } from './components/skills'
 import { initDatabase } from './utils/database'
 import { getAllSessions, createSession as dbCreateSession, saveMessage as dbSaveMessage } from './utils/database'
-import { setServerConnection, syncRuntimeConfig } from './utils/piClient'
+import { status as jcodeStatus } from './utils/jcodeClient'
 import { buildAgentRuntimeConfig } from './utils/agentRuntime'
 import { syncAgentProfileFiles } from './utils/agentProfileFiles'
 import { getActiveTokens } from './themes'
@@ -101,65 +101,14 @@ function App() {
 
   useEffect(() => {
     if (!inTauri) return
-
     let cancelled = false
-
-    ;(async () => {
-      try {
-        const { invoke } = await import('@tauri-apps/api/core')
-        const connection = await invoke<{ url: string; apiToken: string }>('start_server')
-        if (!cancelled && connection?.url && connection?.apiToken) {
-          setServerConnection(connection.url, connection.apiToken)
-          setServerError(null)
-        }
-      } catch (err) {
-        const msg = String(err)
-        console.error('[app] pi-server start failed:', msg)
-        let detail = ''
-        try {
-          const { invoke: invokeDiagnostics } = await import('@tauri-apps/api/core')
-          const diagnostics = await invokeDiagnostics<Record<string, unknown>>('runtime_diagnostics')
-          detail = `\n\nRuntime diagnostics:\n${JSON.stringify(diagnostics, null, 2)}`
-        } catch (diagnosticError) {
-          console.warn('[app] runtime diagnostics failed:', diagnosticError)
-        }
-        if (!cancelled) setServerError(`${msg}${detail}`)
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  useEffect(() => {
-    const config = providerConfigs[activeProvider]
-    if (!config?.model) return
-    syncRuntimeConfig({
-      providerID: activeProvider,
-      modelID: config.model,
-      apiKey: config.apiKey,
-      providerApiKeys: Object.fromEntries(
-        Object.entries(providerConfigs)
-          .filter(([, providerConfig]) => Boolean(providerConfig.apiKey))
-          .map(([providerId, providerConfig]) => [providerId, providerConfig.apiKey]),
-      ),
-      workspaceDir: workspaceDir ?? undefined,
-      thinkingLevel: config.reasoningEfforts?.[config.model] || 'medium',
-      providerConfig: {
-        api: providerList.find((provider) => provider.id === activeProvider)?.api,
-        baseUrl: config.baseUrl,
-        supportsVision: config.supportsVision === true,
-        reasoningEfforts: config.reasoningEfforts,
-        reasoningSupport: config.reasoningSupport || 'auto',
-        thinkingFormat: config.thinkingFormat || 'auto',
-      },
-      webSearchConfig: useWebSearchStore.getState().getActiveConfig() as unknown as Record<string, unknown>,
-      ...buildAgentRuntimeConfig(),
+    void jcodeStatus().then((result) => {
+      if (!cancelled && !result.installed) setServerError(result.error || 'JCode is not installed or is not available on PATH.')
     }).catch((err) => {
-      console.warn('[app] failed to sync runtime config:', err)
+      if (!cancelled) setServerError(String(err))
     })
-  }, [activeProvider, providerConfigs, providerList, workspaceDir, activeAgentId, agents, skills])
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     if (!inTauri) return
