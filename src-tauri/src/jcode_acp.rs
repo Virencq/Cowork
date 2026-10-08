@@ -82,8 +82,6 @@ pub fn jcode_start_session(app: AppHandle, state: State<'_, JCodeState>, workspa
     let _ = read_until_response(&mut reader, 1)?;
 
     let cwd = workspace_dir.clone().unwrap_or_else(|| std::env::current_dir().unwrap_or_default().to_string_lossy().to_string());
-    // JCode currently manages MCP from its own configuration. Do not send
-    // mcpServers here; JCode ACP versions may reject host-supplied servers.
     send_rpc(&stdin, 2, "session/new", json!({"cwd": cwd}))?;
     let result = read_until_response(&mut reader, 2)?;
     let session_id = result.get("sessionId").and_then(Value::as_str).ok_or_else(|| format!("JCode ACP did not return sessionId: {result}"))?.to_string();
@@ -133,7 +131,6 @@ pub fn jcode_status() -> Result<Value, String> {
     }
 }
 
-
 #[tauri::command]
 pub fn jcode_sync_mcp_config(servers: Value) -> Result<Value, String> {
     let home = std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME")).map(std::path::PathBuf::from).ok_or("Unable to resolve the user home directory.")?;
@@ -169,11 +166,19 @@ pub fn jcode_sync_mcp_config(servers: Value) -> Result<Value, String> {
         json!({})
     };
     if !config.is_object() { config = json!({}); }
-    let root = config.as_object_mut().ok_or("Invalid JCode MCP config.")?;
-    let existing = root.entry("mcpServers").or_insert_with(|| json!({}));
-    let map = existing.as_object_mut().ok_or("JCode mcpServers must be an object.")?;
-    for (name, server) in mcp_servers { map.insert(name, server); }
-    std::fs::write(&path, serde_json::to_vec_pretty(&config).map_err(|e| e.to_string())?)
+
+    let server_count = {
+        let root = config.as_object_mut().ok_or("Invalid JCode MCP config.")?;
+        let existing = root.entry("mcpServers").or_insert_with(|| json!({}));
+        let map = existing.as_object_mut().ok_or("JCode mcpServers must be an object.")?;
+        for (name, server) in mcp_servers {
+            map.insert(name, server);
+        }
+        map.len()
+    };
+
+    let content = serde_json::to_vec_pretty(&config).map_err(|e| e.to_string())?;
+    std::fs::write(&path, content)
         .map_err(|e| format!("Failed to write JCode MCP config: {e}"))?;
-    Ok(json!({"path": path.to_string_lossy(), "servers": map.len()}))
+    Ok(json!({"path": path.to_string_lossy(), "servers": server_count}))
 }
