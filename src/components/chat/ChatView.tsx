@@ -123,7 +123,7 @@ export function ChatView() {
         }
       },
       onToolApproval: (request) => {
-        setPendingApproval({ ...request, piSessionId })
+        setPendingApproval({ ...request, piSessionId: jcodeSessionId })
       },
       onStatus: (status) => {
         if (status.type === 'compacting' || status.type === 'compacted') {
