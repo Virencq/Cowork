@@ -83,13 +83,21 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
   const updateSessionTitle = useAppStore((s) => s.updateSessionTitle)
   const deleteSession = useAppStore((s) => s.deleteSession)
   const [menuId, setMenuId] = useState<string | null>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [filterPinned, setFilterPinned] = useState(false)
+  const [taskQuery, setTaskQuery] = useState('')
   const [pinned, setPinned] = useState<Set<string>>(new Set())
   const [unread, setUnread] = useState<Set<string>>(new Set())
   const [archived, setArchived] = useState<Set<string>>(new Set())
   const [renaming, setRenaming] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
 
-  const tasks = sessions.filter(s => !archived.has(s.id)).sort((a,b) => b.updatedAt-a.updatedAt).slice(0, 12)
+  const tasks = sessions
+    .filter(s => !archived.has(s.id))
+    .filter(s => !filterPinned || pinned.has(s.id))
+    .filter(s => !taskQuery || (s.title || '').toLowerCase().includes(taskQuery.toLowerCase()))
+    .sort((a,b) => b.updatedAt-a.updatedAt)
+    .slice(0, 20)
   const pinnedTasks = tasks.filter(s => pinned.has(s.id))
   const scheduledTasks = tasks.filter(s => false)
 
@@ -122,15 +130,26 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
         <button onClick={() => onPage('tasks')} className="home-nav-row"><span>Pinned</span><ChevronRight size={14}/></button>
       </div>
 
-      <div className="mt-2 px-3 flex items-center justify-between">
-        <button onClick={() => onPage('tasks')} className="home-nav-row flex-1 !px-0"><span>Tasks</span><ChevronRight size={14}/></button>
-        <div className="flex items-center gap-1 text-[#8f8983]">
-          <button onClick={() => onPage('tasks')} className="title-icon !h-7 !w-7" title="Search tasks"><Search size={14}/></button>
-          <button onClick={() => onPage('tasks')} className="title-icon !h-7 !w-7" title="Task filters"><SlidersHorizontal size={14}/></button>
+      <div className="mt-2 px-3">
+        <div className="flex items-center justify-between">
+          <button onClick={() => onPage('tasks')} className="home-nav-row flex-1 !px-0"><span>Tasks</span><ChevronRight size={14}/></button>
+          <div className="flex items-center gap-1 text-[#8f8983]">
+            <button onClick={() => setSearchOpen(v => !v)} className={`title-icon !h-7 !w-7 ${searchOpen ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`} title="Search tasks"><Search size={14}/></button>
+            <button onClick={() => setFilterPinned(v => !v)} className={`title-icon !h-7 !w-7 ${filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`} title="Show pinned tasks"><SlidersHorizontal size={14}/></button>
+          </div>
         </div>
+        {searchOpen && (
+          <input
+            autoFocus
+            value={taskQuery}
+            onChange={e => setTaskQuery(e.target.value)}
+            placeholder="Search tasks"
+            className="mb-1 w-full h-8 rounded-md border border-[#e2ded9] bg-white px-3 text-[11px] outline-none focus:border-[#d97745]/50"
+          />
+        )}
       </div>
 
-      <div className="px-2 mt-1 overflow-auto min-h-0">
+      <div className="px-2 mt-1 overflow-auto min-h-0 pb-28">
         {tasks.map(s => (
           <div key={s.id} className="relative group">
             {renaming === s.id ? (
