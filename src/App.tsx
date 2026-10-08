@@ -102,7 +102,7 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
 
   return (
     <aside style={{ width }} className="relative shrink-0 h-full border-r border-[#e5e2de] bg-white pt-11 flex flex-col text-[#3f3a35]">
-      <ResizeHandle side="left" onDrag={(d) => onWidth(Math.max(240, Math.min(340, width + d)))} />
+      <ResizeHandle side="left" onDrag={(d) => onWidth(Math.max(262, Math.min(340, width + d)))} />
 
       <div className="px-3 pt-2 pb-3">
         <div className="grid grid-cols-2 h-8 rounded-md bg-[#f1f0ee] p-0.5">
