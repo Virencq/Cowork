@@ -18,6 +18,7 @@ import { ArtifactsPage } from './components/workspace/ArtifactsPage'
 import { FileTree } from './components/workspace/FileTree'
 import { FilePreviewPanel } from './components/preview/FilePreviewPanel'
 import { useAppStore } from './stores'
+import { useFilePreviewStore } from './stores/filePreviewStore'
 import { useTaskScheduler, useTelegramChatSync } from './hooks'
 import { useMCPStore } from './stores/mcpStore'
 import { useSkillStore } from './stores/skillStore'
@@ -84,8 +85,8 @@ function ResizeHandle({ side, onDrag }: { side: 'left' | 'right'; onDrag: (delta
   return <div onPointerDown={start} className={`absolute top-0 bottom-0 w-1 cursor-col-resize hover:bg-[#d97745]/25 z-30 ${side === 'left' ? 'right-0' : 'left-0'}`} />
 }
 
-function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, onCode }: {
-  width: number; onWidth: (n: number) => void; page: Page; onPage: (p: Page) => void; onNew: () => void; onSettings: () => void; codeMode: boolean; onCode: () => void
+function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, onCode, onCowork }: {
+  width: number; onWidth: (n: number) => void; page: Page; onPage: (p: Page) => void; onNew: () => void; onSettings: () => void; codeMode: boolean; onCode: () => void; onCowork: () => void
 }) {
   const sessions = useAppStore((s) => s.sessions)
   const activeSessionId = useAppStore((s) => s.activeSessionId)
@@ -125,7 +126,7 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
 
       <div className="px-3 pt-2 pb-3">
         <div className="grid grid-cols-2 h-8 rounded-md bg-[#f1f0ee] p-0.5">
-          <button onClick={() => { useAppStore.getState().setActiveSession(null); onPage('chat') }} className="rounded-md bg-white text-[#3d3833] text-[12px] font-semibold shadow-sm">☷&nbsp; Cowork</button>
+          <button onClick={onCowork} className={`rounded-md text-[12px] font-semibold transition-colors ${!codeMode ? 'bg-white text-[#3d3833] shadow-sm' : 'text-[#77716b] hover:text-[#3d3833]'}`}>☷&nbsp; Cowork</button>
           <button onClick={onCode} className={`rounded-md text-[12px] font-medium transition-colors ${codeMode ? 'bg-white text-[#3d3833] shadow-sm' : 'text-[#77716b] hover:text-[#3d3833]'}`}>‹/&gt;&nbsp; Code</button>
         </div>
       </div>
@@ -356,6 +357,8 @@ function App() {
   const createSession = useAppStore((s) => s.createSession)
   const setActiveSession = useAppStore((s) => s.setActiveSession)
   const setWorkspaceDir = useAppStore((s) => s.setWorkspaceDir)
+  const workspaceDir = useAppStore((s) => s.workspaceDir)
+  const preview = useFilePreviewStore((s) => s.preview)
   const activeSessionId = useAppStore((s) => s.activeSessionId)
   const activeSessionMessageCount = useAppStore((s) => activeSessionId ? (s.sessionMessages[activeSessionId]?.length ?? 0) : 0)
   const [page, setPage] = useState<Page>('chat')
@@ -369,6 +372,7 @@ function App() {
   const [historyIndex, setHistoryIndex] = useState(0)
 
   const navigateToPage = useCallback((next: Page) => {
+    if (next !== 'chat') setCodeMode(false)
     setPage((current) => {
       if (current === next) return current
       setPageHistory((history) => [...history.slice(0, historyIndex + 1), next])
@@ -447,7 +451,7 @@ function App() {
         }}
       />
       <div className="h-full flex">
-        <LeftNav width={sidebarOpen ? leftWidth : 0} onWidth={setLeftWidth} page={page} onPage={navigateToPage} onNew={newTask} onSettings={() => setShowSettings(true)} codeMode={codeMode} onCode={() => setCodeMode((v) => !v)} />
+        <LeftNav width={sidebarOpen ? leftWidth : 0} onWidth={setLeftWidth} page={page} onPage={navigateToPage} onNew={newTask} onSettings={() => setShowSettings(true)} codeMode={codeMode} onCode={() => setCodeMode((v) => !v)} onCowork={() => { setCodeMode(false); setActiveSession(null); navigateToPage('chat') }} />
         <main className="relative min-w-0 flex-1 pt-11 flex flex-col bg-[#faf9f7]">
           <div className="min-h-0 flex-1 flex">
             <div className="min-w-0 flex-1 flex flex-col">
@@ -456,16 +460,27 @@ function App() {
                 <div className="flex h-full min-h-0 bg-[#faf9f7]">
                   <aside className="w-[260px] shrink-0 overflow-auto border-r border-[#e5e2de] bg-white p-3">
                     <div className="mb-3 px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9a938c]">Files</div>
-                    {useAppStore.getState().workspaceDir ? (
-                      <FileTree rootPath={useAppStore.getState().workspaceDir!} />
+                    {workspaceDir ? (
+                      <FileTree rootPath={workspaceDir} />
                     ) : (
                       <div className="px-2 py-4 text-[11px] leading-5 text-[#9a938c]">Select a workspace folder to browse code.</div>
                     )}
                   </aside>
-                  <div className="min-w-0 flex-1">
-                    <FilePreviewPanel />
-                    {!useAppStore.getState().workspaceDir && (
-                      <div className="h-full grid place-items-center text-[12px] text-[#9a938c]">No workspace selected</div>
+                  <div className="min-w-0 flex-1 h-full">
+                    {preview ? (
+                      <FilePreviewPanel />
+                    ) : (
+                      <div className="h-full grid place-items-center bg-[#faf9f7]">
+                        <div className="text-center max-w-sm px-6">
+                          <FileCode2 className="mx-auto mb-3 text-[#c1b9b1]" size={30}/>
+                          <div className="text-[13px] font-semibold text-[#5f5851]">
+                            {workspaceDir ? 'Select a file to preview' : 'No workspace selected'}
+                          </div>
+                          <div className="mt-1 text-[11px] leading-5 text-[#9a938c]">
+                            {workspaceDir ? 'Choose a file from the tree on the left to open it here.' : 'Add a project folder from the Context panel or select a workspace first.'}
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -482,11 +497,11 @@ function App() {
               {page === 'customize' && <WorkspaceLibraryPage initialSection="skills" />}
               {page === 'artifacts' && <ArtifactsPage />}
             </div>
-            {page === 'chat' && activeSessionId && activeSessionMessageCount > 0 && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} onAddScheduled={() => navigateToPage('tasks')} />}
+            {page === 'chat' && !codeMode && activeSessionId && activeSessionMessageCount > 0 && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} onAddScheduled={() => navigateToPage('tasks')} />}
           </div>
         </main>
       </div>
-      {page === 'chat' && !rightOpen && (
+      {page === 'chat' && !codeMode && !rightOpen && (
         <button onClick={() => setRightOpen(true)} className="fixed right-4 top-14 z-40 h-9 w-9 rounded-lg border border-[#e4ded7] bg-white shadow-sm grid place-items-center text-[#6e675f]"><ChevronRight size={16}/></button>
       )}
       {showSettings && <SettingsModal initialTab="provider" onClose={() => setShowSettings(false)} />}
