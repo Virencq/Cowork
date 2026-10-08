@@ -289,8 +289,8 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
         {/* Settings Sidebar */}
         <aside className="w-[232px] bg-surface-secondary border-r border-border flex flex-col shrink-0 relative">
           <div className="px-6 pt-7 pb-6 relative z-10">
-            <p className="section-eyebrow mb-2">{t('settings.subtitle')}</p>
-            <h2 className="text-[24px] font-semibold text-text tracking-[-0.03em] leading-tight">{t('settings.title')}</h2>
+            <p className="section-eyebrow mb-2">Settings</p>
+            <h2 className="text-[24px] font-semibold text-text tracking-[-0.03em] leading-tight">Settings</h2>
           </div>
 
           <nav className="flex-1 px-3 space-y-1 overflow-y-auto scrollbar-subtle">
@@ -329,7 +329,7 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
                 <div className="w-2 h-2 rounded-full bg-green-500" />
               </div>
               <span className="text-[11px] font-semibold text-text-secondary">
-                {t('settings.kilostatus.online')}
+                Online
               </span>
             </div>
           </div>
@@ -413,9 +413,9 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
                 <div className="max-w-3xl mx-auto">
                   <div className="mb-8">
                     <div className="flex flex-col mb-6">
-                      <h4 className="section-eyebrow mb-2">{t('settings.sections.visualStyle')}</h4>
-                      <h2 className="text-xl font-semibold text-text tracking-[-0.02em]">{t('settings.sections.interfaceTheme')}</h2>
-                      <p className="text-[13px] text-text-tertiary mt-1">{t('settings.descriptions.customizeLook')}</p>
+                      <h4 className="section-eyebrow mb-2">Visual style</h4>
+                      <h2 className="text-xl font-semibold text-text tracking-[-0.02em]">Interface theme</h2>
+                      <p className="text-[13px] text-text-tertiary mt-1">Choose the appearance of Cowork.</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       {(['light', 'dark'] as const).map((th) => (
@@ -439,10 +439,10 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
                             <span className={`text-[14px] font-semibold block ${
                               theme === th ? 'text-accent' : 'text-text'
                             }`}>
-                              {th === 'light' ? t('settings.theme.daylight') : t('settings.theme.midnight')}
+                              {th === 'light' ? 'Light' : 'Dark'}
                             </span>
                             <span className="text-[11px] text-text-tertiary mt-0.5 block">
-                              {th === 'light' ? t('settings.theme.cleanCrisp') : t('settings.theme.deepFocused')}
+                              {th === 'light' ? 'Clean and bright' : 'Dark and focused'}
                             </span>
                           </div>
                         </button>
@@ -453,8 +453,8 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
                     <div className="mt-8 pt-7 border-t border-border">
                       <div className="flex flex-col mb-5">
                         <span className="section-eyebrow mb-2">Color Palette</span>
-                        <h4 className="text-lg font-semibold text-text tracking-tight">{t('settings.appearance.colorScheme')}</h4>
-                        <p className="text-[13px] text-text-tertiary mt-1 font-medium opacity-70">{t('settings.appearance.colorSchemeDesc')}</p>
+                        <h4 className="text-lg font-semibold text-text tracking-tight">Color palette</h4>
+                        <p className="text-[13px] text-text-tertiary mt-1 font-medium opacity-70">Choose the accent color used across the interface.</p>
                       </div>
                       <div className="grid grid-cols-3 gap-3">
                         {COLOR_SCHEMES.map((scheme) => (
@@ -510,15 +510,15 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
 
                     <div className="mt-8 pt-7 border-t border-border">
                       <div className="flex flex-col mb-4">
-                        <span className="section-eyebrow">{t('settingsLocale.language')}</span>
+                        <span className="section-eyebrow">Language</span>
                       </div>
                       <div className="flex gap-3">
                         {['en', 'zh'].map((l) => (
                           <button
                             key={l}
                             onClick={() => {
-                              setLocale(l)
-                              i18n.changeLanguage(l)
+                              setLocale('en')
+                              i18n.changeLanguage('en')
                             }}
                             className={`flex-1 py-3 px-4 rounded-lg border text-center transition-colors duration-150 ${
                               locale === l
@@ -527,7 +527,7 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
                             }`}
                           >
                             <span className={`text-[13px] font-semibold block ${locale === l ? 'text-accent' : 'text-text'}`}>
-                              {l === 'en' ? 'English' : '中文'}
+                              English
                             </span>
                           </button>
                         ))}
