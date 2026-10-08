@@ -1,5 +1,5 @@
 import { useTaskStore } from '../../stores'
-import { Plus, Trash2, Play, Pause, Zap, Search, Calendar, Eye, Bot, Info, Sun, Inbox, ClipboardList, ListChecks, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, Play, Pause, Zap, Search, Calendar, Eye, Info, Sun, Inbox, ListChecks, ChevronDown } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { TaskDetailModal } from './TaskDetailModal'
 import type { ScheduledTask } from '../../types/task'
@@ -32,7 +32,6 @@ export function TaskList({ onCreateTask }: TaskListProps) {
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [sortNewest, setSortNewest] = useState(true)
-  const [keepAwake, setKeepAwake] = useState(true)
   const platformNameMap = Object.fromEntries(PLATFORM_PRESETS.map(p => [p.id, p.name]))
 
   const filtered = useMemo(() => {
@@ -76,10 +75,7 @@ export function TaskList({ onCreateTask }: TaskListProps) {
 
         <div className="mt-6 rounded-xl border border-[#e1ddd8] bg-white px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 text-[13px] text-[#332e29]"><Info size={16} className="text-[#706960]"/><span>Scheduled tasks only run while your computer is awake and online.</span></div>
-          <button onClick={() => setKeepAwake(v => !v)} className="flex items-center gap-2 text-[12px] text-[#6f6861]">
-            <span>☼</span> Keep awake
-            <span className={`relative h-5 w-9 rounded-full transition ${keepAwake ? 'bg-[#2f80ed]' : 'bg-[#c8c3bd]'}`}><span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition ${keepAwake ? 'left-[18px]' : 'left-0.5'}`}/></span>
-          </button>
+          <span className="text-[11px] text-[#777069]">Cowork checks the schedule while the app is running.</span>
         </div>
 
         {filtered.length > 0 && (
