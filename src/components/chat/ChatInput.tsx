@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Send, Square, X, File, Paperclip, Mic, LoaderCircle, AudioLines, PhoneCall } from 'lucide-react'
 import { TextField, TextArea } from "@heroui/react"
@@ -621,9 +621,13 @@ export function ChatInput({
   }
 
   // Auto-resize logic
-  useEffect(() => {
+  // Keep an empty/reopened composer compact. HeroUI can retain the previous
+  // textarea height between session changes, so explicitly collapse before
+  // measuring new content.
+  useLayoutEffect(() => {
     const textarea = textareaRef.current
     if (!textarea) return
+
     if (variant === 'hero') {
       textarea.style.height = '64px'
       textarea.style.minHeight = '64px'
@@ -631,8 +635,19 @@ export function ChatInput({
       textarea.style.overflowY = 'auto'
       return
     }
+
+    textarea.style.minHeight = '52px'
+    textarea.style.maxHeight = '400px'
+    textarea.style.height = '52px'
+
+    if (!input.trim()) {
+      textarea.style.overflowY = 'hidden'
+      return
+    }
+
     textarea.style.height = 'auto'
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 400)}px`
+    textarea.style.height = String(Math.max(52, Math.min(textarea.scrollHeight, 400))) + 'px'
+    textarea.style.overflowY = textarea.scrollHeight > 400 ? 'auto' : 'hidden'
   }, [input, variant])
 
   const isHero = variant === 'hero'
