@@ -92,14 +92,16 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
   const [renaming, setRenaming] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
 
-  const tasks = sessions
+  const allTasks = sessions
     .filter(s => !archived.has(s.id))
     .filter(s => !taskQuery || (s.title || '').toLowerCase().includes(taskQuery.toLowerCase()))
     .sort((a,b) => b.updatedAt-a.updatedAt)
-    .slice(0, 20)
-  const visibleTasks = filterPinned ? tasks.filter(s => pinned.has(s.id)) : tasks
-  const pinnedTasks = tasks.filter(s => pinned.has(s.id))
-  const scheduledTasks = tasks.filter(s => false)
+  const tasks = allTasks.slice(0, 20)
+  // Pinned is an independent collection: a pinned chat must remain visible
+  // even when it is older than the 20 most-recent task rows.
+  const pinnedTasks = allTasks.filter(s => pinned.has(s.id))
+  const visibleTasks = filterPinned ? pinnedTasks : tasks
+  const scheduledTasks = allTasks.filter(s => false)
 
   const beginRename = (id: string, title: string) => { setRenaming(id); setRenameValue(title); setMenuId(null) }
   const commitRename = (id: string) => {
@@ -195,7 +197,14 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
                 <button onClick={e=>{e.stopPropagation();setMenuId(menuId===s.id?null:s.id)}} className="absolute right-1 top-1.5 h-7 w-7 rounded-md opacity-0 group-hover:opacity-100 hover:bg-[#eae7e3] grid place-items-center"><MoreHorizontal size={14}/></button>
                 {menuId===s.id && (
                   <div className="absolute right-1 top-9 z-50 w-48 rounded-xl border border-[#ddd8d2] bg-white p-1.5 shadow-lg">
-                    <button onClick={()=>{setPinned(p=>{const n=new Set(p);n.has(s.id)?n.delete(s.id):n.add(s.id);return n});setMenuId(null)}} className="menu-row"><Pin size={14}/>{pinned.has(s.id)?'Unpin':'Pin'}</button>
+                    <button onClick={()=>{
+                      setPinned(p=>{
+                        const n=new Set(p)
+                        if (n.has(s.id)) n.delete(s.id); else n.add(s.id)
+                        return n
+                      })
+                      setMenuId(null)
+                    }} className="menu-row"><Pin size={14}/>{pinned.has(s.id)?'Unpin':'Pin'}</button>
                     <button onClick={()=>beginRename(s.id,s.title)} className="menu-row"><Pencil size={14}/>Rename</button>
                     <button onClick={()=>{setUnread(p=>new Set(p).add(s.id));setMenuId(null)}} className="menu-row"><MailOpen size={14}/>Mark as unread</button>
                     <div className="my-1 border-t border-[#eeeae6]"/>
