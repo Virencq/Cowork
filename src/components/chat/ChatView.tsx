@@ -6,7 +6,7 @@ import { useMCPStore } from '../../stores/mcpStore'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
 import { invoke } from '@tauri-apps/api/core'
 import type { ImageAttachment } from './ChatInput'
-import { Cpu, Paperclip, FolderTree, MessagesSquare, ShieldCheck, ShieldAlert, ShieldOff, Bot, ChevronUp } from 'lucide-react'
+import { Cpu, Paperclip, FolderTree, MessagesSquare, ShieldCheck, ShieldAlert, ShieldOff, Bot, ChevronUp, Sparkles } from 'lucide-react'
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { ModelSwitcher } from './ModelSwitcher'
@@ -154,9 +154,11 @@ export function ChatView() {
 
   const handleSubmit = useCallback(
     async (content: string, images?: ImageAttachment[]) => {
-      const sid = useAppStore.getState().activeSessionId
+      let sid = useAppStore.getState().activeSessionId
       if ((!content || !content.trim()) && (!images || images.length === 0)) return
-      if (!sid) return
+      if (!sid) {
+        sid = useAppStore.getState().createSession()
+      }
       setError(null)
       setContextStatus(null)
 
@@ -511,27 +513,32 @@ export function ChatView() {
 
   if (!activeSessionId) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-transparent relative selection:bg-accent/10">
-        <div className="absolute top-4 right-4 z-20">
-          <button
-            onClick={handleToggleLeftPanel}
-            className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-[11px] font-semibold text-text-secondary transition-colors duration-150 hover:border-accent/30 hover:text-accent"
-          >
-            {leftPanelMode === 'files' ? <MessagesSquare size={14} /> : <FolderTree size={14} />}
-            {leftPanelMode === 'files' ? t('chat.layout.backToSessions') : t('chat.layout.openFiles')}
-          </button>
-        </div>
-        <div className="relative z-10 w-full flex flex-col items-center justify-center text-center px-8 max-w-3xl mx-auto h-full">
-          <div className="mb-7 shrink-0">
-            <SLoopMark size="hero" />
-          </div>
-          <div className="space-y-3 mb-10 w-full">
-            <h2 className="text-3xl sm:text-[38px] font-semibold tracking-[-0.035em] text-text leading-tight select-none">
-              {t('chat.welcome.title')} <span className="text-accent">{t('chat.welcome.appName')}</span>
-            </h2>
-            <div className="flex justify-center w-full">
-              <p className="text-sm text-text-secondary leading-6 max-w-xl font-normal text-center">{t('chat.welcome.description')}</p>
+      <div className="flex-1 flex flex-col items-center justify-center bg-transparent relative px-6">
+        <div className="w-full max-w-[760px] -translate-y-8">
+          <div className="text-center mb-8">
+            <div className="mx-auto mb-5 h-14 w-14 rounded-2xl bg-[#f1e6de] grid place-items-center text-[#c96e3e]">
+              <Sparkles size={25} />
             </div>
+            <h1 className="text-[38px] leading-tight tracking-[-0.035em] font-serif text-[#302c28]">
+              What can I help you with?
+            </h1>
+            <p className="mt-3 text-[14px] leading-6 text-[#8a837b]">
+              Give Cowork a task. It can work with your files, tools, and connected services.
+            </p>
+          </div>
+          <ChatInput
+            onSubmit={handleSubmit}
+            onAbort={abort}
+            isStreaming={false}
+            variant="hero"
+            placeholder="What would you like me to do?"
+          />
+          <div className="mt-3 flex justify-center gap-2 flex-wrap">
+            {['Research a topic', 'Work with my files', 'Build something', 'Plan a project'].map((suggestion) => (
+              <button key={suggestion} onClick={() => handleSubmit(suggestion)} className="rounded-full border border-[#e5dfd8] bg-white px-3.5 py-2 text-[11px] text-[#6f6861] hover:border-[#d97745]/40 hover:text-[#c96e3e] transition-colors">
+                {suggestion}
+              </button>
+            ))}
           </div>
         </div>
       </div>
