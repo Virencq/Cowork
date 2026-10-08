@@ -402,7 +402,7 @@ function App() {
   const newTask = () => {
     const id = createSession()
     setActiveSession(id)
-    setPage('chat')
+    navigateToPage('chat')
   }
 
   return (
