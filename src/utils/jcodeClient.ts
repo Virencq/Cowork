@@ -62,9 +62,7 @@ export async function createSession(workspaceDir?: string): Promise<{ id: string
 export function getBaseUrl() { return ''; }
 
 export async function prompt(sessionId: string, text: string, options: JCodePromptOptions = {}) {
-  const finalPrompt = options.systemPrompt ? options.systemPrompt + '
-
-' + text : text;
+  const finalPrompt = options.systemPrompt ? options.systemPrompt + '\\n\\n' + text : text;
   await invoke('jcode_prompt', { sessionId, prompt: finalPrompt });
   return { text: '' };
 }
