@@ -82,7 +82,9 @@ pub fn jcode_start_session(app: AppHandle, state: State<'_, JCodeState>, workspa
     let _ = read_until_response(&mut reader, 1)?;
 
     let cwd = workspace_dir.clone().unwrap_or_else(|| std::env::current_dir().unwrap_or_default().to_string_lossy().to_string());
-    send_rpc(&stdin, 2, "session/new", json!({"cwd":cwd,"mcpServers":[]}))?;
+    // JCode currently manages MCP from its own configuration. Do not send
+    // mcpServers here; JCode ACP versions may reject host-supplied servers.
+    send_rpc(&stdin, 2, "session/new", json!({"cwd": cwd}))?;
     let result = read_until_response(&mut reader, 2)?;
     let session_id = result.get("sessionId").and_then(Value::as_str).ok_or_else(|| format!("JCode ACP did not return sessionId: {result}"))?.to_string();
 
@@ -96,21 +98,28 @@ pub fn jcode_start_session(app: AppHandle, state: State<'_, JCodeState>, workspa
 pub fn jcode_prompt(state: State<'_, JCodeState>, session_id: String, prompt: String) -> Result<(), String> {
     let sessions = state.0.lock().map_err(|e| e.to_string())?;
     let session = sessions.get(&session_id).ok_or_else(|| format!("JCode session not found: {session_id}"))?;
-    send_rpc(&session.stdin, 100, "session/prompt", json!({"sessionId":session.session_id,"prompt":[{"type":"text","text":prompt}]}))
+    if prompt.trim().is_empty() {
+        return Err("Prompt cannot be empty.".to_string());
+    }
+    send_rpc(&session.stdin, 100, "session/prompt", json!({
+        "sessionId": session.session_id,
+        "prompt": [{"type":"text","text":prompt}]
+    }))
 }
 
 #[tauri::command]
 pub fn jcode_cancel(state: State<'_, JCodeState>, session_id: String) -> Result<(), String> {
     let sessions = state.0.lock().map_err(|e| e.to_string())?;
     let session = sessions.get(&session_id).ok_or_else(|| format!("JCode session not found: {session_id}"))?;
-    send_rpc(&session.stdin, 4, "session/cancel", json!({"sessionId":session.session_id}))
+    send_rpc(&session.stdin, 101, "session/cancel", json!({"sessionId":session.session_id}))
 }
 
 #[tauri::command]
 pub fn jcode_close_session(state: State<'_, JCodeState>, session_id: String) -> Result<(), String> {
     let mut sessions = state.0.lock().map_err(|e| e.to_string())?;
     if let Some(mut session) = sessions.remove(&session_id) {
-        let _ = send_rpc(&session.stdin, 5, "session/close", json!({"sessionId":session.session_id}));
+        let _ = send_rpc(&session.stdin, 102, "session/close", json!({"sessionId":session.session_id}));
+        let _ = session.child.wait();
         let _ = session.child.kill();
     }
     Ok(())
