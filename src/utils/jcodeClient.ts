@@ -92,7 +92,7 @@ function extractUpdate(event: any, handlers: StreamHandlers) {
       handlers.onToolResult?.(id, name, update);
     }
   } else if (method === 'session/request_permission' || method === 'session/permission_request') {
-    handlers.onToolApproval?.(p);
+    handlers.onToolApproval?.({ ...p, requestId: String(event?.id ?? p?.requestId ?? '') });
   } else if (method === 'session/closed') {
     handlers.onDone?.();
   }
@@ -201,7 +201,13 @@ export async function subscribeStream(sessionId: string, handlers: StreamHandler
 }
 
 export async function sendMcpToolResponse(_sessionId: string, _requestId: string, _result: unknown, _error?: string) {}
-export async function sendToolApproval(_sessionId: string, _requestId: string, _decision: any) {}
+export async function sendToolApproval(sessionId: string, requestId: string, decision: boolean) {
+  await invoke('jcode_permission_response', {
+    sessionId,
+    requestId,
+    approve: decision,
+  })
+}
 export function installJCodeFetchInterceptor() {}
 export function setServerConnection(_url: string, _token: string) {}
 export async function syncRuntimeConfig(_config: unknown) {}
