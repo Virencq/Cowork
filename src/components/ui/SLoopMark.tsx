@@ -10,15 +10,16 @@ const sizeClasses = {
 }
 
 /**
- * One theme-aware rendering of the original S-Loop brand silhouette.
- * The source PNG supplies only the alpha mask; the active theme supplies color.
+ * Theme-aware Cowork assistant mark.
+ * The existing alpha asset is retained as a neutral visual mark; no S-Loop
+ * product naming is exposed to the user.
  */
 export function SLoopMark({ className = '', size = 'hero' }: SLoopMarkProps) {
   return (
     <div
       className={`relative shrink-0 ${sizeClasses[size]} ${className}`}
       role="img"
-      aria-label="S-Loop"
+      aria-label="Cowork assistant"
     >
       {size === 'hero' && <span className="absolute inset-[14%] rounded-full bg-accent/12 blur-xl" />}
       <span
