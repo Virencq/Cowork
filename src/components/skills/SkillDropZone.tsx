@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
 import { useSkillStore } from '../../stores/skillStore'
 import { FileArchive, Loader2, Check, AlertCircle } from 'lucide-react'
 
 export function SkillDropZone() {
-  const { t } = useTranslation()
   const { installSkillZip } = useSkillStore()
   const [dragging, setDragging] = useState(false)
   const [status, setStatus] = useState<'idle' | 'installing' | 'done' | 'error'>('idle')
@@ -79,7 +77,7 @@ export function SkillDropZone() {
       setStatusText(err instanceof Error ? err.message : 'Could not read the skill ZIP.')
       setTimeout(reset, 3000)
     }
-  }, [t, installSkillZip, reset])
+  }, [installSkillZip, reset])
 
   useEffect(() => {
     document.addEventListener('dragover', handleDragOver)
