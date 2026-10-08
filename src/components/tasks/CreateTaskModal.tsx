@@ -95,8 +95,8 @@ export function CreateTaskModal({ onClose }: CreateTaskModalProps) {
   const selectedModel = selectedAgent?.model || providerConfigs[activeProvider]?.model || '';
 
   const deliveryOptions: Array<{ id: TaskDelivery; label: string }> = [
-    { id: 'silent', label: t('tasks.deliverSilent') },
-    ...PLATFORM_PRESETS.map((p) => ({ id: p.id as TaskDelivery, label: p.name })),
+    { id: 'silent', label: 'Keep result in task history' },
+    { id: 'chat', label: 'Send result to Cowork chat' },
   ];
 
   const scheduleValue = buildSchedule(sMode, { intervalNum, intervalUnit, dailyTime, weeklyDays, weeklyTime, onceAt });
