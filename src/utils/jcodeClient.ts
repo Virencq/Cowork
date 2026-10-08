@@ -150,7 +150,7 @@ export async function fetchModelCapabilities(..._args: any[]): Promise<any> {
 }
 
 export async function prompt(sessionId: string, text: string, options: JCodePromptOptions = {}) {
-  const finalPrompt = options.systemPrompt ? options.systemPrompt + '\\n\\n' + text : text
+  const finalPrompt = options.systemPrompt ? options.systemPrompt + '\n\n' + text : text
 
   let resolveListenerReady!: () => void
   const listenerReady = new Promise<void>((resolve) => { resolveListenerReady = resolve })
