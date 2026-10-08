@@ -690,20 +690,6 @@ export function ChatView() {
                   </div>
                 )}
                 <MessageList sessionId={activeSessionId!} />
-                          <span className="inline-flex items-center rounded-full border border-border-light bg-surface-secondary/70 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">
-                            {t('chat.session.readOnly')}
-                          </span>
-                        )}
-                      </div>
-                      {session.readOnly && (
-                        <p className="mt-2 text-[12px] font-medium text-text-tertiary">
-                          {t('chat.session.readOnlyHint')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-                <MessageList sessionId={activeSessionId!} />
                 {error && (
                   <div className="absolute top-6 left-4 right-4 z-20 flex items-center gap-4 p-4 rounded-lg bg-surface text-red-500 text-[13px] font-semibold border border-red-500/20 shadow-lg">
                     <span>{error}</span>
