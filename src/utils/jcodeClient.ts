@@ -121,18 +121,21 @@ export async function fetchModelCapabilities(..._args: any[]): Promise<any> {
 export async function prompt(sessionId: string, text: string, options: JCodePromptOptions = {}) {
   const finalPrompt = options.systemPrompt ? options.systemPrompt + '\\n\\n' + text : text;
 
-  // Register the completion listener before sending the ACP request so a very
-  // fast response cannot race past the listener.
+  let ready!: () => void;
+  const listenerReady = new Promise<void>((resolve) => { ready = resolve })
+
   const completion = new Promise<{ text: string; error?: string }>(async (resolve) => {
     const unlisten = await listen<any>('jcode://event', (event) => {
       const payload = event.payload;
       if (payload?.sessionId !== sessionId) return;
       const rpc = payload?.event;
+
       if (rpc?.error) {
         unlisten();
         resolve({ text: '', error: String(rpc.error?.message || rpc.error) });
         return;
       }
+
       if (rpc?.result?.stopReason) {
         unlisten();
         resolve({ text: '', error: undefined });
@@ -141,7 +144,11 @@ export async function prompt(sessionId: string, text: string, options: JCodeProm
         resolve({ text: '', error: 'JCode ACP session closed before the prompt completed.' });
       }
     });
+    ready();
   });
+
+  // Do not send the request until the completion listener is installed.
+  await listenerReady;
 
   try {
     await invoke('jcode_prompt', { sessionId, prompt: finalPrompt });
