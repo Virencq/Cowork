@@ -530,33 +530,84 @@ export function ChatView() {
   const filePreview = useFilePreviewStore((s) => s.preview)
 
   if (!activeSessionId) {
+    const homeSessions = useAppStore.getState().sessions
+      .slice()
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, 3)
+
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-transparent relative px-6">
-        <div className="w-full max-w-[760px] -translate-y-8">
-          <div className="text-center mb-8">
-            <div className="mx-auto mb-5 h-14 w-14 rounded-2xl bg-[#f1e6de] grid place-items-center text-[#c96e3e]">
-              <Sparkles size={25} />
+      <div className="flex-1 h-full overflow-auto bg-white">
+        <div className="min-h-full flex flex-col">
+          <div className="flex-1 flex flex-col items-center pt-[214px] px-8">
+            <div className="mb-7 flex justify-center">
+              <SLoopMark size="hero" />
             </div>
-            <h1 className="text-[38px] leading-tight tracking-[-0.035em] font-serif text-[#302c28]">
-              What can I help you with?
+
+            <h1 className="text-center font-serif text-[39px] leading-none tracking-[-0.04em] text-[#171411]">
+              You’re here!
             </h1>
-            <p className="mt-3 text-[14px] leading-6 text-[#8a837b]">
-              Give Cowork a task. It can work with your files, tools, and connected services.
-            </p>
-          </div>
-          <ChatInput
-            onSubmit={handleSubmit}
-            onAbort={abort}
-            isStreaming={false}
-            variant="hero"
-            placeholder="What would you like me to do?"
-          />
-          <div className="mt-3 flex justify-center gap-2 flex-wrap">
-            {['Research a topic', 'Work with my files', 'Build something', 'Plan a project'].map((suggestion) => (
-              <button key={suggestion} onClick={() => handleSubmit(suggestion)} className="rounded-full border border-[#e5dfd8] bg-white px-3.5 py-2 text-[11px] text-[#6f6861] hover:border-[#d97745]/40 hover:text-[#c96e3e] transition-colors">
-                {suggestion}
-              </button>
-            ))}
+
+            <div className="mt-11 w-full max-w-[674px]">
+              <ChatInput
+                onSubmit={handleSubmit}
+                onAbort={abort}
+                isStreaming={false}
+                variant="hero"
+                placeholder="Type / for skills"
+              />
+            </div>
+
+            <div className="w-full max-w-[674px] -mt-3">
+              <div className="h-10 rounded-b-[16px] border-x border-b border-[#e3dfdb] bg-white px-5 flex items-center">
+                <button className="text-[#332e29] hover:text-[#d97745]" title="Add files">
+                  <span className="text-[22px] leading-none">+</span>
+                </button>
+                <div className="ml-auto flex items-center gap-2 text-[12px] text-[#403a35]">
+                  <span className="font-medium">Fable 5</span>
+                  <span className="text-[#8d857d]">High</span>
+                  <button className="ml-2 h-8 w-8 rounded-lg border border-[#e5e1dd] bg-white grid place-items-center text-[#b0aaa4]" title="Send">
+                    <ArrowUp size={15}/>
+                  </button>
+                </div>
+              </div>
+              <div className="h-9 flex items-center gap-2 px-6 text-[12px] text-[#6e675f]">
+                <FolderKanban size={14}/>
+                <span>Project or folder</span>
+                <ChevronDown size={13}/>
+                <span className="ml-auto text-[#a39d96]">ⓘ</span>
+              </div>
+            </div>
+
+            <div className="w-full max-w-[674px] mt-12">
+              <div className="flex items-end justify-between mb-3">
+                <span className="text-[12px] text-[#8b847d]">Active</span>
+                <button className="text-[12px] text-[#8b847d] hover:text-[#4d4741]">Clear active</button>
+              </div>
+              {homeSessions.length > 0 ? (
+                <div className="rounded-lg border border-[#ebe7e3] bg-white px-3 py-2">
+                  {homeSessions.slice(0, 1).map(session => (
+                    <button key={session.id} onClick={() => { useAppStore.getState().setActiveSession(session.id) }}
+                      className="w-full text-left flex items-center gap-3 px-1 py-1.5 hover:bg-[#faf8f6] rounded-md">
+                      <span className="text-[#8c857e]">☷</span>
+                      <div className="min-w-0">
+                        <div className="text-[12px] text-[#39342f] truncate">{session.title || 'Untitled task'}</div>
+                        <div className="text-[11px] text-[#99928a]">recently</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 px-1 py-2 text-[#9b948d]">
+                  <span className="text-[#8c857e]">☷</span>
+                  <span className="text-[12px]">No active tasks</span>
+                </div>
+              )}
+
+              <div className="mt-12 mb-2 text-[12px] text-[#8b847d]">Scheduled</div>
+              <div className="h-24 flex items-center text-[12px] text-[#aaa39b]">
+                No scheduled tasks
+              </div>
+            </div>
           </div>
         </div>
       </div>
