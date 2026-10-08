@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import type { MCPServerConfig, MCPServerStatus, MCPTool, MCPResource } from '../types/mcp';
-import { getBaseUrl, waitForServer } from '../utils/piClient';
+import { getBaseUrl, waitForServer } from '../utils/jcodeClient';
 import {
   redactMCPServersForPersistence,
   splitMCPServerSecrets,
