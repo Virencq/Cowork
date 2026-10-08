@@ -254,128 +254,88 @@ function quoteBindgenPath(value) {
 }
 
 function windowsNativeEnvironment() {
-  const libclangDirectory = findLibclangDirectory();
-  if (!libclangDirectory) {
-    throw new Error(
-      [
-        "Voice compilation requires LLVM/libclang, but libclang.dll was not found.",
-        "Install it with `choco install llvm -y` or the official LLVM Windows installer:",
-        "https://github.com/llvm/llvm-project/releases",
-      ].join("\n"),
-    );
+  // Cowork's desktop runtime does not require the optional S-Loop speech/voice
+  // native crate. Keep this wrapper focused on launching Tauri and do not make
+  // LLVM/libclang a prerequisite for the main application build.
+  const msvcupEnvironment = findMsvcupEnvironment();
+  if (!msvcupEnvironment) {
+    return { ...process.env };
   }
 
-  const resourceDirectory = findClangResourceDirectory(libclangDirectory);
-  const msvcupEnvironment = findMsvcupEnvironment();
   const msvcIncludeDirectory = findMsvcIncludeDirectory(msvcupEnvironment);
   const sdkIncludeDirectories =
     findWindowsSdkIncludeDirectories(msvcupEnvironment);
-  if (!resourceDirectory || !msvcIncludeDirectory || sdkIncludeDirectories.length === 0) {
-    throw new Error(
-      [
-        "LLVM was found, but the native C/C++ header set is incomplete.",
-        "Install Visual Studio 2022 Build Tools with Desktop development with C++",
-        "and a Windows 10 or Windows 11 SDK, then retry.",
-      ].join("\n"),
-    );
+  if (!msvcIncludeDirectory || sdkIncludeDirectories.length === 0) {
+    return { ...process.env };
   }
 
-  const bindgenArguments = [
-    `-resource-dir=${quoteBindgenPath(resourceDirectory)}`,
-    ...[msvcIncludeDirectory, ...sdkIncludeDirectories].flatMap((directory) => [
-      "-isystem",
-      quoteBindgenPath(directory),
-    ]),
-  ].join(" ");
-  const existingArguments = process.env.BINDGEN_EXTRA_CLANG_ARGS?.trim();
+  const ninja = findExecutable("ninja.exe", [
+    path.join(
+      process.env.ProgramData ?? "C:\\ProgramData",
+      "chocolatey",
+      "bin",
+    ),
+  ]);
+  if (!ninja) {
+    return { ...process.env };
+  }
 
-  console.log(`[native-env] libclang: ${libclangDirectory}`);
-  console.log(`[native-env] MSVC headers: ${msvcIncludeDirectory}`);
-  console.log(
-    `[native-env] Windows SDK: ${path.dirname(sdkIncludeDirectories[0])}`,
+  const msvcBinDirectory = path.join(
+    msvcupEnvironment.msvcDirectory,
+    "bin",
+    "Hostx64",
+    "x64",
   );
+  const msvcLibDirectory = path.join(
+    msvcupEnvironment.msvcDirectory,
+    "lib",
+    "x64",
+  );
+  const existingPath = process.env.Path ?? process.env.PATH ?? "";
+  const existingInclude = process.env.INCLUDE?.trim();
+  const existingLib = process.env.LIB?.trim();
 
   const environment = {
     ...process.env,
-    LIBCLANG_PATH: libclangDirectory,
-    BINDGEN_EXTRA_CLANG_ARGS: existingArguments
-      ? `${existingArguments} ${bindgenArguments}`
-      : bindgenArguments,
-  };
-
-  if (msvcupEnvironment) {
-    const ninja = findExecutable("ninja.exe", [
-      path.join(
-        process.env.ProgramData ?? "C:\\ProgramData",
-        "chocolatey",
-        "bin",
-      ),
-    ]);
-    if (!ninja) {
-      throw new Error(
-        [
-          "A standalone msvcup toolchain was found, but Ninja is missing.",
-          "Install it with `choco install ninja -y`, then retry.",
-        ].join("\n"),
-      );
-    }
-
-    const msvcBinDirectory = path.join(
-      msvcupEnvironment.msvcDirectory,
-      "bin",
-      "Hostx64",
-      "x64",
-    );
-    const msvcLibDirectory = path.join(
-      msvcupEnvironment.msvcDirectory,
-      "lib",
-      "x64",
-    );
-    const existingPath = process.env.Path ?? process.env.PATH ?? "";
-    const existingInclude = process.env.INCLUDE?.trim();
-    const existingLib = process.env.LIB?.trim();
-
-    environment.Path = [
+    Path: [
       msvcBinDirectory,
       msvcupEnvironment.sdkBinDirectory,
       path.dirname(ninja),
       existingPath,
     ]
       .filter(Boolean)
-      .join(path.delimiter);
-    environment.INCLUDE = [
+      .join(path.delimiter),
+    INCLUDE: [
       msvcIncludeDirectory,
       ...sdkIncludeDirectories,
       existingInclude,
     ]
       .filter(Boolean)
-      .join(path.delimiter);
-    environment.LIB = [
+      .join(path.delimiter),
+    LIB: [
       msvcLibDirectory,
       path.join(msvcupEnvironment.sdkLibDirectory, "ucrt", "x64"),
       path.join(msvcupEnvironment.sdkLibDirectory, "um", "x64"),
       existingLib,
     ]
       .filter(Boolean)
-      .join(path.delimiter);
-    environment.VCINSTALLDIR = withTrailingSeparator(
+      .join(path.delimiter),
+    VCINSTALLDIR: withTrailingSeparator(
       path.join(msvcupEnvironment.root, "VC"),
-    );
-    environment.VCToolsInstallDir = withTrailingSeparator(
+    ),
+    VCToolsInstallDir: withTrailingSeparator(
       msvcupEnvironment.msvcDirectory,
-    );
-    environment.VisualStudioVersion = "17.0";
-    environment.WindowsSdkDir = withTrailingSeparator(
-      msvcupEnvironment.sdkRoot,
-    );
-    environment.WindowsSDKVersion = `${msvcupEnvironment.sdkVersion}${path.sep}`;
-    environment.CMAKE_GENERATOR = process.env.CMAKE_GENERATOR || "Ninja";
+    ),
+    VisualStudioVersion: "17.0",
+    WindowsSdkDir: withTrailingSeparator(msvcupEnvironment.sdkRoot),
+    WindowsSDKVersion: `${msvcupEnvironment.sdkVersion}${path.sep}`,
+    CMAKE_GENERATOR: process.env.CMAKE_GENERATOR || "Ninja",
+  };
 
-    console.log(
-      `[native-env] standalone MSVC: ${msvcupEnvironment.msvcDirectory}`,
-    );
-    console.log(`[native-env] CMake generator: ${environment.CMAKE_GENERATOR}`);
-  }
+  console.log(
+    `[native-env] standalone MSVC: ${msvcupEnvironment.msvcDirectory}`,
+  );
+  console.log(`[native-env] CMake generator: ${environment.CMAKE_GENERATOR}`);
 
   return environment;
 }
