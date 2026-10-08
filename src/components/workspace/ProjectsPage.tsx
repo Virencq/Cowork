@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { FolderOpen, FolderKanban, MoreHorizontal, Pin, Plus, Search, ArrowUpDown } from 'lucide-react'
+import { FolderOpen, FolderKanban, Pin, Plus, Search, ArrowUpDown, Trash2 } from 'lucide-react'
 import { open } from '@tauri-apps/plugin-dialog'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useAppStore } from '../../stores'
@@ -7,16 +7,18 @@ import { useAppStore } from '../../stores'
 export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id: string; name: string; path?: string }) => void }) {
   const projects = useWorkspaceStore(s => s.projects)
   const addProject = useWorkspaceStore(s => s.addProject)
+  const removeProject = useWorkspaceStore(s => s.removeProject)
+  const toggleProjectPin = useWorkspaceStore(s => s.toggleProjectPin)
+  const pinnedProjectIds = useWorkspaceStore(s => s.pinnedProjectIds)
   const setWorkspaceDir = useAppStore(s => s.setWorkspaceDir)
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [sort, setSort] = useState<'updated' | 'name'>('updated')
-  const [pinned, setPinned] = useState<Set<string>>(new Set())
 
   const visible = useMemo(() => [...projects]
     .filter(p => p.name.toLowerCase().includes(query.toLowerCase()))
     .sort((a, b) => {
-      if (pinned.has(a.id) !== pinned.has(b.id)) return pinned.has(a.id) ? -1 : 1
+      if (pinnedProjectIds.includes(a.id) !== pinnedProjectIds.includes(b.id)) return pinnedProjectIds.includes(a.id) ? -1 : 1
       return sort === 'name' ? a.name.localeCompare(b.name) : b.updatedAt - a.updatedAt
     }), [projects, query, sort, pinned])
 
@@ -61,7 +63,7 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-[14px] font-semibold text-[#191613]">
                       <span className="truncate">{project.name}</span>
-                      {pinned.has(project.id) && <Pin size={13} className="fill-current text-[#5e5852]"/>}
+                      {pinnedProjectIds.includes(project.id) && <Pin size={13} className="fill-current text-[#5e5852]"/>}
                     </div>
                     <div className="mt-2 text-[11px] text-[#958e87]">{new Date(project.updatedAt).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</div>
                   </div>
@@ -69,16 +71,22 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    setPinned(s => {
-                      const n = new Set(s)
-                      n.has(project.id) ? n.delete(project.id) : n.add(project.id)
-                      return n
-                    })
+                    toggleProjectPin(project.id)
                   }}
                   className="absolute right-3 top-3 h-7 w-7 grid place-items-center rounded-md hover:bg-[#f2efec] text-[#7b746d]"
-                  title="Pin project"
+                  title={pinnedProjectIds.includes(project.id) ? 'Unpin project' : 'Pin project'}
                 >
-                  <MoreHorizontal size={16}/>
+                  <Pin size={15} className={pinnedProjectIds.includes(project.id) ? 'fill-current' : ''}/>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (window.confirm('Remove project "' + project.name + '" from Cowork?')) removeProject(project.id)
+                  }}
+                  className="absolute right-12 top-3 h-7 w-7 grid place-items-center rounded-md opacity-0 group-hover:opacity-100 hover:bg-[#f2efec] text-[#9b5b52]"
+                  title="Remove project"
+                >
+                  <Trash2 size={14}/>
                 </button>
                 <div className="absolute right-4 bottom-3 flex items-center gap-1 text-[11px] text-[#6f6861] pointer-events-none"><FolderOpen size={13}/><span className="max-w-[160px] truncate">{project.name}</span></div>
               </div>
