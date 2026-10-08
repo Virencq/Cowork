@@ -45,7 +45,9 @@ function extractUpdate(event: any, handlers: StreamHandlers) {
     }
   } else if (method === 'session/request_permission' || method === 'session/permission_request') {
     handlers.onToolApproval?.(p);
-  } else if (event?.result?.stopReason) {\n    handlers.onDone?.();\n  } else if (method === 'session/closed') {
+  } else if (event?.result?.stopReason) {
+    handlers.onDone?.();
+  } else if (method === 'session/closed') {
     handlers.onDone?.();
   }
 }
@@ -57,8 +59,12 @@ export async function createSession(workspaceDir?: string): Promise<{ id: string
   const id = await invoke<string>('jcode_start_session', { workspaceDir });
   return { id };
 }
-export function getBaseUrl() { return ''; }\n\nexport async function prompt(sessionId: string, text: string, options: JCodePromptOptions = {}) {
-  const finalPrompt = options.systemPrompt ? options.systemPrompt + '\n\n' + text : text;
+export function getBaseUrl() { return ''; }
+
+export async function prompt(sessionId: string, text: string, options: JCodePromptOptions = {}) {
+  const finalPrompt = options.systemPrompt ? options.systemPrompt + '
+
+' + text : text;
   await invoke('jcode_prompt', { sessionId, prompt: finalPrompt });
   return { text: '' };
 }
