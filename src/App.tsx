@@ -41,7 +41,12 @@ function WindowControls() {
   )
 }
 
-function CoworkTitleBar() {
+function CoworkTitleBar({ onToggleSidebar, onToggleRightPanel, onBack, onForward }: {
+  onToggleSidebar: () => void
+  onToggleRightPanel: () => void
+  onBack: () => void
+  onForward: () => void
+}) {
   const appWindow = inTauri ? getCurrentWindow() : null
   const drag = useCallback((e: React.MouseEvent) => {
     if (e.detail === 2) { void appWindow?.toggleMaximize(); return }
@@ -51,10 +56,10 @@ function CoworkTitleBar() {
   return (
     <header onMouseDown={drag} className="fixed top-0 left-0 right-0 z-[100] h-11 bg-white flex items-center justify-between select-none">
       <div className="flex items-center h-full gap-1 px-3 text-[#5d5852]">
-        <button className="title-icon" title="Menu"><Menu size={16}/></button>
-        <button className="title-icon" title="Toggle sidebar"><Columns2 size={16}/></button>
-        <button className="title-icon" title="Back"><ArrowLeft size={17}/></button>
-        <button className="title-icon" title="Forward"><ArrowRight size={17}/></button>
+        <button onClick={onToggleSidebar} className="title-icon" title="Toggle sidebar" aria-label="Toggle sidebar"><Menu size={16}/></button>
+        <button onClick={onToggleRightPanel} className="title-icon" title="Toggle project panel" aria-label="Toggle project panel"><Columns2 size={16}/></button>
+        <button onClick={onBack} className="title-icon" title="Back" aria-label="Back"><ArrowLeft size={17}/></button>
+        <button onClick={onForward} className="title-icon" title="Forward" aria-label="Forward"><ArrowRight size={17}/></button>
       </div>
       <WindowControls />
     </header>
@@ -103,7 +108,6 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings }: {
   // even when it is older than the 20 most-recent task rows.
   const pinnedTasks = allTasks.filter(s => pinned.has(s.id))
   const visibleTasks = filterPinned ? pinnedTasks : tasks
-  const scheduledTasks = allTasks.filter(s => false)
 
   const beginRename = (id: string, title: string) => { setRenaming(id); setRenameValue(title); setMenuId(null) }
   const commitRename = (id: string) => {
@@ -219,7 +223,7 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings }: {
 
       <div className="mt-auto border-t border-[#ece9e5] px-3 py-2">
         <button onClick={onSettings} className="w-full flex items-center justify-between rounded-md px-1 py-2 text-left text-[11px] text-[#7d766f] hover:bg-[#f3f1ef] hover:text-[#302c28]" title="Open Settings">
-          <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full bg-[#e7e4e0] grid place-items-center text-[9px]">✦</span>NW · Gateway</span>
+          <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full bg-[#e7e4e0] grid place-items-center text-[9px]">✦</span>Workspace</span>
           <Settings size={13}/>
         </button>
       </div>
@@ -342,6 +346,18 @@ function App() {
   const [leftWidth, setLeftWidth] = useState(262)
   const [rightWidth, setRightWidth] = useState(330)
   const [rightOpen, setRightOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [pageHistory, setPageHistory] = useState<Page[]>(['chat'])
+  const [historyIndex, setHistoryIndex] = useState(0)
+
+  const navigateToPage = useCallback((next: Page) => {
+    setPage((current) => {
+      if (current === next) return current
+      setPageHistory((history) => [...history.slice(0, historyIndex + 1), next])
+      setHistoryIndex((index) => index + 1)
+      return next
+    })
+  }, [historyIndex])
 
   useTaskScheduler()
   useTelegramChatSync()
@@ -391,9 +407,24 @@ function App() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#faf9f7] text-[#302c28]">
-      <CoworkTitleBar />
+      <CoworkTitleBar
+        onToggleSidebar={() => setSidebarOpen((open) => !open)}
+        onToggleRightPanel={() => setRightOpen((open) => !open)}
+        onBack={() => {
+          if (historyIndex <= 0) return
+          const next = historyIndex - 1
+          setHistoryIndex(next)
+          setPage(pageHistory[next])
+        }}
+        onForward={() => {
+          if (historyIndex >= pageHistory.length - 1) return
+          const next = historyIndex + 1
+          setHistoryIndex(next)
+          setPage(pageHistory[next])
+        }}
+      />
       <div className="h-full flex">
-        <LeftNav width={leftWidth} onWidth={setLeftWidth} page={page} onPage={setPage} onNew={newTask} onSettings={() => setShowSettings(true)} />
+        <LeftNav width={sidebarOpen ? leftWidth : 0} onWidth={setLeftWidth} page={page} onPage={navigateToPage} onNew={newTask} onSettings={() => setShowSettings(true)} />
         <main className="relative min-w-0 flex-1 pt-11 flex flex-col bg-[#faf9f7]">
           <div className="min-h-0 flex-1 flex">
             <div className="min-w-0 flex-1 flex flex-col">
