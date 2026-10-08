@@ -22,8 +22,19 @@ export const useApprovalStore = create<ApprovalState>()((set, get) => ({
       query.append('status', 'pending')
       query.append('status', 'approved')
       const response = await fetch(`${getBaseUrl()}/approvals?${query}`)
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      set({ approvals: await response.json(), loading: false })
+      if (!response.ok) throw new Error(`Approval service returned HTTP ${response.status}`)
+      const contentType = response.headers.get('content-type') || ''
+      const body = await response.text()
+      if (!contentType.includes('application/json')) {
+        throw new Error('Approval service is unavailable (received a non-JSON response).')
+      }
+      let approvals: ApprovalRequest[]
+      try {
+        approvals = JSON.parse(body)
+      } catch {
+        throw new Error('Approval service returned invalid JSON.')
+      }
+      set({ approvals, loading: false })
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : String(error),
