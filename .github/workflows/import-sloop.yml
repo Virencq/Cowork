@@ -22,6 +22,7 @@ jobs:
           git clone --depth 1 --branch master https://github.com/JeffGuo7/s-loop.git /tmp/s-loop
           rsync -a \
             --exclude='.git/' \
+            --exclude='.github/workflows/' \
             --exclude='README.md' \
             --exclude='README.zh-CN.md' \
             /tmp/s-loop/ ./
