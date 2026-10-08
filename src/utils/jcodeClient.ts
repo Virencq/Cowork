@@ -8,6 +8,7 @@ export interface JCodePromptOptions {
   systemPrompt?: string;
   providerID?: string;
   providerAPI?: string;
+  providerConfig?: unknown;
   modelID?: string;
   thinkingLevel?: string;
   apiKey?: string;
