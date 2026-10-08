@@ -4,7 +4,7 @@ import { usePlatformStore } from '../../stores'
 import { Send, Check, Loader2, Link, Link2Off, ChevronDown } from 'lucide-react'
 import { MagicButton } from '../ui'
 import type { PlatformConfig } from '../../types/platform'
-import { getBaseUrl } from '../../utils/piClient'
+import { getBaseUrl } from '../../utils/jcodeClient'
 
 interface ContactEntry {
   key: string
