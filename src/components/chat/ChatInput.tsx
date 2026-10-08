@@ -53,6 +53,7 @@ interface ChatInputProps {
   disabled?: boolean
   placeholder?: string
   variant?: 'default' | 'hero'
+  draftValue?: string | null
 }
 
 export function ChatInput({
@@ -62,6 +63,7 @@ export function ChatInput({
   disabled = false,
   placeholder,
   variant = 'default',
+  draftValue = null,
 }: ChatInputProps) {
   const { t, i18n } = useTranslation()
   const [input, setInput] = useState('')
@@ -240,6 +242,13 @@ export function ChatInput({
   }, [])
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (draftValue !== null && draftValue !== undefined) {
+      setInput(draftValue)
+      requestAnimationFrame(() => textareaRef.current?.focus())
+    }
+  }, [draftValue])
 
   useEffect(() => {
     if (!isTauriRuntime()) return
