@@ -12,7 +12,7 @@ import { ScrollShadow } from "@heroui/react"
 import i18n from '../../i18n'
 import { COLOR_SCHEMES } from '../../themes'
 import { VoiceInputSettings } from './VoiceInputSettings'
-import * as Pi from '../../utils/piClient'
+import * as Pi from '../../utils/jcodeClient'
 
 interface SettingsModalProps {
   onClose: () => void
@@ -455,7 +455,7 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
                                 onClick={async () => {
                                   if (!expandedProvider) return
                                   const cfg = localConfigs[expandedProvider]
-                                  const list = await import('../../utils/piClient').then(m =>
+                                  const list = await import('../../utils/jcodeClient').then(m =>
                                     m.fetchModels(
                                       expandedProvider,
                                       cfg?.apiKey,
