@@ -151,3 +151,58 @@ export function parseSchedule(input: string): TaskSchedule {
 
   throw new Error(`Invalid schedule: "${s}". Use "every 30m", "0 9 * * *", or ISO timestamp.`)
 }
+
+export function nextScheduledRunAt(schedule: TaskSchedule, from = Date.now()): number | null {
+  if (schedule.kind === 'once') {
+    const at = schedule.runAt ? new Date(schedule.runAt).getTime() : NaN
+    return Number.isFinite(at) ? at : null
+  }
+
+  if (schedule.kind === 'interval') {
+    const minutes = Math.max(1, schedule.minutes || 1)
+    return from + minutes * 60_000
+  }
+
+  if (schedule.kind === 'cron' && schedule.expr) {
+    const fields = schedule.expr.trim().split(/\s+/)
+    if (fields.length !== 5) return null
+
+    const matches = (value: number, expression: string) => {
+      if (expression === '*') return true
+      return expression.split(',').some((part) => {
+        const [base, stepText] = part.split('/')
+        const step = stepText ? Math.max(1, Number(stepText)) : 1
+        if (base === '*') return value % step === 0
+        if (base.includes('-')) {
+          const [lo, hi] = base.split('-').map(Number)
+          return Number.isFinite(lo) && Number.isFinite(hi) && value >= lo && value <= hi && (value - lo) % step === 0
+        }
+        const exact = Number(base)
+        return Number.isFinite(exact) && value === exact
+      })
+    }
+
+    const cursor = new Date(from + 60_000)
+    cursor.setSeconds(0, 0)
+    const limit = cursor.getTime() + 366 * 24 * 60 * 60_000
+    while (cursor.getTime() <= limit) {
+      const minute = cursor.getMinutes()
+      const hour = cursor.getHours()
+      const day = cursor.getDate()
+      const month = cursor.getMonth() + 1
+      const weekday = cursor.getDay()
+      if (
+        matches(minute, fields[0]) &&
+        matches(hour, fields[1]) &&
+        matches(day, fields[2]) &&
+        matches(month, fields[3]) &&
+        matches(weekday, fields[4])
+      ) {
+        return cursor.getTime()
+      }
+      cursor.setMinutes(cursor.getMinutes() + 1)
+    }
+  }
+
+  return null
+}
