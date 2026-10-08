@@ -1,0 +1,324 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@import "@heroui/styles";
+
+@theme {
+  --color-accent: #8b4c3c;
+  --color-accent-rgb: 139, 76, 60;
+  --color-accent-foreground: #ffffff;
+  --color-accent-light: #a66a5a;
+  --color-accent-lighter: #c08d7a;
+  --color-accent-muted: rgba(139, 76, 60, 0.1);
+  --color-accent-subtle: rgba(139, 76, 60, 0.05);
+  --color-accent-glow: rgba(139, 76, 60, 0.18);
+
+  --color-bg: #fdfcfb;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f9f8f6;
+  --color-surface-tertiary: #f1f0ed;
+  --color-surface-hover: #f4f3f0;
+  --color-surface-elevated: #ffffff;
+  --color-surface-overlay: rgba(0, 0, 0, 0.25);
+
+  --color-text: #1c1b1a;
+  --color-text-secondary: #6b6965;
+  --color-text-tertiary: #96948f;
+  --color-text-quaternary: #c2c1bc;
+
+  --color-border: #ebeae7;
+  --color-border-light: #f1f0ed;
+  --color-border-hover: #dfddd9;
+
+  --spacing-sidebar: 248px;
+  --spacing-sidebar-collapsed: 56px;
+  --spacing-chat-max: 900px;
+  --spacing-workspace-panel: 328px;
+  --spacing-workspace-panel-collapsed: 56px;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 14px;
+
+  --font-sans: 'Inter Variable', 'Inter', 'Microsoft YaHei UI', 'PingFang SC', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Inter Variable', 'Inter', 'Microsoft YaHei UI', 'PingFang SC', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --shadow-panel: 0 1px 2px rgba(20, 20, 20, 0.04), 0 12px 32px rgba(20, 20, 20, 0.06);
+  --shadow-dialog: 0 24px 64px rgba(16, 16, 16, 0.18);
+  --titlebar-height: 42px;
+}
+
+@layer base {
+  *, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.45;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+}
+
+.dark {
+  --color-accent: #c49a8c;
+  --color-accent-rgb: 196, 154, 140;
+  --color-bg: #11100f;
+  --color-surface: #191817;
+  --color-surface-secondary: #1f1e1c;
+  --color-surface-tertiary: #272624;
+  --color-surface-hover: #272624;
+  --color-text: #f2f1f0;
+  --color-text-secondary: #a6a4a0;
+  --color-text-tertiary: #73716d;
+  --color-text-quaternary: #4d4b48;
+  --color-border: #272624;
+  --color-border-light: #201f1d;
+  --color-border-hover: #363532;
+}
+
+/* ── Animations ── */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+@keyframes liquid {
+  0%, 100% { border-radius: 32% 68% 55% 45% / 45% 35% 65% 55%; }
+  33% { border-radius: 54% 46% 38% 62% / 49% 70% 30% 51%; }
+  66% { border-radius: 38% 62% 63% 37% / 41% 44% 56% 59%; }
+}
+
+.animate-fade-in { animation: fadeIn 0.4s var(--ease-out) both; }
+.animate-fade-in-up { animation: fadeInUp 0.5s var(--ease-out) both; }
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-liquid { animation: liquid 10s ease-in-out infinite; }
+
+.app-shell {
+  background-color: var(--color-bg);
+}
+
+.sidebar-transition {
+  transition: width 0.22s var(--ease-out);
+}
+
+/* Keyboard focus stays visible while avoiding HeroUI's default blue treatment. */
+:where(button, input, textarea, select, [tabindex]):focus {
+  outline: none;
+}
+
+:where(button, input, textarea, select, [tabindex]):focus-visible,
+[data-focus-visible="true"] {
+  outline: 2px solid var(--color-accent) !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}
+
+/* ── Global Focus Styles ── */
+.focus-ring-accent:focus-within {
+  border-color: var(--color-accent) !important;
+  box-shadow: 0 0 0 3px var(--color-accent-subtle) !important;
+}
+
+.workbench-panel {
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-panel);
+}
+
+.settings-section {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.settings-section:first-child {
+  padding-top: 0;
+}
+
+.settings-section:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.control-field {
+  min-height: 42px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.control-field:focus-within {
+  border-color: color-mix(in srgb, var(--color-accent) 50%, var(--color-border));
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
+}
+
+.section-eyebrow {
+  color: var(--color-text-tertiary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.s-loop-brand-mask {
+  -webkit-mask: url('/s-loop-icon.png') center / contain no-repeat;
+  mask: url('/s-loop-icon.png') center / contain no-repeat;
+}
+
+/* ── Chat Input: Force text wrapping on HeroUI TextArea ── */
+[data-slot="input-wrapper"] textarea,
+textarea[data-slot="input"] {
+  white-space: pre-wrap !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+/* ── Button Styles ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.375rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+  font-weight: 700;
+  font-size: 0.8125rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 78%, black);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(var(--color-accent-rgb), 0.16);
+  white-space: nowrap;
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-light);
+  box-shadow: 0 1px 3px rgba(var(--color-accent-rgb), 0.2);
+}
+
+.btn-primary:active {
+  box-shadow: none;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.375rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-secondary:hover {
+  background: var(--color-surface-tertiary);
+  color: var(--color-text);
+  border-color: var(--color-border-hover);
+}
+
+.btn-secondary:active {
+  background: var(--color-surface-hover);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  line-height: 1;
+  transition: background-color 0.16s ease, color 0.16s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-ghost:hover {
+  background: var(--color-surface-secondary);
+  color: var(--color-text);
+}
+
+.btn-ghost-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  line-height: 1;
+  transition: background-color 0.16s ease, color 0.16s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-ghost-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
