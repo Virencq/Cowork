@@ -55,48 +55,6 @@ async function saveServerSecrets(config: MCPServerConfig): Promise<MCPServerConf
   return split.config;
 }
 
-async function syncOAuthCredentials(name: string): Promise<void> {
-  try {
-    const response = await fetch(
-      `${getBaseUrl()}/mcp-oauth/credentials?name=${encodeURIComponent(name)}`,
-    );
-    if (!response.ok) return;
-    const oauth = await response.json();
-    if (oauth && Object.keys(oauth).length > 0) {
-      await invoke('mcp_secret_merge', { name, values: { oauth } });
-    }
-  } catch {
-    // OAuth credentials are exported only after a successful flow.
-  }
-}
-
-async function ensurePiServer(): Promise<void> {
-  try {
-    const response = await fetch(`${getBaseUrl()}/health`);
-    if (response.ok) return;
-  } catch {
-    // The Tauri side may still be starting pi-server.
-  }
-  await waitForServer(10000);
-}
-
-function mapRemoteTools(tools: RemoteMCPTool[] = []): MCPTool[] {
-  return tools.map((tool) => ({
-    name: tool.name,
-    description: tool.description || '',
-    inputSchema: tool.inputSchema || {},
-  }));
-}
-
-function mapRemoteResources(resources: RemoteMCPResource[] = []): MCPResource[] {
-  return resources.map((resource) => ({
-    name: resource.name || resource.uri,
-    uri: resource.uri,
-    description: resource.description || '',
-    mimeType: resource.mimeType || undefined,
-  }));
-}
-
 interface MCPState {
   servers: MCPServerConfig[];
   serverStatuses: Record<string, MCPServerStatus>;
