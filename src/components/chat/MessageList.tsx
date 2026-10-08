@@ -8,9 +8,11 @@ const EMPTY_MESSAGES: never[] = []
 
 interface MessageListProps {
   sessionId: string
+  onEdit?: (message: KiloMessage) => void
+  onDelete?: (message: KiloMessage) => void
 }
 
-export function MessageList({ sessionId }: MessageListProps) {
+export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
   const messages = useAppStore((state) => state.sessionMessages[sessionId]) ?? EMPTY_MESSAGES
   const streamingMessage = useAppStore((state) => state.streamingMessage[sessionId])
   const virtuosoRef = useRef(null)
@@ -80,6 +82,8 @@ export function MessageList({ sessionId }: MessageListProps) {
               <MessageItem
                 message={message}
                 isStreaming={isStreaming}
+                onEdit={onEdit}
+                onDelete={onDelete}
               />
             </div>
           )
