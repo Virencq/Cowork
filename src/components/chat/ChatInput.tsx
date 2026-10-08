@@ -604,9 +604,9 @@ export function ChatInput({
       <form onSubmit={handleSubmit}>
         <Card
           variant={isHero ? 'glass' : 'default'}
-          className={`relative group p-1.5 transition-colors duration-150 border border-border ${
-            isHero ? 'shadow-(--shadow-panel)' : 'shadow-sm'
-          } ${isDragOver ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg' : 'focus-ring-accent'} rounded-xl bg-surface/96`}
+          className={`relative group transition-colors duration-150 border border-border ${
+            isHero ? 'shadow-none rounded-[16px] bg-white p-0 overflow-hidden' : 'shadow-sm rounded-xl bg-surface/96 p-1.5'
+          } ${isDragOver ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg' : 'focus-ring-accent'}`}
         >
           {isDragOver && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[inherit] bg-surface/96 pointer-events-none">
@@ -722,108 +722,97 @@ export function ChatInput({
               </TextField>
             </div>
 
-              <div className="flex items-center p-2">
-                {isStreaming ? (
-                  <Button
-                    type="button"
-                    variant="danger"
-                    size="icon"
-                    aria-label="Stop generating"
-                    onClick={onAbort}
-                    className="w-9 h-9 rounded-lg animate-fade-in"
-                  >
-                    <Square size={16} fill="currentColor" />
-                  </Button>
+              <div className={isHero ? "flex items-center justify-between h-11 px-4 border-t border-[#eeeae6]" : "flex items-center p-2"}>
+                {isHero ? (
+                  <>
+                    <button type="button" className="h-8 w-8 rounded-md grid place-items-center text-[#342f2a] hover:bg-[#f2efec]" title="Add files">
+                      <span className="text-[22px] leading-none">+</span>
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[12px] font-medium text-[#302c28]">Fable 5</span>
+                      <span className="text-[12px] text-[#8f8880]">High</span>
+                      <Button
+                        type="submit"
+                        variant="secondary"
+                        size="icon"
+                        aria-label="Send message"
+                        isDisabled={(!input.trim() && attachments.length === 0) || disabled}
+                        className={`w-8 h-8 rounded-lg border border-[#e6e1dc] bg-white text-[#aaa39c] ${input.trim() || attachments.length > 0 ? 'opacity-100 text-[#6f675f]' : 'opacity-70'}`}
+                      >
+                        <Send size={15} strokeWidth={2.4}/>
+                      </Button>
+                    </div>
+                  </>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    {isTauriRuntime() && (
-                      <>
+                  <>
+                    {isStreaming ? (
+                      <Button
+                        type="button"
+                        variant="danger"
+                        size="icon"
+                        aria-label="Stop generating"
+                        onClick={onAbort}
+                        className="w-9 h-9 rounded-lg animate-fade-in"
+                      >
+                        <Square size={16} fill="currentColor" />
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        {isTauriRuntime() && (
+                          <>
+                            <Button
+                              type="button"
+                              variant={dictation?.recording ? 'danger' : 'secondary'}
+                              size="icon"
+                              aria-label={dictation?.recording ? 'Stop dictation' : voiceReady ? 'Start dictation' : 'Configure voice input'}
+                              title={dictation?.recording ? (chinese ? '停止并转写' : 'Stop and transcribe') : voiceReady ? (chinese ? '本地语音输入' : 'Local voice input') : (chinese ? '先配置语音输入' : 'Configure voice input first')}
+                              isDisabled={dictationBusy || disabled || isStreaming || !!realtimeMode || realtimeBusy}
+                              onClick={() => void toggleDictation()}
+                              className={`w-9 h-9 rounded-lg ${!voiceReady && !dictation?.recording ? 'opacity-45' : ''}`}
+                            >
+                              {dictationBusy ? <LoaderCircle size={17} className="animate-spin" /> : dictation?.recording ? <Square size={15} fill="currentColor" /> : <Mic size={18} />}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={realtimeMode === 'dictation' ? 'danger' : 'secondary'}
+                              size="icon"
+                              aria-label={realtimeMode === 'dictation' ? 'Stop live captions' : 'Start live captions'}
+                              title={realtimeMode === 'dictation' ? 'Stop live captions' : 'Live partial captions'}
+                              isDisabled={disabled || isStreaming || dictationBusy || !!dictation?.recording || realtimeBusy || conversation.active}
+                              onClick={() => void toggleRealtimeDictation()}
+                              className={`w-9 h-9 rounded-lg ${!realtimeReady && realtimeMode !== 'dictation' ? 'opacity-45' : ''}`}
+                            >
+                              {realtimeBusy && realtimeMode !== 'conversation' ? <LoaderCircle size={17} className="animate-spin" /> : realtimeMode === 'dictation' ? <Square size={15} fill="currentColor" /> : <AudioLines size={18} />}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={conversation.active ? 'danger' : 'secondary'}
+                              size="icon"
+                              aria-label={conversation.active ? 'Stop voice conversation' : 'Start voice conversation'}
+                              title="Voice conversation"
+                              isDisabled={disabled || !!dictation?.recording || dictationBusy || (isStreaming && !conversation.active) || (realtimeMode === 'dictation')}
+                              onClick={() => void toggleConversation()}
+                              className={`w-9 h-9 rounded-lg ${!conversationReady && !conversation.active ? 'opacity-45' : ''}`}
+                            >
+                              {realtimeBusy && realtimeMode === 'conversation' ? <LoaderCircle size={17} className="animate-spin" /> : conversation.active && conversation.state !== 'speaking' ? <Square size={15} fill="currentColor" /> : <PhoneCall size={18} />}
+                            </Button>
+                          </>
+                        )}
                         <Button
-                          type="button"
-                          variant={dictation?.recording ? 'danger' : 'secondary'}
+                          type="submit"
+                          variant="primary"
                           size="icon"
-                          aria-label={dictation?.recording ? 'Stop dictation' : voiceReady ? 'Start dictation' : 'Configure voice input'}
-                          title={dictation?.recording ? (chinese ? '停止并转写' : 'Stop and transcribe') : voiceReady ? (chinese ? '本地语音输入' : 'Local voice input') : (chinese ? '先配置语音输入' : 'Configure voice input first')}
-                          isDisabled={dictationBusy || disabled || isStreaming || !!realtimeMode || realtimeBusy}
-                          onClick={() => void toggleDictation()}
-                          className={`w-9 h-9 rounded-lg ${!voiceReady && !dictation?.recording ? 'opacity-45' : ''}`}
+                          aria-label="Send message"
+                          isDisabled={(!input.trim() && attachments.length === 0) || disabled || !!dictation?.recording || dictationBusy || !!realtimeMode || realtimeBusy}
+                          className={`w-9 h-9 rounded-lg transition-colors duration-150 ${(input.trim() || attachments.length > 0) && !dictation?.recording && !dictationBusy && !realtimeMode && !realtimeBusy ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}
                         >
-                          {dictationBusy ? <LoaderCircle size={17} className="animate-spin" /> : dictation?.recording ? <Square size={15} fill="currentColor" /> : <Mic size={18} />}
+                          <Send size={18} strokeWidth={3} className={input.trim() || attachments.length > 0 ? 'translate-x-0.5 -translate-y-0.5' : ''}/>
                         </Button>
-                        <Button
-                          type="button"
-                          variant={realtimeMode === 'dictation' ? 'danger' : 'secondary'}
-                          size="icon"
-                          aria-label={realtimeMode === 'dictation' ? 'Stop live captions' : 'Start live captions'}
-                          title={
-                            realtimeMode === 'dictation'
-                              ? chinese ? '停止实时字幕' : 'Stop live captions'
-                              : realtimeReady
-                                ? chinese ? '流式中间字幕' : 'Live partial captions'
-                                : chinese ? '先安装实时语音模型' : 'Configure real-time voice first'
-                          }
-                          isDisabled={disabled || isStreaming || dictationBusy || !!dictation?.recording || realtimeBusy || conversation.active}
-                          onClick={() => void toggleRealtimeDictation()}
-                          className={`w-9 h-9 rounded-lg ${!realtimeReady && realtimeMode !== 'dictation' ? 'opacity-45' : ''}`}
-                        >
-                          {realtimeBusy && realtimeMode !== 'conversation' ? (
-                            <LoaderCircle size={17} className="animate-spin" />
-                          ) : realtimeMode === 'dictation' ? (
-                            <Square size={15} fill="currentColor" />
-                          ) : (
-                            <AudioLines size={18} />
-                          )}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={conversation.active ? 'danger' : 'secondary'}
-                          size="icon"
-                          aria-label={conversation.active ? 'Stop voice conversation' : 'Start voice conversation'}
-                          title={
-                            conversation.active && conversation.state === 'speaking'
-                              ? chinese ? '打断回答并继续说话' : 'Interrupt and speak'
-                              : conversation.active
-                                ? chinese ? '结束实时通话' : 'End voice conversation'
-                                : conversationReady
-                                  ? chinese ? '开始实时语音通话' : 'Start voice conversation'
-                                  : chinese ? '先安装实时识别、VAD 和 TTS 模型' : 'Install real-time voice and TTS models first'
-                          }
-                          isDisabled={disabled || !!dictation?.recording || dictationBusy || (isStreaming && !conversation.active) || (realtimeMode === 'dictation')}
-                          onClick={() => void toggleConversation()}
-                          className={`w-9 h-9 rounded-lg ${!conversationReady && !conversation.active ? 'opacity-45' : ''}`}
-                        >
-                          {realtimeBusy && realtimeMode === 'conversation' ? (
-                            <LoaderCircle size={17} className="animate-spin" />
-                          ) : conversation.active && conversation.state !== 'speaking' ? (
-                            <Square size={15} fill="currentColor" />
-                          ) : (
-                            <PhoneCall size={18} />
-                          )}
-                        </Button>
-                      </>
+                      </div>
                     )}
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      size="icon"
-                      aria-label="Send message"
-                      isDisabled={(!input.trim() && attachments.length === 0) || disabled || !!dictation?.recording || dictationBusy || !!realtimeMode || realtimeBusy}
-                      className={`w-9 h-9 rounded-lg transition-colors duration-150 ${
-                        (input.trim() || attachments.length > 0) && !dictation?.recording && !dictationBusy && !realtimeMode && !realtimeBusy
-                          ? 'opacity-100'
-                          : 'opacity-30 pointer-events-none'
-                      }`}
-                    >
-                      <Send
-                        size={18}
-                        strokeWidth={3}
-                        className={input.trim() || attachments.length > 0 ? 'translate-x-0.5 -translate-y-0.5' : ''}
-                      />
-                    </Button>
-                  </div>
+                  </>
                 )}
-              </div>
-            </div>
+              </div>            </div>
           </div>
         </Card>
       </form>
