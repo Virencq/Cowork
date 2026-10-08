@@ -332,3 +332,7 @@ textarea[data-slot="input"] {
 .cowork-nav-item.active{background:#e9e4de;color:#302c28;font-weight:600}
 
 .menu-row{width:100%;display:flex;align-items:center;gap:9px;height:32px;padding:0 9px;border-radius:7px;color:#5f5851;font-size:11px;text-align:left;transition:background .12s,color .12s}.menu-row:hover{background:#f2eee9;color:#302c28}.menu-row svg{flex:none;color:#817a72}
+
+/* Cowork reference home */
+.title-icon{height:30px;width:30px;border-radius:7px;display:grid;place-items:center;color:#77716b;transition:background .12s,color .12s}.title-icon:hover{background:#f0eeeb;color:#302c28}
+.home-nav-row{height:34px;width:100%;display:flex;align-items:center;justify-content:space-between;padding:0 8px;color:#706963;font-size:12px;text-align:left}.home-nav-row:hover{color:#302c28}
