@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import {
   Archive, CalendarClock, ChevronLeft, ChevronRight, FolderKanban, History,
@@ -80,7 +81,7 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
     .sort((a, b) => b.updatedAt - a.updatedAt)
     .slice(0, 8)
 
-  const item = (icon: React.ReactNode, label: string, target: Page, badge?: string) => (
+  const item = (icon: ReactNode, label: string, target: Page, badge?: string) => (
     <button onClick={() => onPage(target)} className={`cowork-nav-item ${page === target ? 'active' : ''}`}>
       {icon}<span>{label}</span>{badge && <span className="ml-auto text-[10px] text-[#8d877f]">{badge}</span>}
     </button>
@@ -168,7 +169,7 @@ function RightPanel({ width, onWidth }: { width: number; onWidth: (n: number) =>
   )
 }
 
-function PanelCard({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
+function PanelCard({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
   return <div className="rounded-xl border border-[#e6e0d9] bg-white p-4">
     <div className="flex items-center gap-2 text-[#6f675f]">{icon}<span className="text-[12px] font-semibold">{title}</span></div>
     <p className="mt-3 text-[11px] leading-5 text-[#918a83]">{text}</p>
@@ -184,8 +185,6 @@ function App() {
   const [leftWidth, setLeftWidth] = useState(250)
   const [rightWidth, setRightWidth] = useState(330)
   const [rightOpen, setRightOpen] = useState(true)
-  const agents = useAgentStore((s) => s.agents)
-  const userProfile = useAgentStore((s) => s.userProfile)
 
   useTaskScheduler()
   useTelegramChatSync()
