@@ -20,7 +20,7 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
     .sort((a, b) => {
       if (pinnedProjectIds.includes(a.id) !== pinnedProjectIds.includes(b.id)) return pinnedProjectIds.includes(a.id) ? -1 : 1
       return sort === 'name' ? a.name.localeCompare(b.name) : b.updatedAt - a.updatedAt
-    }), [projects, query, sort, pinned])
+    }), [projects, query, sort, pinnedProjectIds])
 
   const createProject = async () => {
     const selected = await open({ directory: true, multiple: false, title: 'Choose project folder' })
