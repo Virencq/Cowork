@@ -7,7 +7,14 @@ use tauri::{AppHandle, Emitter, State};
 #[serde(rename_all = "camelCase")]
 pub struct JCodeEvent { pub session_id: String, pub event: Value }
 
-pub(crate) struct SessionProcess { child: Child, stdin: Arc<Mutex<ChildStdin>>, session_id: String, next_request_id: AtomicU64, pending: Arc<Mutex<HashMap<u64, Sender<Result<Value, String>>>>> }
+pub(crate) struct SessionProcess {
+    child: Child,
+    stdin: Arc<Mutex<ChildStdin>>,
+    session_id: String,
+    next_request_id: AtomicU64,
+    pending: Arc<Mutex<HashMap<u64, Sender<Result<Value, String>>>>>,
+    permission_requests: Arc<Mutex<HashMap<u64, Value>>>,
+}
 pub struct JCodeState(pub Arc<Mutex<HashMap<String, SessionProcess>>>);
 
 #[derive(Debug, Deserialize)]
@@ -18,6 +25,13 @@ fn send_rpc(stdin: &Arc<Mutex<ChildStdin>>, id: u64, method: &str, params: Value
     let mut guard = stdin.lock().map_err(|e| e.to_string())?;
     writeln!(&mut *guard, "{}", request).map_err(|e| format!("Failed to write ACP request: {e}"))?;
     guard.flush().map_err(|e| format!("Failed to flush ACP request: {e}"))
+}
+
+fn send_rpc_result(stdin: &Arc<Mutex<ChildStdin>>, id: u64, result: Value) -> Result<(), String> {
+    let response = json!({"jsonrpc":"2.0","id":id,"result":result});
+    let mut guard = stdin.lock().map_err(|e| e.to_string())?;
+    writeln!(&mut *guard, "{}", response).map_err(|e| format!("Failed to write ACP response: {e}"))?;
+    guard.flush().map_err(|e| format!("Failed to flush ACP response: {e}"))
 }
 
 fn read_until_response(reader: &mut BufReader<std::process::ChildStdout>, request_id: u64) -> Result<Value, String> {
@@ -44,7 +58,13 @@ fn find_jcode() -> Result<PathBuf, String> {
     Err("JCode was not found on PATH. Install JCode and ensure the jcode command is available.".to_string())
 }
 
-fn start_reader(app: AppHandle, session_key: String, stdout: std::process::ChildStdout, pending: Arc<Mutex<HashMap<u64, Sender<Result<Value, String>>>>>) {
+fn start_reader(
+    app: AppHandle,
+    session_key: String,
+    stdout: std::process::ChildStdout,
+    pending: Arc<Mutex<HashMap<u64, Sender<Result<Value, String>>>>>,
+    permission_requests: Arc<Mutex<HashMap<u64, Value>>>,
+) {
     thread::spawn(move || {
         let reader = BufReader::new(stdout);
         for line in reader.lines() {
@@ -52,6 +72,13 @@ fn start_reader(app: AppHandle, session_key: String, stdout: std::process::Child
             let line = line.trim();
             if line.is_empty() { continue; }
             let Ok(value) = serde_json::from_str::<Value>(line) else { continue };
+            if value.get("method").and_then(Value::as_str) == Some("session/request_permission") {
+                if let Some(id) = value.get("id").and_then(Value::as_u64) {
+                    if let Ok(mut requests) = permission_requests.lock() {
+                        requests.insert(id, value.clone());
+                    }
+                }
+            }
             if value.get("method").and_then(Value::as_str).is_some() || value.get("result").is_some() || value.get("error").is_some() {
                 let _ = app.emit("jcode://event", JCodeEvent { session_id: session_key.clone(), event: value });
             }
@@ -87,9 +114,17 @@ pub fn jcode_start_session(app: AppHandle, state: State<'_, JCodeState>, workspa
     let session_id = result.get("sessionId").and_then(Value::as_str).ok_or_else(|| format!("JCode ACP did not return sessionId: {result}"))?.to_string();
 
     let pending = Arc::new(Mutex::new(HashMap::new()));
-    let process = SessionProcess { child, stdin: stdin.clone(), session_id: session_id.clone(), next_request_id: AtomicU64::new(100), pending: pending.clone() };
+    let permission_requests = Arc::new(Mutex::new(HashMap::new()));
+    let process = SessionProcess {
+        child,
+        stdin: stdin.clone(),
+        session_id: session_id.clone(),
+        next_request_id: AtomicU64::new(100),
+        pending: pending.clone(),
+        permission_requests: permission_requests.clone(),
+    };
     state.0.lock().map_err(|e| e.to_string())?.insert(session_id.clone(), process);
-    start_reader(app, session_id.clone(), reader.into_inner(), pending);
+    start_reader(app, session_id.clone(), reader.into_inner(), pending, permission_requests);
     Ok(session_id)
 }
 
@@ -108,6 +143,49 @@ pub fn jcode_prompt(state: State<'_, JCodeState>, session_id: String, prompt: St
     // ACP is streamed: return immediately after the request is written.
     // The background reader forwards session/update chunks and the final
     // session/prompt response to the frontend through jcode://event.
+    Ok(())
+}
+
+#[tauri::command]
+pub fn jcode_permission_response(
+    state: State<'_, JCodeState>,
+    session_id: String,
+    request_id: String,
+    approve: bool,
+) -> Result<(), String> {
+    let sessions = state.0.lock().map_err(|e| e.to_string())?;
+    let session = sessions.get(&session_id).ok_or_else(|| format!("JCode session not found: {session_id}"))?;
+    let id = request_id.parse::<u64>().map_err(|_| format!("Invalid ACP permission request id: {request_id}"))?;
+
+    let request = session.permission_requests.lock().map_err(|e| e.to_string())?.get(&id).cloned()
+        .ok_or_else(|| format!("ACP permission request not found: {request_id}"))?;
+    let options = request.get("params")
+        .and_then(|v| v.get("options"))
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+
+    let selected = options.iter().find(|option| {
+        option.get("kind").and_then(Value::as_str).map(|kind| {
+            if approve { kind == "allow_once" || kind == "allow_always" }
+            else { kind == "reject_once" || kind == "reject_always" }
+        }).unwrap_or(false)
+    });
+
+    let result = if let Some(option) = selected {
+        let option_id = option.get("optionId").and_then(Value::as_str)
+            .or_else(|| option.get("id").and_then(Value::as_str))
+            .ok_or("ACP permission option has no optionId.")?;
+        json!({"outcome":{"outcome":"selected","optionId":option_id}})
+    } else {
+        json!({"outcome":{"outcome":"cancelled"}})
+    };
+
+    send_rpc_result(&session.stdin, id, result)?;
+    {
+        let mut requests = session.permission_requests.lock().map_err(|e| e.to_string())?;
+        requests.remove(&id);
+    }
     Ok(())
 }
 
