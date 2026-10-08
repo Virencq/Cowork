@@ -49,7 +49,7 @@ interface SkillPrefs {
   hooks?: { pre?: string[]; post?: string[] };
 }
 
-const SKILLS_BASE = '~/.pi/agent/skills';
+const SKILLS_BASE = '~/.jcode/skills';
 
 interface SkillState {
   // From disk scan — never persisted
@@ -97,7 +97,7 @@ export const useSkillStore = create<SkillState>()(
       paths: [],
       skillPrefs: {},
 
-      /// Write a manual skill to ~/.pi/agent/skills/{name}/SKILL.md, then rescan.
+      /// Write a manual skill to JCode's global skills directory (~/.jcode/skills/{name}/SKILL.md), then rescan.
       addSkill: async (name, description, content) => {
         await invoke<string>('create_skill_file', { name, description, content });
         await get().refreshSkills();
