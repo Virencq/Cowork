@@ -6,10 +6,6 @@ use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::{mpsc, Arc, Mutex, RwLock};
 use std::time::Duration;
 
-use crate::pi_server::configure_sanitized_environment;
-#[cfg(windows)]
-use crate::pi_server::{attach_kill_on_close_job, WindowsJob};
-
 // ---- Data Types ----
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -45,7 +41,6 @@ struct MCPServerProcess {
     name: String,
     child: Child,
     #[cfg(windows)]
-    _job: Option<WindowsJob>,
     response_rx: mpsc::Receiver<Result<String, String>>,
     writer: ChildStdin,
     tools: Vec<MCPTool>,
@@ -60,7 +55,6 @@ impl MCPServerProcess {
         env: &HashMap<String, String>,
     ) -> Result<Self, String> {
         let mut cmd = Command::new(command);
-        configure_sanitized_environment(&mut cmd);
         cmd.args(args)
             // MCP environment variables are explicit user configuration and
             // are applied after the inherited host environment is cleared.
@@ -80,7 +74,6 @@ impl MCPServerProcess {
             .map_err(|e| format!("Failed to spawn MCP server '{}': {}", name, e))?;
 
         #[cfg(windows)]
-        let job = attach_kill_on_close_job(&child);
 
         let stdin = child.stdin.take().ok_or("Failed to capture stdin")?;
         let stdout = child.stdout.take().ok_or("Failed to capture stdout")?;
@@ -94,7 +87,6 @@ impl MCPServerProcess {
             name: name.to_string(),
             child,
             #[cfg(windows)]
-            _job: job,
             response_rx,
             writer,
             tools: Vec::new(),
