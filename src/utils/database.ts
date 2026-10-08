@@ -2,6 +2,7 @@ import Database from '@tauri-apps/plugin-sql'
 import type { KiloMessage, MessagePart } from '../types'
 
 let db: Database | null = null
+let dbInitPromise: Promise<Database> | null = null
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS sessions (
@@ -34,14 +35,26 @@ CREATE TABLE IF NOT EXISTS app_settings (
 
 export async function initDatabase(): Promise<Database> {
   if (db) return db
-  db = await Database.load('sqlite:snotra.db')
-  await db.execute(SCHEMA)
-  const sessionColumns = await db.select<{ name: string }[]>('PRAGMA table_info(sessions)')
-  if (!sessionColumns.some((column) => column.name === 'pi_id')) {
-    await db.execute('ALTER TABLE sessions ADD COLUMN pi_id TEXT')
+  if (dbInitPromise) return dbInitPromise
+
+  dbInitPromise = (async () => {
+    const connection = await Database.load('sqlite:snotra.db')
+    await connection.execute(SCHEMA)
+    const sessionColumns = await connection.select<{ name: string }[]>('PRAGMA table_info(sessions)')
+    if (!sessionColumns.some((column) => column.name === 'pi_id')) {
+      await connection.execute('ALTER TABLE sessions ADD COLUMN pi_id TEXT')
+    }
+    await connection.execute('PRAGMA journal_mode=WAL')
+    db = connection
+    return connection
+  })()
+
+  try {
+    return await dbInitPromise
+  } catch (error) {
+    dbInitPromise = null
+    throw error
   }
-  await db.execute('PRAGMA journal_mode=WAL')
-  return db
 }
 
 export async function getDatabase(): Promise<Database> {
