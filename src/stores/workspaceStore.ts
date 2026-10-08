@@ -101,8 +101,8 @@ export const useWorkspaceStore = create<WorkspaceLibraryState>()(
         set((s) => ({
           projects: [...s.projects.filter((p) => !projects.some((x) => x.id === p.id)), ...projects],
           artifacts: [...s.artifacts.filter((a) => !artifacts.some((x) => x.id === a.id)), ...artifacts],
-          pinnedProjectIds: s.pinnedProjectIds.filter((id) => projects.some((p) => p.id === id)),
-          pinnedArtifactIds: s.pinnedArtifactIds.filter((id) => artifacts.some((a) => a.id === id)),
+          pinnedProjectIds: s.pinnedProjectIds.filter((id) => !projects.some((p) => p.id === id)).concat(projects.filter((p) => s.pinnedProjectIds.includes(p.id)).map((p) => p.id)),
+          pinnedArtifactIds: s.pinnedArtifactIds.filter((id) => !artifacts.some((a) => a.id === id)).concat(artifacts.filter((a) => s.pinnedArtifactIds.includes(a.id)).map((a) => a.id)),
         }))
         return { projects: projects.length, artifacts: artifacts.length }
       },
