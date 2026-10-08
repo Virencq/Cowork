@@ -7,7 +7,7 @@ import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
 import { invoke } from '@tauri-apps/api/core'
 import type { ImageAttachment } from './ChatInput'
-import { Cpu, Paperclip, FolderTree, MessagesSquare, ShieldCheck, ShieldAlert, ShieldOff, Bot, ChevronUp, Sparkles, ArrowUp, FolderKanban, ChevronDown, Asterisk } from 'lucide-react'
+import { Paperclip, FolderTree, MessagesSquare, ShieldAlert, Sparkles, ArrowUp, FolderKanban, ChevronDown, Asterisk } from 'lucide-react'
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { FilePreviewPanel } from '../preview'
@@ -50,19 +50,6 @@ export function ChatView() {
     addMessage,
     updateSessionTitle,
   } = useAppStore()
-  const [jcodeRuntime, setJcodeRuntime] = useState<{ provider?: string | null; model?: string | null; effort?: string | null } | null>(null)
-  useEffect(() => {
-    let cancelled = false
-    const refresh = () => {
-      void JCode.runtimeInfo().then(info => {
-        if (!cancelled) setJcodeRuntime(info)
-      }).catch(() => undefined)
-    }
-    refresh()
-    const timer = window.setInterval(refresh, 15000)
-    return () => { cancelled = true; window.clearInterval(timer) }
-  }, [])
-
   const [error, setError] = useState<string | null>(null)
   const [draftValue, setDraftValue] = useState<string | null>(null)
   const [contextStatus, setContextStatus] = useState<JCode.ContextStatus | null>(null)
@@ -410,8 +397,8 @@ export function ChatView() {
   const handleEditMessage = useCallback((message: KiloMessage) => {
     if (message.info.role !== 'user') return
     const content = message.parts
-      .filter((part): part is Extract<typeof part, { type: 'text' }> => part.type === 'text')
-      .map((part) => part.text)
+      .filter((part) => part.type === 'text')
+      .map((part) => 'text' in part ? part.text : '')
       .join('\n')
       .trim()
     if (!content) return
@@ -645,8 +632,8 @@ export function ChatView() {
               <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
                 <Paperclip size={28} className="text-accent" />
               </div>
-              <p className="text-lg font-bold text-accent tracking-tight">释放文件/文件夹到此处直接发送</p>
-              <p className="text-sm text-text-tertiary font-medium">文件将立即发送给 AI 分析处理</p>
+              <p className="text-lg font-bold text-accent tracking-tight">Drop files or folders here to send</p>
+              <p className="text-sm text-text-tertiary font-medium">Files will be sent to JCode for analysis</p>
             </div>
           </div>
         )}
@@ -726,8 +713,8 @@ export function ChatView() {
               <div className="mb-2 flex justify-center" role="status" aria-live="polite">
                 <div className="rounded-full border border-accent/20 bg-accent/8 px-3 py-1 text-[10px] font-semibold text-text-secondary">
                   {contextStatus.type === 'compacting'
-                    ? '正在整理较早的对话上下文…'
-                    : `上下文已整理${contextStatus.tokensBefore && contextStatus.tokensAfter
+                    ? 'Organizing earlier conversation context…'
+                    : `Context compacted${contextStatus.tokensBefore && contextStatus.tokensAfter
                       ? ` · ${contextStatus.tokensBefore.toLocaleString()} → ${contextStatus.tokensAfter.toLocaleString()} tokens`
                       : ''}`}
                 </div>
