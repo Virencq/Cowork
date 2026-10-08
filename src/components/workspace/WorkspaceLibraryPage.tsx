@@ -9,6 +9,50 @@ import { useAppStore } from '../../stores'
 
 type Section = 'projects' | 'artifacts' | 'skills' | 'connectors'
 
+export async function importWorkspaceFile(file: File): Promise<string> {
+  let bundle: any
+  if (file.name.toLowerCase().endsWith('.zip')) {
+    const zip = await JSZip.loadAsync(await file.arrayBuffer())
+    const entries = Object.values(zip.files) as any[]
+    const jsonEntry = entries.find((f) => !f.dir && /(^|[/\\\\])(cowork|s-loop|manifest).*\\.json$/i.test(f.name))
+      || entries.find((f) => !f.dir && f.name.toLowerCase().endsWith('.json'))
+    if (!jsonEntry) throw new Error('No JSON manifest found in the archive.')
+    bundle = JSON.parse(await jsonEntry.async('text'))
+  } else {
+    bundle = JSON.parse(await file.text())
+  }
+
+  const counts = useWorkspaceStore.getState().importBundle(bundle)
+  if (Array.isArray(bundle.skills)) {
+    for (const skill of bundle.skills) {
+      if (skill?.name && (skill.content || skill.body)) {
+        await useSkillStore.getState().addSkill(skill.name, skill.description || '', skill.content || skill.body)
+      }
+    }
+  }
+  if (Array.isArray(bundle.connectors)) {
+    for (const connector of bundle.connectors) {
+      if (connector?.name && connector?.type) useMCPStore.getState().addServer(connector)
+    }
+  }
+  return `Imported ${counts.projects} projects, ${counts.artifacts} artifacts, ${bundle.skills?.length || 0} skills, and ${bundle.connectors?.length || 0} connectors.`
+}
+
+export function ImportLibraryButton({ className = '' }: { className?: string }) {
+  const [message, setMessage] = useState('')
+  return (
+    <label className={`cursor-pointer inline-flex items-center justify-center gap-2 rounded-lg bg-[#d97745] px-4 py-2.5 text-[12px] font-semibold text-white hover:bg-[#c96838] ${className}`}>
+      <Upload size={15}/> Import
+      <input type="file" className="hidden" accept=".json,.zip" onChange={async (e) => {
+        const f = e.target.files?.[0]
+        if (f) setMessage(await importWorkspaceFile(f).catch((err) => err instanceof Error ? err.message : 'Import failed.'))
+        e.currentTarget.value = ''
+      }} />
+      {message && <span className="sr-only">{message}</span>}
+    </label>
+  )
+}
+
 export function WorkspaceLibraryPage({ initialSection = 'projects' }: { initialSection?: Section }) {
   const [section, setSection] = useState<Section>(initialSection)
   const [message, setMessage] = useState('')
@@ -29,40 +73,6 @@ export function WorkspaceLibraryPage({ initialSection = 'projects' }: { initialS
     setMessage(`Project “${name}” added.`)
   }
 
-  const importFile = async (file: File) => {
-    try {
-      let bundle: any
-      if (file.name.toLowerCase().endsWith('.zip')) {
-        const zip = await JSZip.loadAsync(await file.arrayBuffer())
-        const jsonEntry = Object.values(zip.files).find((f: any) => !f.dir && /(^|[/\\])(cowork|s-loop|manifest).*\\.json$/i.test(f.name))
-          || Object.values(zip.files).find((f: any) => !f.dir && f.name.toLowerCase().endsWith('.json'))
-        if (!jsonEntry) throw new Error('No JSON manifest found in the archive.')
-        bundle = JSON.parse(await (jsonEntry as any).async('text'))
-      } else {
-        bundle = JSON.parse(await file.text())
-      }
-
-      const counts = importBundle(bundle)
-      if (Array.isArray(bundle.skills)) {
-        for (const skill of bundle.skills) {
-          if (skill?.name && (skill.content || skill.body)) {
-            await useSkillStore.getState().addSkill(skill.name, skill.description || '', skill.content || skill.body)
-          }
-        }
-      }
-      if (Array.isArray(bundle.connectors)) {
-        for (const connector of bundle.connectors) {
-          if (connector?.name && connector?.type) {
-            useMCPStore.getState().addServer(connector)
-          }
-        }
-      }
-      setMessage(`Imported ${counts.projects} projects, ${counts.artifacts} artifacts, ${bundle.skills?.length || 0} skills, and ${bundle.connectors?.length || 0} connectors.`)
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Import failed.')
-    }
-  }
-
   const sections = [
     ['projects', 'Projects', FolderKanban, projects.length],
     ['artifacts', 'Artifacts', FileCode2, artifacts.length],
@@ -81,10 +91,7 @@ export function WorkspaceLibraryPage({ initialSection = 'projects' }: { initialS
             <h1 className="mt-1 text-[30px] font-serif tracking-tight text-[#302c28]">{title}</h1>
             <p className="mt-2 text-[13px] text-[#8b837b]">Projects, artifacts, skills, and connected tools in one place.</p>
           </div>
-          <label className="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-[#d97745] px-4 py-2.5 text-[12px] font-semibold text-white hover:bg-[#c96838]">
-            <Upload size={15}/> Import
-            <input type="file" className="hidden" accept=".json,.zip" onChange={(e) => { const f = e.target.files?.[0]; if (f) void importFile(f); e.currentTarget.value = '' }} />
-          </label>
+          <ImportLibraryButton />
         </div>
 
         <div className="grid grid-cols-4 gap-2 mb-8">
