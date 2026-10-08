@@ -160,8 +160,20 @@ pub fn jcode_sync_mcp_config(servers: Value) -> Result<Value, String> {
         }
     }
 
-    let config = json!({"mcpServers": Value::Object(mcp_servers)});
+    let mut config = if path.exists() {
+        std::fs::read_to_string(&path)
+            .ok()
+            .and_then(|raw| serde_json::from_str::<Value>(&raw).ok())
+            .unwrap_or_else(|| json!({}))
+    } else {
+        json!({})
+    };
+    if !config.is_object() { config = json!({}); }
+    let root = config.as_object_mut().ok_or("Invalid JCode MCP config.")?;
+    let existing = root.entry("mcpServers").or_insert_with(|| json!({}));
+    let map = existing.as_object_mut().ok_or("JCode mcpServers must be an object.")?;
+    for (name, server) in mcp_servers { map.insert(name, server); }
     std::fs::write(&path, serde_json::to_vec_pretty(&config).map_err(|e| e.to_string())?)
         .map_err(|e| format!("Failed to write JCode MCP config: {e}"))?;
-    Ok(json!({"path": path.to_string_lossy(), "servers": config["mcpServers"].as_object().map(|m| m.len()).unwrap_or(0)}))
+    Ok(json!({"path": path.to_string_lossy(), "servers": map.len()}))
 }
