@@ -189,7 +189,7 @@ export function ChatView() {
       let pid = (useAppStore.getState().sessions.find(s => s.id === sid) as any)?.piId ?? null
       if (!pid) {
         try {
-          const ks = await JCode.createSession()
+          const ks = await JCode.createSession(workspaceDir ?? undefined)
           pid = ks.id
           useAppStore.getState().setSessionPiId(sid, pid)
         } catch {
