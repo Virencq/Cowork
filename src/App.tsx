@@ -338,6 +338,7 @@ function App() {
   const { theme, colorScheme } = useAppStore()
   const createSession = useAppStore((s) => s.createSession)
   const setActiveSession = useAppStore((s) => s.setActiveSession)
+  const setWorkspaceDir = useAppStore((s) => s.setWorkspaceDir)
   const activeSessionId = useAppStore((s) => s.activeSessionId)
   const [page, setPage] = useState<Page>('chat')
   const [showSettings, setShowSettings] = useState(false)
@@ -401,7 +402,12 @@ function App() {
             <div className="min-w-0 flex-1 flex flex-col">
               {page === 'chat' && <ChatView />}
               {page === 'tasks' && <TasksPage />}
-              {page === 'projects' && <ProjectsPage />}
+              {page === 'projects' && <ProjectsPage onOpenProject={(project) => {
+                if (project.path) setWorkspaceDir(project.path)
+                const id = createSession()
+                setActiveSession(id)
+                setPage('chat')
+              }} />}
               {page === 'ideas' && <div className="flex-1 grid place-items-center"><div className="text-center max-w-md"><Lightbulb className="mx-auto mb-4 text-[#b0a79e]" size={30}/><h2 className="text-xl font-semibold">Ideas</h2><p className="mt-2 text-sm text-[#8c847c]">Capture ideas here and turn them into tasks when ready.</p></div></div>}
               {page === 'extensions' && <ExtensionsPage />}
               {page === 'customize' && <WorkspaceLibraryPage initialSection="skills" />}
