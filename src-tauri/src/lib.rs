@@ -82,6 +82,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             jcode_acp::jcode_start_session,
             jcode_acp::jcode_prompt,
+            jcode_acp::jcode_permission_response,
             jcode_acp::jcode_cancel,
             jcode_acp::jcode_close_session,
             jcode_acp::jcode_status,
