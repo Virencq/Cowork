@@ -1,20 +1,23 @@
 import { useMemo, useState } from 'react'
-import { FileCode2, Pin, Plus, Search, ListFilter } from 'lucide-react'
+import { FileCode2, Pin, Plus, Search, ListFilter, Trash2, Pencil } from 'lucide-react'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 
 export function ArtifactsPage() {
   const artifacts = useWorkspaceStore(s => s.artifacts)
   const addArtifact = useWorkspaceStore(s => s.addArtifact)
+  const updateArtifact = useWorkspaceStore(s => s.upsertArtifact)
+  const removeArtifact = useWorkspaceStore(s => s.removeArtifact)
+  const toggleArtifactPin = useWorkspaceStore(s => s.toggleArtifactPin)
+  const pinnedArtifactIds = useWorkspaceStore(s => s.pinnedArtifactIds)
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
-  const [pinned, setPinned] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState<'all' | 'pinned'>('all')
 
   const createArtifact = () => addArtifact({ name: 'Untitled artifact', type: 'document', content: 'New artifact' })
   const visible = useMemo(() => artifacts.filter(a =>
-    (filter === 'all' || pinned.has(a.id)) &&
+    (filter === 'all' || pinnedArtifactIds.includes(a.id)) &&
     a.name.toLowerCase().includes(query.toLowerCase())
-  ), [artifacts, query, filter, pinned])
+  ), [artifacts, query, filter, pinnedArtifactIds])
 
   return (
     <div className="h-full overflow-auto bg-white pt-11">
@@ -47,10 +50,21 @@ export function ArtifactsPage() {
                   ) : (
                     <div className="h-full p-4 font-mono text-[8px] leading-3 text-[#777069] overflow-hidden whitespace-pre-wrap">{a.content || 'Artifact preview'}</div>
                   )}
-                  <button onClick={() => setPinned(s => { const n = new Set(s); n.has(a.id) ? n.delete(a.id) : n.add(a.id); return n })} className="absolute right-2 bottom-2 h-7 w-7 rounded-full bg-white/90 grid place-items-center shadow-sm">{pinned.has(a.id) ? <Pin size={13} className="fill-current"/> : <Pin size={13} className="text-[#8f8881}"/>}</button>
+                  <button onClick={() => toggleArtifactPin(a.id)} className="absolute right-2 bottom-2 h-7 w-7 rounded-full bg-white/90 grid place-items-center shadow-sm" title={pinnedArtifactIds.includes(a.id) ? 'Unpin artifact' : 'Pin artifact'}>{pinnedArtifactIds.includes(a.id) ? <Pin size={13} className="fill-current"/> : <Pin size={13} className="text-[#8f8881}"/>}</button>
                 </div>
                 <div className="px-3.5 py-3">
-                  <div className="text-[13px] font-semibold text-[#1e1a17] truncate">{a.name}</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-[13px] font-semibold text-[#1e1a17] truncate">{a.name}</div>
+                    <div className="flex items-center shrink-0">
+                      <button onClick={() => {
+                        const name = window.prompt('Artifact name', a.name)
+                        if (name?.trim()) updateArtifact({ ...a, name: name.trim(), updatedAt: Date.now() })
+                      }} className="h-7 w-7 grid place-items-center rounded-md hover:bg-[#f3f1ee]" title="Rename artifact"><Pencil size={13}/></button>
+                      <button onClick={() => {
+                        if (window.confirm('Delete artifact "' + a.name + '"?')) removeArtifact(a.id)
+                      }} className="h-7 w-7 grid place-items-center rounded-md hover:bg-[#f3f1ee] text-[#9b5b52]" title="Delete artifact"><Trash2 size={13}/></button>
+                    </div>
+                  </div>
                   <div className="mt-1 text-[11px] text-[#8c847d]">{a.createdAt ? `Created ${new Date(a.createdAt).toLocaleDateString(undefined, {month:'short',day:'numeric'})}` : 'Artifact'}</div>
                 </div>
               </div>
