@@ -101,16 +101,13 @@ pub fn jcode_prompt(state: State<'_, JCodeState>, session_id: String, prompt: St
         return Err("Prompt cannot be empty.".to_string());
     }
     let request_id = session.next_request_id.fetch_add(1, Ordering::Relaxed);
-    let (tx, rx) = mpsc::channel();
-    session.pending.lock().map_err(|e| e.to_string())?.insert(request_id, tx);
-    if let Err(error) = send_rpc(&session.stdin, request_id, "session/prompt", json!({
+    send_rpc(&session.stdin, request_id, "session/prompt", json!({
         "sessionId": session.session_id,
         "prompt": [{"type":"text","text":prompt}]
-    })) {
-        let _ = session.pending.lock().map_err(|e| e.to_string())?.remove(&request_id);
-        return Err(error);
-    }
-    rx.recv().map_err(|e| format!("JCode ACP response channel closed: {e}"))??;
+    }))?;
+    // ACP is streamed: return immediately after the request is written.
+    // The background reader forwards session/update chunks and the final
+    // session/prompt response to the frontend through jcode://event.
     Ok(())
 }
 
