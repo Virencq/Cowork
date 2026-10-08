@@ -34,8 +34,33 @@ export interface StreamHandlers {
 }
 
 function extractText(value: any): string {
-  const p = value?.params ?? {};
-  return p?.delta?.text ?? p?.delta?.content ?? p?.content?.text ?? p?.text ?? '';
+  if (value == null) return ''
+
+  if (typeof value === 'string') return value
+
+  // ACP agent_message_chunk uses:
+  // { sessionUpdate: 'agent_message_chunk',
+  //   content: { type: 'text', text: '...' } }
+  const direct = [
+    value?.text,
+    value?.delta?.text,
+    value?.delta?.content,
+    value?.content?.text,
+    value?.content?.delta?.text,
+    value?.content?.delta?.content,
+    value?.textDelta,
+  ].find((v) => typeof v === 'string' && v.length > 0)
+  if (direct) return direct
+
+  if (Array.isArray(value?.content)) {
+    return value.content.map((item: any) => extractText(item)).filter(Boolean).join('')
+  }
+
+  if (Array.isArray(value?.delta)) {
+    return value.delta.map((item: any) => extractText(item)).filter(Boolean).join('')
+  }
+
+  return ''
 }
 
 function extractUpdate(event: any, handlers: StreamHandlers) {
