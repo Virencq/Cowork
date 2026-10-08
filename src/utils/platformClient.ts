@@ -1,4 +1,4 @@
-import { getBaseUrl } from './piClient'
+import { getBaseUrl } from './jcodeClient'
 import type { PlatformId, PlatformSnapshot } from '../types/platform'
 
 const BASE = () => getBaseUrl()
