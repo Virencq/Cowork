@@ -1,18 +1,29 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FolderOpen, Search, GitBranch, Play, Terminal, PanelRight, X, FileCode2 } from 'lucide-react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { FileTree } from './FileTree'
 import { FilePreviewPanel } from '../preview/FilePreviewPanel'
 import { useAppStore } from '../../stores/appStore'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
+import { ChatView } from '../chat/ChatView'
 
-export function CodeWorkspace() {
+export function CodeWorkspace({ onExitCode }: { onExitCode: () => void }) {
   const workspaceDir = useAppStore((s) => s.workspaceDir)
   const setWorkspaceDir = useAppStore((s) => s.setWorkspaceDir)
   const preview = useFilePreviewStore((s) => s.preview)
   const closePreview = useFilePreviewStore((s) => s.closePreview)
   const [query, setQuery] = useState('')
   const [rightOpen, setRightOpen] = useState(true)
+  const activeSessionId = useAppStore((s) => s.activeSessionId)
+  const createSession = useAppStore((s) => s.createSession)
+  const setActiveSession = useAppStore((s) => s.setActiveSession)
+
+  useEffect(() => {
+    if (!activeSessionId) {
+      const id = createSession()
+      setActiveSession(id)
+    }
+  }, [activeSessionId, createSession, setActiveSession])
 
   const openFolder = async () => {
     const selected = await openDialog({ directory: true, multiple: false, title: 'Open code workspace' })
@@ -37,6 +48,7 @@ export function CodeWorkspace() {
           </div>
         </div>
         <div className="ml-auto flex items-center gap-1">
+          <button onClick={onExitCode} className="h-8 px-2.5 rounded-md hover:bg-[#f1eee9] text-[11px] text-[#665f58]">← Cowork</button>
           <button onClick={openFolder} className="h-8 px-2.5 rounded-md border border-[#e2ddd7] bg-white hover:bg-[#f5f2ef] text-[11px] flex items-center gap-1.5"><FolderOpen size={14}/> Open folder</button>
           <button className="h-8 w-8 rounded-md hover:bg-[#f1eee9] grid place-items-center text-[#777068]" title="Search files"><Search size={15}/></button>
           <button className="h-8 w-8 rounded-md hover:bg-[#f1eee9] grid place-items-center text-[#777068]" title="Run"><Play size={14}/></button>
@@ -101,25 +113,19 @@ export function CodeWorkspace() {
         </section>
 
         {rightOpen && (
-          <aside className="w-[310px] shrink-0 border-l border-[#e3dfda] bg-white flex flex-col">
+          <aside className="w-[390px] shrink-0 border-l border-[#e3dfda] bg-white flex flex-col min-h-0">
             <div className="h-12 shrink-0 border-b border-[#e5e0da] px-4 flex items-center justify-between">
-              <div><div className="text-[12px] font-semibold">JCode</div><div className="text-[9px] text-[#9b938b]">Coding assistant</div></div>
+              <div>
+                <div className="text-[12px] font-semibold">JCode</div>
+                <div className="text-[9px] text-[#9b938b]">Coding assistant</div>
+              </div>
               <button onClick={() => setRightOpen(false)} className="h-7 w-7 rounded hover:bg-[#f1eee9] grid place-items-center"><X size={14}/></button>
             </div>
-            <div className="min-h-0 flex-1 overflow-auto p-4">
-              <div className="rounded-xl border border-[#e7e1db] bg-[#faf9f7] p-3">
-                <div className="text-[11px] font-semibold text-[#554e47]">Ready to work</div>
-                <p className="mt-1.5 text-[10px] leading-4 text-[#938b83]">Inspect files, explain code, find bugs, or implement changes in this workspace.</p>
-              </div>
-            </div>
-            <div className="p-3 border-t border-[#e5e0da]">
-              <div className="rounded-xl border border-[#ddd7d1] bg-white overflow-hidden">
-                <textarea rows={3} placeholder="Ask JCode to modify this project..." className="w-full resize-none bg-transparent px-3 py-2.5 text-[11px] outline-none placeholder:text-[#aaa29a]"/>
-                <div className="h-8 border-t border-[#eeeae6] px-2 flex items-center justify-between"><span className="text-[9px] text-[#aaa29a]">JCode · Default</span><button className="h-6 w-6 rounded-md bg-[#302c28] text-white grid place-items-center"><Play size={11}/></button></div>
-              </div>
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <ChatView embedded />
             </div>
           </aside>
-        )}
+        )}}
       </div>
     </div>
   )
