@@ -158,8 +158,8 @@ pub fn jcode_runtime_info() -> Result<Value, String> {
             }
             None
         }
-        provider = find_string(&value, &["provider", "providerId", "provider_id"]);
-        model = find_string(&value, &["model", "modelId", "model_id"]);
+        provider = find_string(&value, &["resolved_provider", "provider", "providerId", "provider_id"]);
+        model = find_string(&value, &["selected_model", "model", "modelId", "model_id"]);
         effort = find_string(&value, &["effort", "thinkingLevel", "reasoningEffort"]);
     }
 
