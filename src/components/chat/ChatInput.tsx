@@ -578,16 +578,22 @@ export function ChatInput({
   // Auto-resize logic
   useEffect(() => {
     const textarea = textareaRef.current
-    if (textarea) {
-      textarea.style.height = 'auto'
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 400)}px`
+    if (!textarea) return
+    if (variant === 'hero') {
+      textarea.style.height = '64px'
+      textarea.style.minHeight = '64px'
+      textarea.style.maxHeight = '64px'
+      textarea.style.overflowY = 'auto'
+      return
     }
-  }, [input])
+    textarea.style.height = 'auto'
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 400)}px`
+  }, [input, variant])
 
   const isHero = variant === 'hero'
   const voiceReady = !!dictation?.supported && !!dictation?.modelVerified && !!dictation?.testPassed
   const recordingTime = `${Math.floor(recordingSeconds / 60)}:${String(recordingSeconds % 60).padStart(2, '0')}`
-  const chinese = i18n.resolvedLanguage?.startsWith('zh')
+  const chinese = false
 
   return (
     <div
@@ -613,7 +619,7 @@ export function ChatInput({
               <div className="rounded-lg border border-dashed border-accent/50 bg-accent-subtle px-8 py-5 animate-fade-in">
                 <p className="text-sm font-semibold text-accent flex items-center gap-2">
                   <Paperclip size={18} />
-                  {t('chat.input.dropOverlay')}
+                  Drop files here
                 </p>
               </div>
             </div>
@@ -716,7 +722,7 @@ export function ChatInput({
                   onCompositionStart={handleCompositionStart}
                   onCompositionEnd={handleCompositionEnd}
                   placeholder={attachments.length > 0 ? t('chat.input.placeholderWithFiles') : (placeholder || t('chat.input.placeholder'))}
-                  className="w-full bg-transparent hover:bg-transparent focus:!ring-0 focus:!outline-none shadow-none border-none px-4 py-3.5 min-h-[52px] text-[14px] font-medium leading-relaxed custom-scrollbar text-text placeholder:text-text-quaternary/60 resize-none selection:bg-accent/20"
+                  className={`w-full bg-transparent hover:bg-transparent focus:!ring-0 focus:!outline-none shadow-none border-none px-4 py-3.5 text-[14px] font-medium leading-relaxed custom-scrollbar text-text placeholder:text-text-quaternary/60 resize-none selection:bg-accent/20 ${isHero ? '!h-16 !min-h-16 !max-h-16 overflow-y-auto' : 'min-h-[52px]'}`}
                   rows={1}
                 />
               </TextField>
