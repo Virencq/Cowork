@@ -219,8 +219,10 @@ pub async fn skills_cli_remove(skill_name: String) -> Result<String, String> {
             "skills",
             "remove",
             &skill_name,
+            // The app owns JCode's global skill directory directly; no legacy
+            // Pi/third-party agent target is involved.
             "--agent",
-            "pi",
+            "jcode",
             "-g",
             "-y",
         ])
@@ -274,7 +276,7 @@ pub fn delete_skill_files(skill_name: String, skill_path: Option<String>) -> Res
     }
 }
 
-/// Write a new SKILL.md file to ~/.pi/agent/skills/{name}/SKILL.md.
+/// Write a new SKILL.md file to ~/.jcode/skills/{name}/SKILL.md.
 /// Returns the path to the created skill directory.
 #[tauri::command]
 pub fn create_skill_file(name: String, description: String, content: String) -> Result<String, String> {
