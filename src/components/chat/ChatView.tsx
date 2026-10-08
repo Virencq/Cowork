@@ -44,6 +44,8 @@ export function ChatView() {
     startStreaming,
     appendStreamingDelta,
     finishStreaming,
+    deleteMessage,
+    deleteMessagesFrom,
     commitStreamingMessage,
     addMessage,
     updateSessionTitle,
@@ -62,6 +64,7 @@ export function ChatView() {
   }, [])
 
   const [error, setError] = useState<string | null>(null)
+  const [draftValue, setDraftValue] = useState<string | null>(null)
   const [contextStatus, setContextStatus] = useState<JCode.ContextStatus | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [dragTargetZone, setDragTargetZone] = useState<'message' | 'input'>('message')
@@ -165,6 +168,7 @@ export function ChatView() {
       }
       setError(null)
       setContextStatus(null)
+      setDraftValue(null)
 
       if (isReadOnlySession) {
         setError(t('chat.session.readOnlyHint'))
@@ -402,6 +406,23 @@ export function ChatView() {
   const activeJCodeSessionId = activeSessionId
     ? (sessions.find((s) => s.id === activeSessionId) as any)?.piId ?? ''
     : ''
+
+  const handleEditMessage = useCallback((message: KiloMessage) => {
+    if (message.info.role !== 'user') return
+    const content = message.parts
+      .filter((part): part is Extract<typeof part, { type: 'text' }> => part.type === 'text')
+      .map((part) => part.text)
+      .join('\n')
+      .trim()
+    if (!content) return
+    deleteMessagesFrom(activeSessionId!, message.info.id)
+    setDraftValue(content)
+  }, [activeSessionId, deleteMessagesFrom])
+
+  const handleDeleteMessage = useCallback((message: KiloMessage) => {
+    if (!activeSessionId) return
+    deleteMessage(activeSessionId, message.info.id)
+  }, [activeSessionId, deleteMessage])
 
   const abort = useCallback(() => {
     if (activeJCodeSessionId) {
@@ -688,7 +709,7 @@ export function ChatView() {
                     </div>
                   </div>
                 )}
-                <MessageList sessionId={activeSessionId!} />
+                <MessageList sessionId={activeSessionId!} onEdit={handleEditMessage} onDelete={handleDeleteMessage} />
                 {error && (
                   <div className="absolute top-6 left-4 right-4 z-20 flex items-center gap-4 p-4 rounded-lg bg-surface text-red-500 text-[13px] font-semibold border border-red-500/20 shadow-lg">
                     <span>{error}</span>
@@ -718,86 +739,8 @@ export function ChatView() {
                   isStreaming={isStreaming}
                   disabled={isReadOnlySession}
                   placeholder={isReadOnlySession ? t('chat.session.readOnlyPlaceholder') : t('chat.input.placeholder')}
+                  draftValue={draftValue}
                 />
-            {/* Permission + model info row — unified pill below the input */}
-            <div className="mt-2 pb-2 flex justify-center">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-secondary/80 border border-border-light shadow-sm text-[10px] text-text-secondary">
-                {/* Permission mode selector */}
-                {activeSessionId && (() => {
-                  const agentStore = useAgentStore.getState()
-                  const agent = agentStore.activeAgentId ? agentStore.agents.find(a => a.id === agentStore.activeAgentId) : null
-                  const mode = agent?.permissionMode || 'allow'
-                  const modeConfig = {
-                    allow: { icon: ShieldCheck, label: 'Allow' },
-                    ask: { icon: ShieldAlert, label: 'Ask' },
-                    deny: { icon: ShieldOff, label: 'Deny' },
-                  }[mode] || { icon: ShieldAlert, label: 'Ask' }
-                  const ModeIcon = modeConfig.icon
-                  return (
-                    <div className="relative flex items-center">
-                      <button
-                        onClick={() => setShowPermissionPopup(!showPermissionPopup)}
-                        className="inline-flex items-center gap-1.5 px-2 py-0.5 -mx-1 rounded-full hover:bg-accent/10 transition-all duration-300 border border-transparent hover:border-accent/20"
-                      >
-                        <ModeIcon size={12} strokeWidth={2.5} className="text-accent" />
-                        <span className="font-bold uppercase tracking-[0.1em]">{modeConfig.label}</span>
-                        <ChevronUp size={10} strokeWidth={2.5} className={`transition-transform duration-300 ${showPermissionPopup ? 'rotate-0' : 'rotate-180'} opacity-50`} />
-                      </button>
-                      {showPermissionPopup && (
-                        <>
-                          <div className="fixed inset-0 z-40" onClick={() => setShowPermissionPopup(false)} />
-                          <div className="absolute bottom-full left-0 mb-2 z-50 w-52 rounded-[24px] border border-border-light/70 bg-white/92 dark:bg-[#171717]/95 backdrop-blur-2xl shadow-[0_16px_48px_rgba(0,0,0,0.12)] overflow-hidden animate-fade-in max-h-48 overflow-y-auto">
-                            {([
-                              { mode: 'allow' as const, icon: ShieldCheck, label: 'Allow', desc: 'All tools run without asking' },
-                              { mode: 'ask' as const, icon: ShieldAlert, label: 'Ask', desc: 'Dangerous tools require approval' },
-                              { mode: 'deny' as const, icon: ShieldOff, label: 'Deny', desc: 'All tools are blocked' },
-                            ]).map((item) => {
-                              const isActive = mode === item.mode
-                              const ItemIcon = item.icon
-                              return (
-                                <button
-                                  key={item.mode}
-                                  onClick={() => {
-                                    if (agent) {
-                                      agentStore.updateAgent(agent.id, { permissionMode: item.mode })
-                                    }
-                                    setShowPermissionPopup(false)
-                                  }}
-                                  className={`w-full flex items-center gap-3 px-5 py-3 text-left transition-all duration-200 hover:bg-surface-secondary/70 ${
-                                    isActive ? 'bg-accent-subtle border-l-2 border-accent' : 'border-l-2 border-transparent'
-                                  }`}
-                                >
-                                  <ItemIcon size={16} strokeWidth={2.2} className={isActive ? 'text-accent' : 'text-text-tertiary'} />
-                                  <div className="flex-1 min-w-0">
-                                    <div className={`text-[12px] font-bold tracking-tight ${isActive ? 'text-accent' : 'text-text'}`}>{item.label}</div>
-                                    <div className="text-[10px] text-text-tertiary leading-tight mt-0.5">{item.desc}</div>
-                                  </div>
-                                  {isActive && <div className="w-2 h-2 rounded-full bg-accent" />}
-                                </button>
-                              )
-                            })}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )
-                })()}
-                <span className="opacity-15 w-px h-4 bg-current mx-1" />
-                <Cpu size={12} className="text-accent/60" />
-                <span className="font-bold">{jcodeRuntime?.model || 'JCode'}</span>
-                <span className="text-text-tertiary">{jcodeRuntime?.effort || 'Default'}</span>
-                {jcodeRuntime?.provider && (
-                  <>
-                    <span className="opacity-15 w-px h-4 bg-current mx-1" />
-                    <span className="font-bold uppercase tracking-[0.12em]">{jcodeRuntime.provider}</span>
-                  </>
-                )}
-                {(() => {
-                  const agent = useAgentStore.getState().activeAgentId ? useAgentStore.getState().agents.find(a => a.id === useAgentStore.getState().activeAgentId) : null
-                  return agent ? <><span className="opacity-15 w-px h-4 bg-current mx-1" /><Bot size={12} strokeWidth={2.5} className="text-accent/60" /><span className="font-bold">{agent.name}</span></> : null
-                })()}
-              </div>
-            </div>
           </div>
         </div>
       </div>
