@@ -61,6 +61,8 @@ interface AppState {
   // Actions - Sessions
   createSession: () => string
   deleteSession: (id: string) => void
+  deleteMessage: (sessionId: string, messageId: string) => void
+  deleteMessagesFrom: (sessionId: string, messageId: string) => void
   setActiveSession: (id: string | null) => void
   updateSessionTitle: (id: string, title: string) => void
   setSessionPiId: (id: string, piId: string) => void
@@ -210,6 +212,30 @@ export const useAppStore = create<AppState>()(
         if (piId) {
           import('../utils/jcodeClient').then((pi) => pi.deleteSession(piId).catch(() => {}))
         }
+      },
+
+      deleteMessage: (sessionId, messageId) => {
+        set((state) => ({
+          sessionMessages: {
+            ...state.sessionMessages,
+            [sessionId]: (state.sessionMessages[sessionId] || []).filter((message) => message.info.id !== messageId),
+          },
+        }))
+        db.deleteMessage(messageId).catch(console.warn)
+      },
+
+      deleteMessagesFrom: (sessionId, messageId) => {
+        const current = get().sessionMessages[sessionId] || []
+        const index = current.findIndex((message) => message.info.id === messageId)
+        if (index < 0) return
+        const removed = current.slice(index)
+        set((state) => ({
+          sessionMessages: {
+            ...state.sessionMessages,
+            [sessionId]: current.slice(0, index),
+          },
+        }))
+        db.deleteMessagesByIds(removed.map((message) => message.info.id)).catch(console.warn)
       },
 
       setActiveSession: (id) => {
