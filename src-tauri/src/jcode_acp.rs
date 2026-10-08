@@ -157,7 +157,7 @@ pub fn jcode_status() -> Result<Value, String> {
 pub fn jcode_runtime_info() -> Result<Value, String> {
     let executable = find_jcode()?;
     let output = Command::new(&executable)
-        .args(["--quiet", "provider", "current", "--json"])
+        .args(["--quiet", "--no-update", "--no-selfdev", "provider", "current", "--json"])
         .output()
         .map_err(|e| format!("Failed to query JCode provider: {e}"))?;
 
