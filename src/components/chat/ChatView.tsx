@@ -31,7 +31,7 @@ import { isAgentMcpToolAllowed, remoteMcpToolName } from '../../utils/agentMcpRu
 const EMPTY_MESSAGES: never[] = []
 const EMPTY_STREAMING = null
 
-export function ChatView() {
+export function ChatView({ embedded = false }: { embedded?: boolean }) {
   const { t } = useTranslation()
   const {
     activeSessionId,
@@ -609,14 +609,14 @@ export function ChatView() {
   return (
     <div
       ref={containerRef}
-      className="flex-1 flex h-full w-full overflow-hidden relative"
+      className={`flex-1 flex h-full w-full overflow-hidden relative ${embedded ? "bg-white" : ""}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       {/* Main chat area */}
       <div className="flex-1 flex flex-col bg-transparent h-full overflow-hidden relative min-w-0">
-        <div className="absolute top-4 right-4 z-40">
+        {!embedded && <div className="absolute top-4 right-4 z-40">
           <button
             onClick={handleToggleLeftPanel}
             className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-[11px] font-semibold text-text-secondary transition-colors duration-150 hover:border-accent/30 hover:text-accent"
@@ -624,7 +624,7 @@ export function ChatView() {
             {leftPanelMode === 'files' ? <MessagesSquare size={14} /> : <FolderTree size={14} />}
             {leftPanelMode === 'files' ? t('chat.layout.backToSessions') : t('chat.layout.openFiles')}
           </button>
-        </div>
+        </div>}
         {isDragOver && dragTargetZone === 'message' && (
           <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none rounded-[inherit]">
             <div className="w-full h-full mx-4 my-4 rounded-[28px] border-2 border-dashed border-accent/50 bg-accent/5 backdrop-blur-[2px] flex flex-col items-center justify-center gap-4 animate-fade-in">
