@@ -82,6 +82,10 @@ export async function createSession(workspaceDir?: string): Promise<{ id: string
   return { id };
 }
 
+export async function syncMcpConfig(servers: unknown[]) {
+  return invoke<{ path: string; servers: number }>('jcode_sync_mcp_config', { servers })
+}
+
 export function getBaseUrl() { return ''; }
 export async function waitForServer(..._args: any[]) { return true; }
 
