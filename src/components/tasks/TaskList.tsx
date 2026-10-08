@@ -3,7 +3,6 @@ import { Plus, Trash2, Play, Pause, Zap, Search, Calendar, Eye, Info, Sun, Inbox
 import { useState, useMemo } from 'react'
 import { TaskDetailModal } from './TaskDetailModal'
 import type { ScheduledTask } from '../../types/task'
-import { PLATFORM_PRESETS } from '../../types/platform'
 
 interface TaskListProps {
   onCreateTask: () => void;
@@ -32,7 +31,6 @@ export function TaskList({ onCreateTask }: TaskListProps) {
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [sortNewest, setSortNewest] = useState(true)
-  const platformNameMap = Object.fromEntries(PLATFORM_PRESETS.map(p => [p.id, p.name]))
 
   const filtered = useMemo(() => {
     const result = tasks.filter(t =>
@@ -96,7 +94,7 @@ export function TaskList({ onCreateTask }: TaskListProps) {
                     <button onClick={() => removeTask(task.id)} className="p-1.5 hover:bg-[#f8e9e6] rounded-md text-[#a35a4c]" title="Delete"><Trash2 size={13}/></button>
                   </div>
                 </div>
-                {platformNameMap[task.deliver] && <div className="mt-2 text-[10px] text-[#9a928a]">{platformNameMap[task.deliver]}</div>}
+}
               </div>
             ))}
           </div>
