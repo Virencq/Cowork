@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { ApprovalRequest } from '../types/approval'
-import { getBaseUrl } from '../utils/piClient'
+import { getBaseUrl } from '../utils/jcodeClient'
 
 interface ApprovalState {
   approvals: ApprovalRequest[]
