@@ -12,6 +12,9 @@ import { ScrollShadow } from "@heroui/react"
 import i18n from '../../i18n'
 import { COLOR_SCHEMES } from '../../themes'
 import { VoiceInputSettings } from './VoiceInputSettings'
+import { ImportLibraryButton } from '../workspace/WorkspaceLibraryPage'
+import { useMCPStore } from '../../stores/mcpStore'
+import { useSkillStore } from '../../stores/skillStore'
 import * as Pi from '../../utils/jcodeClient'
 
 interface SettingsModalProps {
@@ -230,6 +233,7 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
               { id: 'websearch', icon: Globe, label: t('settings.tabs.webSearch') },
               { id: 'voice', icon: Mic, label: i18n.resolvedLanguage?.startsWith('zh') ? '语音输入' : 'Voice Input' },
               { id: 'appearance', icon: theme === 'light' ? Sun : Moon, label: t('settings.tabs.appearance') },
+              { id: 'library', icon: Upload, label: 'Import & Library' },
             ].map((item) => (
               <button
                 key={item.id}
@@ -276,6 +280,7 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
                 {activeTab === 'websearch' && t('settings.sections.webSearch')}
                 {activeTab === 'voice' && (i18n.resolvedLanguage?.startsWith('zh') ? '本地语音输入' : 'Local Voice Input')}
                 {activeTab === 'appearance' && t('settings.sections.appearance')}
+                {activeTab === 'library' && 'Import & Library'}
               </h3>
               <p className="text-[12px] text-text-tertiary mt-1">{t('settings.descriptions.manageSettings', { tab: activeTab })}</p>
             </div>
@@ -626,6 +631,52 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
                   </div>
                 </ScrollShadow>
               </div>
+            )}
+
+            {activeTab === 'library' && (
+              <ScrollShadow className="h-full px-8 py-7 animate-fade-in">
+                <div className="max-w-3xl mx-auto space-y-5">
+                  <div>
+                    <div className="section-eyebrow mb-2">Migration</div>
+                    <h4 className="text-xl font-semibold text-text">Import existing work</h4>
+                    <p className="mt-1 text-[13px] leading-6 text-text-tertiary">
+                      Import a Cowork/S-Loop bundle containing projects, artifacts, skills, and connectors.
+                      Existing items are merged rather than replacing your current setup.
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-surface p-5">
+                    <div className="flex items-center justify-between gap-5">
+                      <div>
+                        <div className="text-[14px] font-semibold text-text">Import bundle</div>
+                        <p className="mt-1 text-[12px] leading-5 text-text-tertiary">JSON or ZIP with a Cowork/S-Loop manifest.</p>
+                      </div>
+                      <ImportLibraryButton />
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border bg-surface p-5">
+                    <div className="text-[14px] font-semibold text-text">Refresh local integrations</div>
+                    <p className="mt-1 text-[12px] leading-5 text-text-tertiary">
+                      Re-scan skills on disk and refresh configured MCP connectors.
+                    </p>
+                    <button
+                      onClick={() => {
+                        void useSkillStore.getState().refreshSkills()
+                        void useMCPStore.getState().refreshAllServers()
+                      }}
+                      className="mt-4 rounded-lg border border-border bg-surface-secondary px-4 py-2.5 text-[12px] font-semibold text-text-secondary hover:text-text"
+                    >
+                      Refresh skills & connectors
+                    </button>
+                  </div>
+                  <div className="rounded-xl border border-[#d97745]/20 bg-[#fff8f3] p-5">
+                    <div className="text-[13px] font-semibold text-[#684f42]">About Claude imports</div>
+                    <p className="mt-1 text-[12px] leading-5 text-[#8b6d5b]">
+                      Claude provides a personal data export, but it does not provide a general API that lets this app pull private projects, connectors, or artifacts directly.
+                      Use an exported file or a local bundle rather than entering Claude credentials here.
+                    </p>
+                  </div>
+                </div>
+              </ScrollShadow>
             )}
 
             {activeTab === 'appearance' && (
