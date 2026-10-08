@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import {
-  Archive, CalendarClock, ChevronLeft, ChevronRight, FolderKanban, History,
+  Archive, CalendarClock, ChevronLeft, ChevronRight, FolderKanban, History, FileCode2,
   Lightbulb, Menu, Plus, Search, Settings, Sparkles, X, SlidersHorizontal,
   PanelRight, Clock3
 } from 'lucide-react'
