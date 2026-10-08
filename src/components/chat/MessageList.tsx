@@ -20,23 +20,6 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
   const virtuosoRef = useRef<VirtuosoHandle>(null)
   const [atBottom, setAtBottom] = useState(true)
 
-  const scrollToBottom = () => {
-    virtuosoRef.current?.scrollToIndex({
-      index: Math.max(0, groupedMessages.length - 1),
-      align: 'end',
-      behavior: 'smooth',
-    })
-  }
-
-  // Always follow a newly-sent user message. Once the user deliberately scrolls
-  // upward, streaming output will no longer yank the viewport away from them.
-  useEffect(() => {
-    const last = groupedMessages[groupedMessages.length - 1]
-    if (last?.info.role === 'user') {
-      requestAnimationFrame(scrollToBottom)
-    }
-  }, [groupedMessages.length])
-
   const groupedMessages = useMemo(() => {
     const rawMessages = [...messages]
     if (streamingMessage?.isStreaming && streamingMessage.parts.length > 0) {
@@ -74,6 +57,24 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
     }
     return result
   }, [messages, streamingMessage, sessionId])
+
+
+  const scrollToBottom = () => {
+    virtuosoRef.current?.scrollToIndex({
+      index: Math.max(0, groupedMessages.length - 1),
+      align: 'end',
+      behavior: 'smooth',
+    })
+  }
+
+  // Always follow a newly-sent user message. Once the user deliberately scrolls
+  // upward, streaming output will no longer yank the viewport away from them.
+  useEffect(() => {
+    const last = groupedMessages[groupedMessages.length - 1]
+    if (last?.info.role === 'user') {
+      requestAnimationFrame(scrollToBottom)
+    }
+  }, [groupedMessages.length])
 
   if (groupedMessages.length === 0) {
     return null
