@@ -240,14 +240,18 @@ function App() {
       <div className="h-full flex">
         <LeftNav width={leftWidth} onWidth={setLeftWidth} page={page} onPage={setPage} onNew={newTask} />
         <main className="relative min-w-0 flex-1 pt-11 flex flex-col bg-[#faf9f7]">
-          {page === 'chat' && <ChatView />}
-          {page === 'tasks' && <TasksPage />}
-          {page === 'projects' && <WorkspaceLibraryPage initialSection="projects" />}
-          {page === 'ideas' && <div className="flex-1 grid place-items-center"><div className="text-center max-w-md"><Lightbulb className="mx-auto mb-4 text-[#b0a79e]" size={30}/><h2 className="text-xl font-semibold">Ideas</h2><p className="mt-2 text-sm text-[#8c847c]">Capture ideas here and turn them into tasks when ready.</p></div></div>}
-          {page === 'extensions' && <ExtensionsPage />}
-          {page === 'customize' && <WorkspaceLibraryPage initialSection="skills" />}
-          {page === 'artifacts' && <WorkspaceLibraryPage initialSection="artifacts" />}
-          {page === 'chat' && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} />}
+          <div className="min-h-0 flex-1 flex">
+            <div className="min-w-0 flex-1 flex flex-col">
+              {page === 'chat' && <ChatView />}
+              {page === 'tasks' && <TasksPage />}
+              {page === 'projects' && <WorkspaceLibraryPage initialSection="projects" />}
+              {page === 'ideas' && <div className="flex-1 grid place-items-center"><div className="text-center max-w-md"><Lightbulb className="mx-auto mb-4 text-[#b0a79e]" size={30}/><h2 className="text-xl font-semibold">Ideas</h2><p className="mt-2 text-sm text-[#8c847c]">Capture ideas here and turn them into tasks when ready.</p></div></div>}
+              {page === 'extensions' && <ExtensionsPage />}
+              {page === 'customize' && <WorkspaceLibraryPage initialSection="skills" />}
+              {page === 'artifacts' && <WorkspaceLibraryPage initialSection="artifacts" />}
+            </div>
+            {page === 'chat' && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} />}
+          </div>
         </main>
       </div>
       {page === 'chat' && !rightOpen && (
