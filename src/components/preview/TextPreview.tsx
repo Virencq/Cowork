@@ -15,6 +15,8 @@ function getLanguageExtension(ext: string): (() => Promise<Extension>) | null {
     ts: () => import('@codemirror/lang-javascript').then(m => m.javascript({ jsx: false, typescript: true })),
     tsx: () => import('@codemirror/lang-javascript').then(m => m.javascript({ jsx: true, typescript: true })),
     js: () => import('@codemirror/lang-javascript').then(m => m.javascript({ jsx: false })),
+    mjs: () => import('@codemirror/lang-javascript').then(m => m.javascript({ jsx: false })),
+    cjs: () => import('@codemirror/lang-javascript').then(m => m.javascript({ jsx: false })),
     jsx: () => import('@codemirror/lang-javascript').then(m => m.javascript({ jsx: true })),
     json: () => import('@codemirror/lang-json').then(m => m.json()),
     css: () => import('@codemirror/lang-css').then(m => m.css()),
