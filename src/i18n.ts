@@ -15,6 +15,17 @@ void i18n.use(initReactI18next).init({
           },
           time: {
             justNow: 'just now',
+            minutesAgo: '{{n}} min ago',
+            hoursAgo: '{{n}} hr ago',
+            daysAgo: '{{n}} days ago',
+          },
+          copy: {
+            copy: 'Copy',
+            copied: 'Copied',
+          },
+          actions: {
+            edit: 'Edit',
+            delete: 'Delete',
           },
           layout: {
             openFiles: 'Open files',
