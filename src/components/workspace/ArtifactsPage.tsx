@@ -4,11 +4,13 @@ import { useWorkspaceStore } from '../../stores/workspaceStore'
 
 export function ArtifactsPage() {
   const artifacts = useWorkspaceStore(s => s.artifacts)
+  const addArtifact = useWorkspaceStore(s => s.addArtifact)
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [pinned, setPinned] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState<'all' | 'pinned'>('all')
 
+  const createArtifact = () => addArtifact({ name: 'Untitled artifact', type: 'document', content: 'New artifact' })
   const visible = useMemo(() => artifacts.filter(a =>
     (filter === 'all' || pinned.has(a.id)) &&
     a.name.toLowerCase().includes(query.toLowerCase())
@@ -22,7 +24,7 @@ export function ArtifactsPage() {
           <div className="flex items-center gap-3">
             <button onClick={() => setSearchOpen(v => !v)} className="h-9 w-9 grid place-items-center rounded-lg hover:bg-[#f3f1ee] text-[#554f49]" title="Search artifacts"><Search size={18}/></button>
             <button onClick={() => setFilter(v => v === 'all' ? 'pinned' : 'all')} className="h-9 w-9 grid place-items-center rounded-lg hover:bg-[#f3f1ee] text-[#554f49]" title="Filter artifacts"><ListFilter size={18}/></button>
-            <button className="h-9 rounded-lg bg-[#171717] px-4 text-[13px] font-semibold text-white inline-flex items-center gap-2"><Plus size={15}/> New artifact</button>
+            <button onClick={createArtifact} className="h-9 rounded-lg bg-[#171717] px-4 text-[13px] font-semibold text-white inline-flex items-center gap-2"><Plus size={15}/> New artifact</button>
           </div>
         </div>
         {searchOpen && (
