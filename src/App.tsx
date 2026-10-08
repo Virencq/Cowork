@@ -367,7 +367,7 @@ function App() {
   const [rightWidth, setRightWidth] = useState(() => Number(localStorage.getItem('cowork-right-width')) || 330)
   const [rightOpen, setRightOpen] = useState(() => localStorage.getItem('cowork-right-open') !== 'false')
   const [sidebarOpen, setSidebarOpen] = useState(() => localStorage.getItem('cowork-sidebar-open') !== 'false')
-  const [codeMode, setCodeMode] = useState(false)
+  const [codeMode, setCodeMode] = useState(() => localStorage.getItem('cowork-code-mode') === 'true')
   const [pageHistory, setPageHistory] = useState<Page[]>(['chat'])
   const [historyIndex, setHistoryIndex] = useState(0)
 
@@ -385,6 +385,7 @@ function App() {
   useEffect(() => { localStorage.setItem('cowork-right-width', String(rightWidth)) }, [rightWidth])
   useEffect(() => { localStorage.setItem('cowork-right-open', String(rightOpen)) }, [rightOpen])
   useEffect(() => { localStorage.setItem('cowork-sidebar-open', String(sidebarOpen)) }, [sidebarOpen])
+  useEffect(() => { localStorage.setItem('cowork-code-mode', String(codeMode)) }, [codeMode])
 
   useTaskScheduler()
   useTelegramChatSync()
