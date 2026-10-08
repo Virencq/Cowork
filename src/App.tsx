@@ -4,7 +4,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import {
   Archive, CalendarClock, ChevronLeft, ChevronRight, FolderKanban, History, FileCode2,
   Lightbulb, Menu, Plus, Search, Settings, Sparkles, X, SlidersHorizontal,
-  PanelRight, Clock3
+  PanelRight, Clock3, MoreHorizontal, Pin, Pencil, Archive, Trash2, MailOpen, FolderPlus, Check, X, Plus
 } from 'lucide-react'
 import { ChatView } from './components/chat'
 import { SettingsModal } from './components/settings'
@@ -17,6 +17,7 @@ import { useTaskScheduler, useTelegramChatSync } from './hooks'
 import { useMCPStore } from './stores/mcpStore'
 import { useSkillStore } from './stores/skillStore'
 import { useAgentStore } from './stores/agentStore'
+import { useWorkspaceStore } from './stores/workspaceStore'
 import { initDatabase } from './utils/database'
 import { getAllSessions, createSession as dbCreateSession, saveMessage as dbSaveMessage } from './utils/database'
 import { status as jcodeStatus } from './utils/jcodeClient'
@@ -76,11 +77,38 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
   const sessions = useAppStore((s) => s.sessions)
   const activeSessionId = useAppStore((s) => s.activeSessionId)
   const setActiveSession = useAppStore((s) => s.setActiveSession)
+  const updateSessionTitle = useAppStore((s) => s.updateSessionTitle)
+  const deleteSession = useAppStore((s) => s.deleteSession)
   const [query, setQuery] = useState('')
+  const [menuId, setMenuId] = useState<string | null>(null)
+  const [pinned, setPinned] = useState<Set<string>>(new Set())
+  const [unread, setUnread] = useState<Set<string>>(new Set())
+  const [archived, setArchived] = useState<Set<string>>(new Set())
+  const [renaming, setRenaming] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+
   const recent = sessions
+    .filter(s => !archived.has(s.id))
     .filter(s => !query || s.title.toLowerCase().includes(query.toLowerCase()))
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, 8)
+    .sort((a, b) => {
+      const ap = pinned.has(a.id) ? 1 : 0
+      const bp = pinned.has(b.id) ? 1 : 0
+      if (ap !== bp) return bp - ap
+      return b.updatedAt - a.updatedAt
+    })
+    .slice(0, 12)
+
+  const beginRename = (id: string, title: string) => {
+    setRenaming(id)
+    setRenameValue(title)
+    setMenuId(null)
+  }
+
+  const commitRename = (id: string) => {
+    const title = renameValue.trim()
+    if (title) updateSessionTitle(id, title)
+    setRenaming(null)
+  }
 
   const item = (icon: ReactNode, label: string, target: Page, badge?: string) => (
     <button onClick={() => onPage(target)} className={`cowork-nav-item ${page === target ? 'active' : ''}`}>
@@ -116,11 +144,58 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
         <span className="text-[10px] font-semibold uppercase tracking-[.12em] text-[#928b84]">Recents</span>
         <History size={13} className="text-[#a39c94]" />
       </div>
+
       <div className="px-2 mt-1 overflow-auto min-h-0">
         {recent.map(s => (
-          <button key={s.id} onClick={() => { onPage('chat'); setActiveSession(s.id) }} className={`w-full text-left rounded-lg px-3 py-2 text-[12px] truncate transition-colors ${activeSessionId === s.id ? 'bg-white text-[#292622] shadow-sm' : 'text-[#6e6861] hover:bg-white/70'}`}>
-            {s.title || 'Untitled task'}
-          </button>
+          <div key={s.id} className={`relative group rounded-lg ${activeSessionId === s.id ? 'bg-white shadow-sm' : 'hover:bg-white/70'}`}>
+            {renaming === s.id ? (
+              <div className="flex items-center gap-1 px-2 py-1.5">
+                <input
+                  autoFocus
+                  value={renameValue}
+                  onChange={e => setRenameValue(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') commitRename(s.id); if (e.key === 'Escape') setRenaming(null) }}
+                  className="min-w-0 flex-1 h-7 rounded-md border border-[#d8d0c8] bg-white px-2 text-[11px] outline-none"
+                />
+                <button onClick={() => commitRename(s.id)} className="h-7 w-7 rounded-md hover:bg-[#eee9e3] grid place-items-center"><Check size={13}/></button>
+                <button onClick={() => setRenaming(null)} className="h-7 w-7 rounded-md hover:bg-[#eee9e3] grid place-items-center"><X size={13}/></button>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => { onPage('chat'); setActiveSession(s.id); setUnread(prev => { const n = new Set(prev); n.delete(s.id); return n }) }}
+                  className="w-full text-left rounded-lg pl-3 pr-9 py-2 text-[12px] truncate text-[#6e6861]"
+                >
+                  <span className="inline-flex items-center gap-1.5 max-w-full">
+                    {pinned.has(s.id) && <Pin size={10} className="shrink-0 text-[#d97745]" fill="currentColor" />}
+                    {unread.has(s.id) && <span className="h-1.5 w-1.5 rounded-full bg-[#d97745] shrink-0" />}
+                    <span className="truncate">{s.title || 'Untitled task'}</span>
+                  </span>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setMenuId(menuId === s.id ? null : s.id) }}
+                  className="absolute right-1.5 top-1.5 h-7 w-7 rounded-md opacity-0 group-hover:opacity-100 hover:bg-[#eee9e3] grid place-items-center text-[#777069]"
+                  title="Task options"
+                >
+                  <MoreHorizontal size={15}/>
+                </button>
+
+                {menuId === s.id && (
+                  <div className="absolute right-1 top-9 z-50 w-48 rounded-xl border border-[#ddd5cd] bg-white p-1.5 shadow-[0_10px_30px_rgba(50,40,30,.12)]">
+                    <button onClick={() => { setPinned(prev => { const n = new Set(prev); n.has(s.id) ? n.delete(s.id) : n.add(s.id); return n }); setMenuId(null) }} className="menu-row">
+                      <Pin size={14}/> {pinned.has(s.id) ? 'Unpin' : 'Pin'} <span className="ml-auto text-[10px] text-[#aaa29a]">P</span>
+                    </button>
+                    <button onClick={() => beginRename(s.id, s.title)} className="menu-row"><Pencil size={14}/> Rename</button>
+                    <button onClick={() => { setUnread(prev => { const n = new Set(prev); n.add(s.id); return n }); setMenuId(null) }} className="menu-row"><MailOpen size={14}/> Mark as unread <span className="ml-auto text-[10px] text-[#aaa29a]">U</span></button>
+                    <button onClick={() => { onPage('projects'); setMenuId(null) }} className="menu-row"><FolderPlus size={14}/> Add to project</button>
+                    <div className="my-1 border-t border-[#eee9e3]"/>
+                    <button onClick={() => { setArchived(prev => new Set(prev).add(s.id)); setMenuId(null) }} className="menu-row"><Archive size={14}/> Archive <span className="ml-auto text-[10px] text-[#aaa29a]">A</span></button>
+                    <button onClick={() => { deleteSession(s.id); setMenuId(null) }} className="menu-row text-[#b44b3c] hover:bg-[#fff1ee]"><Trash2 size={14}/> Delete <span className="ml-auto text-[10px]">D</span></button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         ))}
         {recent.length === 0 && <div className="px-3 py-3 text-[11px] text-[#9b948d]">No recent tasks</div>}
       </div>
@@ -135,47 +210,107 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
   )
 }
 
-function RightPanel({ width, onWidth }: { width: number; onWidth: (n: number) => void }) {
-  const [section, setSection] = useState<'context' | 'instructions' | 'schedule' | 'memory'>('context')
-  const sections = [
-    ['context', 'Context'], ['instructions', 'Instructions'], ['schedule', 'Scheduled'], ['memory', 'Memory']
-  ] as const
+function RightPanel({ width, onWidth, onClose }: { width: number; onWidth: (n: number) => void; onClose: () => void }) {
+  const workspaceDir = useAppStore((s) => s.workspaceDir)
+  const projects = useWorkspaceStore((s) => s.projects)
+  const updateProject = useWorkspaceStore((s) => s.updateProject)
+  const project = projects.find((p) => p.path && workspaceDir && p.path === workspaceDir)
+  const [editingInstructions, setEditingInstructions] = useState(false)
+  const [draftInstructions, setDraftInstructions] = useState(project?.instructions || '')
+
+  useEffect(() => {
+    setDraftInstructions(project?.instructions || '')
+    setEditingInstructions(false)
+  }, [project?.id, project?.instructions])
+
+  const saveInstructions = () => {
+    if (project) {
+      updateProject(project.id, { instructions: draftInstructions.trim() })
+    }
+    setEditingInstructions(false)
+  }
+
   return (
-    <aside style={{ width }} className="relative shrink-0 h-full border-l border-[#e7e2dc] bg-[#fbfaf8] pt-11">
-      <ResizeHandle side="right" onDrag={(d) => onWidth(Math.max(260, Math.min(440, width + d)))} />
-      <div className="h-14 px-4 flex items-center justify-between border-b border-[#ebe6e0]">
+    <aside style={{ width }} className="relative shrink-0 h-full border-l border-[#e7e2dc] bg-[#fbfaf8] pt-11 overflow-auto">
+      <ResizeHandle side="right" onDrag={(d) => onWidth(Math.max(280, Math.min(440, width + d)))} />
+      <div className="h-14 px-5 flex items-center justify-between border-b border-[#ebe6e0]">
         <div>
-          <div className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#9a938c]">Task</div>
-          <div className="text-[14px] font-semibold text-[#302c28]">Workspace</div>
+          <div className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#9a938c]">Project</div>
+          <div className="text-[14px] font-semibold text-[#302c28] truncate max-w-[210px]">{project?.name || 'Workspace'}</div>
         </div>
-        <button className="h-8 w-8 rounded-md hover:bg-[#f0ece7] grid place-items-center text-[#817a72]"><PanelRight size={16}/></button>
+        <button onClick={onClose} className="h-8 w-8 rounded-md hover:bg-[#f0ece7] grid place-items-center text-[#817a72]" title="Close panel"><X size={16}/></button>
       </div>
-      <div className="p-3 flex gap-1 border-b border-[#ebe6e0]">
-        {sections.map(([key, label]) => (
-          <button key={key} onClick={() => setSection(key)} className={`flex-1 rounded-md px-2 py-2 text-[10px] font-semibold ${section === key ? 'bg-[#eee9e3] text-[#302c28]' : 'text-[#89827a] hover:bg-[#f3f0ec]'}`}>
-            {label}
+
+      <section className="border-b border-[#ebe6e0]">
+        <div className="px-5 py-4 flex items-center justify-between">
+          <div>
+            <div className="text-[13px] font-semibold text-[#302c28]">Instructions</div>
+            <div className="mt-1 text-[11px] text-[#9a938c]">Instructions for this project</div>
+          </div>
+          <button onClick={() => { setDraftInstructions(project?.instructions || ''); setEditingInstructions(true) }} className="h-8 w-8 rounded-md hover:bg-[#eee9e3] grid place-items-center text-[#817a72]" title={project?.instructions ? 'Edit instructions' : 'Add instructions'}>
+            {project?.instructions ? <Pencil size={15}/> : <Plus size={16}/>}
           </button>
-        ))}
-      </div>
-      <div className="p-4">
-        {section === 'context' && <PanelCard icon={<Sparkles size={16}/>} title="Context" text="Files, folders, and task context used by the agent will appear here." />}
-        {section === 'instructions' && <PanelCard icon={<Archive size={16}/>} title="Instructions" text="Add persistent instructions for this workspace or task." />}
-        {section === 'schedule' && <PanelCard icon={<CalendarClock size={16}/>} title="Scheduled tasks" text="Create recurring tasks and background work from here." />}
-        {section === 'memory' && <PanelCard icon={<History size={16}/>} title="Memory" text="Relevant workspace memory will be available here." />}
-        <div className="mt-4 rounded-xl border border-[#e6e0d9] bg-white p-4">
-          <div className="text-[11px] font-semibold text-[#514a44]">JCode</div>
-          <div className="mt-1 text-[11px] leading-5 text-[#8a837c]">JCode CLI is the agent runtime. Provider and model selection stay with JCode.</div>
         </div>
-      </div>
+        <div className="px-5 pb-5">
+          {editingInstructions ? (
+            <div>
+              <textarea
+                autoFocus
+                value={draftInstructions}
+                onChange={e => setDraftInstructions(e.target.value)}
+                placeholder="Tell JCode how to work in this project..."
+                className="w-full min-h-[130px] resize-y rounded-lg border border-[#d8d0c8] bg-white p-3 text-[12px] leading-5 text-[#403a35] outline-none focus:border-[#d97745]/60"
+              />
+              <div className="mt-2 flex justify-end gap-2">
+                <button onClick={() => setEditingInstructions(false)} className="rounded-lg px-3 py-1.5 text-[11px] text-[#746c64] hover:bg-[#eee9e3]">Cancel</button>
+                <button onClick={saveInstructions} className="rounded-lg bg-[#302c28] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-black">Save</button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-[12px] leading-5 text-[#6f675f] whitespace-pre-wrap">
+              {project?.instructions || 'Add instructions to guide JCode on goals, style, constraints, and project conventions.'}
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section className="border-b border-[#ebe6e0]">
+        <div className="px-5 py-4">
+          <div className="text-[13px] font-semibold text-[#302c28]">Memory</div>
+          <div className="mt-1 text-[11px] text-[#9a938c]">Project memory</div>
+        </div>
+        <div className="px-5 pb-5 text-[12px] leading-5 text-[#777068]">
+          Ask JCode to remember project-specific information. Saved memory will appear here.
+        </div>
+      </section>
+
+      <section className="border-b border-[#ebe6e0]">
+        <div className="px-5 py-4 flex items-center justify-between">
+          <div>
+            <div className="text-[13px] font-semibold text-[#302c28]">Context</div>
+            <div className="mt-1 text-[11px] text-[#9a938c]">Files and folders available to JCode</div>
+          </div>
+          <button className="h-7 w-7 rounded-md hover:bg-[#eee9e3] grid place-items-center text-[#817a72]" title="Add context"><Plus size={15}/></button>
+        </div>
+        <div className="px-5 pb-5">
+          <div className="rounded-lg border border-[#e7e0d9] bg-white px-3 py-2.5 flex items-center gap-2">
+            <FolderKanban size={15} className="text-[#8c837b]"/>
+            <span className="text-[11px] truncate text-[#5f5851]">{project?.path || workspaceDir || 'No project folder selected'}</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div className="px-5 py-4 flex items-center justify-between">
+          <div>
+            <div className="text-[13px] font-semibold text-[#302c28]">Scheduled</div>
+            <div className="mt-1 text-[11px] text-[#9a938c]">Recurring tasks for this project</div>
+          </div>
+          <button className="h-7 w-7 rounded-md hover:bg-[#eee9e3] grid place-items-center text-[#817a72]" title="Add scheduled task"><Plus size={15}/></button>
+        </div>
+      </section>
     </aside>
   )
-}
-
-function PanelCard({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
-  return <div className="rounded-xl border border-[#e6e0d9] bg-white p-4">
-    <div className="flex items-center gap-2 text-[#6f675f]">{icon}<span className="text-[12px] font-semibold">{title}</span></div>
-    <p className="mt-3 text-[11px] leading-5 text-[#918a83]">{text}</p>
-  </div>
 }
 
 function App() {
@@ -250,7 +385,7 @@ function App() {
               {page === 'customize' && <WorkspaceLibraryPage initialSection="skills" />}
               {page === 'artifacts' && <WorkspaceLibraryPage initialSection="artifacts" />}
             </div>
-            {page === 'chat' && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} />}
+            {page === 'chat' && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} />}
           </div>
         </main>
       </div>
