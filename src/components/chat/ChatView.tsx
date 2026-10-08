@@ -13,7 +13,7 @@ import { ModelSwitcher } from './ModelSwitcher'
 import { ReasoningLevelSelector } from './ReasoningLevelSelector'
 import { FilePreviewPanel } from '../preview'
 import { SLoopMark } from '../ui'
-import * as Pi from '../../utils/piClient'
+import * as JCode from '../../utils/jcodeClient'
 import {
   getVoiceConversation,
   setVoiceConversation,
@@ -58,7 +58,7 @@ export function ChatView() {
   })
 
   const [error, setError] = useState<string | null>(null)
-  const [contextStatus, setContextStatus] = useState<Pi.ContextStatus | null>(null)
+  const [contextStatus, setContextStatus] = useState<JCode.ContextStatus | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [dragTargetZone, setDragTargetZone] = useState<'message' | 'input'>('message')
   const [showPermissionPopup, setShowPermissionPopup] = useState(false)
@@ -66,10 +66,10 @@ export function ChatView() {
   const containerRef = useRef<HTMLDivElement>(null)
   const streamUnsubsRef = useRef(new Map<string, () => void>())
 
-  const subscribeStream = useCallback((piSessionId: string, sid: string) => {
-    streamUnsubsRef.current.get(piSessionId)?.()
+  const subscribeStream = useCallback(async (jcodeSessionId: string, sid: string) => {
+    streamUnsubsRef.current.get(jcodeSessionId)?.()
     let unsubscribe = () => {}
-    unsubscribe = Pi.subscribeStream(piSessionId, {
+    unsubscribe = await JCode.subscribeStream(jcodeSessionId, {
       onText: (partPid, delta) => {
         if (useAppStore.getState().streamingMessage[sid]) {
           useAppStore.getState().appendStreamingDelta(sid, partPid, delta)
@@ -117,9 +117,9 @@ export function ChatView() {
             tool_name: request.toolName,
             arguments: request.arguments,
           })
-          await Pi.sendMcpToolResponse(piSessionId, request.requestId, result)
+          await JCode.sendMcpToolResponse(jcodeSessionId, request.requestId, result)
         } catch (err) {
-          await Pi.sendMcpToolResponse(piSessionId, request.requestId, null, err instanceof Error ? err.message : String(err))
+          await JCode.sendMcpToolResponse(jcodeSessionId, request.requestId, null, err instanceof Error ? err.message : String(err))
         }
       },
       onToolApproval: (request) => {
@@ -132,10 +132,10 @@ export function ChatView() {
       },
       onDone: () => {
         unsubscribe()
-        streamUnsubsRef.current.delete(piSessionId)
+        streamUnsubsRef.current.delete(jcodeSessionId)
       },
     })
-    streamUnsubsRef.current.set(piSessionId, unsubscribe)
+    streamUnsubsRef.current.set(jcodeSessionId, unsubscribe)
   }, [])
 
   const session = sessions.find((s) => s.id === activeSessionId)
@@ -165,9 +165,7 @@ export function ChatView() {
         return
       }
 
-      const providerConfig = activeProvider ? providerConfigs[activeProvider] : null
-      if (!providerConfig) { setError(t('chat.errors.noProvider')); return }
-      if (!providerConfig.apiKey) { setError(t('chat.errors.noApiKey')); return }
+      const providerConfig = activeProvider ? providerConfigs[activeProvider] : undefined
 
       const model = providerConfig?.model
         ? { providerID: activeProvider!, modelID: providerConfig.model }
@@ -189,7 +187,7 @@ export function ChatView() {
       let pid = (useAppStore.getState().sessions.find(s => s.id === sid) as any)?.piId ?? null
       if (!pid) {
         try {
-          const ks = await Pi.createSession()
+          const ks = await JCode.createSession()
           pid = ks.id
           useAppStore.getState().setSessionPiId(sid, pid)
         } catch {
@@ -200,7 +198,7 @@ export function ChatView() {
       }
 
       // Subscribe for streaming visual feedback
-      subscribeStream(pid, sid)
+      await subscribeStream(pid, sid)
 
       // Build context
       const agentStore = useAgentStore.getState()
@@ -271,13 +269,13 @@ export function ChatView() {
         }
       }
 
-      const mcpToolDefs: Pi.McpToolDef[] = connectedMCPTools
+      const mcpToolDefs: JCode.McpToolDef[] = connectedMCPTools
         .map(({ serverName, toolName }) => {
           const st = mcpStore.serverStatuses[serverName]
           const tool = st?.status === 'connected' ? st.tools?.find(t => t.name === toolName) : undefined
           return tool ? { serverName, name: tool.name, description: tool.description, inputSchema: tool.inputSchema } : null
         })
-        .filter(Boolean) as Pi.McpToolDef[]
+        .filter(Boolean) as JCode.McpToolDef[]
 
       if (blocks.length > 0) {
         const header = activeAgent ? `[Agent: ${activeAgent.name}]` : '[Global Context]'
@@ -305,7 +303,7 @@ export function ChatView() {
         agentSkillsBlock,
       )
 
-      const result = await Pi.prompt(pid!, enrichedContent, {
+      const result = await JCode.prompt(pid!, enrichedContent, {
         systemPrompt: agentSystemPrompt,
         providerID: effectiveModel?.providerID,
         modelID: effectiveModel?.modelID,
@@ -380,20 +378,20 @@ export function ChatView() {
     [activeSessionId, activeProvider, providerConfigs, providerList, session, t, startStreaming, finishStreaming, commitStreamingMessage, addMessage, updateSessionTitle, appendStreamingDelta, subscribeStream, isReadOnlySession],
   )
 
-  const activePiSessionId = activeSessionId
+  const activeJCodeSessionId = activeSessionId
     ? (sessions.find((s) => s.id === activeSessionId) as any)?.piId ?? ''
     : ''
 
   const abort = useCallback(() => {
-    if (activePiSessionId) {
-      Pi.abortSession(activePiSessionId)
-      streamUnsubsRef.current.get(activePiSessionId)?.()
-      streamUnsubsRef.current.delete(activePiSessionId)
+    if (activeJCodeSessionId) {
+      JCode.abortSession(activeJCodeSessionId)
+      streamUnsubsRef.current.get(activeJCodeSessionId)?.()
+      streamUnsubsRef.current.delete(activeJCodeSessionId)
     }
     if (activeSessionId) finishStreaming(activeSessionId)
     if (getVoiceConversation().active) setVoiceConversation(false)
     usePetStore.getState().onResponded()
-  }, [activePiSessionId, activeSessionId, finishStreaming])
+  }, [activeJCodeSessionId, activeSessionId, finishStreaming])
 
   // ── File/folder drag into message area ──
 
@@ -747,7 +745,7 @@ export function ChatView() {
 
       {/* Tool approval dialog */}
       {pendingApproval && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-md" onClick={() => { Pi.sendToolApproval(pendingApproval.piSessionId, pendingApproval.requestId, false); setPendingApproval(null) }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-md" onClick={() => { JCode.sendToolApproval(pendingApproval.piSessionId, pendingApproval.requestId, false); setPendingApproval(null) }}>
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -794,15 +792,15 @@ export function ChatView() {
 
               {/* Actions */}
               <div className="flex items-center gap-2.5">
-                <button onClick={() => { Pi.sendToolApproval(pendingApproval.piSessionId, pendingApproval.requestId, false); setPendingApproval(null) }}
+                <button onClick={() => { JCode.sendToolApproval(pendingApproval.piSessionId, pendingApproval.requestId, false); setPendingApproval(null) }}
                   className="flex-1 px-4 py-2.5 rounded-xl border border-border-light text-[12px] font-semibold text-text-tertiary hover:text-text hover:bg-surface-secondary/60 transition-all">
                   {t('chat.toolApproval.cancel')}
                 </button>
-                <button onClick={() => { Pi.sendToolApproval(pendingApproval.piSessionId, pendingApproval.requestId, false); setPendingApproval(null) }}
+                <button onClick={() => { JCode.sendToolApproval(pendingApproval.piSessionId, pendingApproval.requestId, false); setPendingApproval(null) }}
                   className="flex-1 px-4 py-2.5 rounded-xl bg-surface text-[12px] font-semibold text-red-500 border border-red-500/20 hover:bg-red-500/5 transition-all">
                   {t('chat.toolApproval.reject')}
                 </button>
-                <button onClick={() => { Pi.sendToolApproval(pendingApproval.piSessionId, pendingApproval.requestId, true); setPendingApproval(null) }}
+                <button onClick={() => { JCode.sendToolApproval(pendingApproval.piSessionId, pendingApproval.requestId, true); setPendingApproval(null) }}
                   className="flex-1 px-4 py-2.5 rounded-xl bg-accent text-white text-[12px] font-bold shadow-md shadow-accent/20 hover:shadow-lg transition-all">
                   {t('chat.toolApproval.approve')}
                 </button>
