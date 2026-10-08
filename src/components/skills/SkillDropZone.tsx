@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSkillStore } from '../../stores/skillStore'
 import { FileArchive, Loader2, Check, AlertCircle } from 'lucide-react'
 
