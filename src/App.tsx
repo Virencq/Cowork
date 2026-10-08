@@ -16,6 +16,7 @@ import { WorkspaceLibraryPage } from './components/workspace/WorkspaceLibraryPag
 import { ProjectsPage } from './components/workspace/ProjectsPage'
 import { ArtifactsPage } from './components/workspace/ArtifactsPage'
 import { FileTree } from './components/workspace/FileTree'
+import { CodeWorkspace } from './components/workspace/CodeWorkspace'
 import { FilePreviewPanel } from './components/preview/FilePreviewPanel'
 import { useAppStore } from './stores'
 import { useFilePreviewStore } from './stores/filePreviewStore'
@@ -456,35 +457,8 @@ function App() {
           <div className="min-h-0 flex-1 flex">
             <div className="min-w-0 flex-1 flex flex-col">
               {page === 'chat' && !codeMode && <ChatView />}
-              {page === 'chat' && codeMode && (
-                <div className="flex h-full min-h-0 bg-[#faf9f7]">
-                  <aside className="w-[260px] shrink-0 overflow-auto border-r border-[#e5e2de] bg-white p-3">
-                    <div className="mb-3 px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9a938c]">Files</div>
-                    {workspaceDir ? (
-                      <FileTree rootPath={workspaceDir} />
-                    ) : (
-                      <div className="px-2 py-4 text-[11px] leading-5 text-[#9a938c]">Select a workspace folder to browse code.</div>
-                    )}
-                  </aside>
-                  <div className="min-w-0 flex-1 h-full">
-                    {preview ? (
-                      <FilePreviewPanel />
-                    ) : (
-                      <div className="h-full grid place-items-center bg-[#faf9f7]">
-                        <div className="text-center max-w-sm px-6">
-                          <FileCode2 className="mx-auto mb-3 text-[#c1b9b1]" size={30}/>
-                          <div className="text-[13px] font-semibold text-[#5f5851]">
-                            {workspaceDir ? 'Select a file to preview' : 'No workspace selected'}
-                          </div>
-                          <div className="mt-1 text-[11px] leading-5 text-[#9a938c]">
-                            {workspaceDir ? 'Choose a file from the tree on the left to open it here.' : 'Add a project folder from the Context panel or select a workspace first.'}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              {page === 'chat' && codeMode && <CodeWorkspace />}
+
               {page === 'tasks' && <TasksPage />}
               {page === 'projects' && <ProjectsPage onOpenProject={(project) => {
                 if (project.path) setWorkspaceDir(project.path)
