@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useAppStore, useAgentStore, useWebSearchStore, usePetStore } from '../../stores'
 import { useSkillStore } from '../../stores/skillStore'
 import { useMCPStore } from '../../stores/mcpStore'
+import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
 import { invoke } from '@tauri-apps/api/core'
 import type { ImageAttachment } from './ChatInput'
@@ -239,6 +240,15 @@ export function ChatView() {
 
       let enrichedContent = content
       const blocks: string[] = []
+
+      // Project instructions are persistent context, not just UI metadata.
+      // Inject them into every JCode task launched from the matching workspace.
+      const project = useWorkspaceStore.getState().projects.find(
+        (p) => p.path && workspaceDir && p.path === workspaceDir,
+      )
+      if (project?.instructions?.trim()) {
+        blocks.push('## Project Instructions\\n' + project.instructions.trim())
+      }
 
       if (connectedMCPTools.length > 0) {
         const listings = connectedMCPTools.map(({ serverName, toolName }) => {
