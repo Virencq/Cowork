@@ -19,9 +19,11 @@ interface MessageBlock {
 interface MessageItemProps {
   message: KiloMessage
   isStreaming?: boolean
+  onEdit?: (message: KiloMessage) => void
+  onDelete?: (message: KiloMessage) => void
 }
 
-export const MessageItem = memo(function MessageItem({ message, isStreaming = false }: MessageItemProps) {
+export const MessageItem = memo(function MessageItem({ message, isStreaming = false, onEdit, onDelete }: MessageItemProps) {
   const { t } = useTranslation()
   const isUser = message.info.role === 'user'
 
@@ -76,6 +78,10 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
                 content={allText}
                 timestamp={message.info.time.created}
                 align="end"
+                editable
+                deletable
+                onEdit={() => onEdit?.(message)}
+                onDelete={() => onDelete?.(message)}
               />
             </div>
           </div>
@@ -136,6 +142,8 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
                 timestamp={message.info.time.created}
                 align="start"
                 speakable
+                deletable
+                onDelete={() => onDelete?.(message)}
               />
               {!isStreaming && message.info.cost !== undefined && (
                 <div className="text-[10px] font-bold text-text-tertiary tracking-[0.1em] uppercase flex items-center gap-3 opacity-50">
