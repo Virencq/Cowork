@@ -21,9 +21,9 @@ export function ApprovalInbox() {
       <div className="flex items-center gap-2">
         <ShieldAlert size={16} className="text-amber-500" />
         <div>
-          <h2 className="text-[13px] font-black text-text">Approvals / 待审批</h2>
+          <h2 className="text-[13px] font-black text-text">Approvals</h2>
           <p className="text-[10px] text-text-tertiary">
-            无人值守任务已暂停，批准前不会执行下面的工具。
+            A task is paused until the requested tool actions are approved.
           </p>
         </div>
       </div>
@@ -64,14 +64,14 @@ export function ApprovalInbox() {
                 className="inline-flex items-center gap-1 rounded-lg bg-green-500 px-2.5 py-1.5 text-[10px] font-bold text-white hover:bg-green-600"
               >
                 <Check size={12} />
-                批准
+                Approve
               </button>
               <button
                 onClick={() => decide(approval.id, 'deny')}
                 className="inline-flex items-center gap-1 rounded-lg bg-red-500/10 px-2.5 py-1.5 text-[10px] font-bold text-red-500 hover:bg-red-500/20"
               >
                 <X size={12} />
-                拒绝
+                Deny
               </button>
             </div>
           </div>
