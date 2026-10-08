@@ -721,7 +721,7 @@ export function ChatInput({
                 value={input}
                 onChange={setInput}
                 isDisabled={disabled || isStreaming || !!dictation?.recording || dictationBusy || !!realtimeMode || realtimeBusy}
-                className="w-full selection:bg-accent/20"
+                className={`w-full selection:bg-accent/20 ${isHero ? "cowork-hero-input" : ""}`}
               >
                 <TextArea
                   ref={textareaRef}
