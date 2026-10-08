@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Send, Square, X, File, Paperclip, Mic, LoaderCircle, AudioLines, PhoneCall } from 'lucide-react'
 import { TextField, TextArea } from "@heroui/react"
 import { Button, Card } from '../ui'
+import { runtimeInfo } from '../../utils/jcodeClient'
 import {
   cancelDictation,
   getDictationLevel,
