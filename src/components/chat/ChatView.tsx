@@ -700,7 +700,7 @@ export function ChatView() {
             )}
           </AnimatePresence>
         </div>
-        <div className="bg-linear-to-t from-bg to-transparent pt-1 pb-2 shrink-0">
+        <div className={`bg-linear-to-t from-bg to-transparent pt-1 pb-2 shrink-0 ${isEmpty ? "hidden" : ""}`}>
           <div className="w-full max-w-(--spacing-chat-max) mx-auto relative px-4">
             {contextStatus && (
               <div className="mb-2 flex justify-center" role="status" aria-live="polite">
