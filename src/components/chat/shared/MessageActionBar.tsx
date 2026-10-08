@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { CopyButton } from './CopyButton'
 import { SpeechButton } from './SpeechButton'
-import { Copy, Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 
 interface MessageActionBarProps {
   content?: string
@@ -23,7 +23,16 @@ function formatRelativeTime(ts: number, t: TFunction): string {
   return t('chat.time.daysAgo', { n: Math.floor(diff / 86400) })
 }
 
-export function MessageActionBar({ content, timestamp, align = 'start', speakable = false }: MessageActionBarProps) {
+export function MessageActionBar({
+  content,
+  timestamp,
+  align = 'start',
+  speakable = false,
+  editable = false,
+  deletable = false,
+  onEdit,
+  onDelete,
+}: MessageActionBarProps) {
   const { t, i18n } = useTranslation()
   return (
     <div
