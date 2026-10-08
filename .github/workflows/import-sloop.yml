@@ -20,7 +20,7 @@ jobs:
       - name: Import S-Loop source
         run: |
           git clone --depth 1 --branch master https://github.com/JeffGuo7/s-loop.git /tmp/s-loop
-          rsync -a --delete-excluded \
+          rsync -a \
             --exclude='.git/' \
             --exclude='README.md' \
             --exclude='README.zh-CN.md' \
