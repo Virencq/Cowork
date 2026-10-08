@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::{collections::HashMap, io::{BufRead, BufReader, Write}, path::PathBuf, process::{Child, ChildStdin, Command, Stdio}, sync::{Arc, Mutex}, thread};
+use std::{collections::HashMap, io::{BufRead, BufReader, Write}, path::PathBuf, process::{Child, ChildStdin, Command, Stdio}, sync::{mpsc::{self, Sender}, Arc, Mutex}, sync::atomic::{AtomicU64, Ordering}, thread};
 use tauri::{AppHandle, Emitter, State};
 
 #[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct JCodeEvent { pub session_id: String, pub event: Value }
 
-pub(crate) struct SessionProcess { child: Child, stdin: Arc<Mutex<ChildStdin>>, session_id: String }
+pub(crate) struct SessionProcess { child: Child, stdin: Arc<Mutex<ChildStdin>>, session_id: String, next_request_id: AtomicU64, pending: Arc<Mutex<HashMap<u64, Sender<Result<Value, String>>>>> }
 pub struct JCodeState(pub Arc<Mutex<HashMap<String, SessionProcess>>>);
 
 #[derive(Debug, Deserialize)]
@@ -44,7 +44,7 @@ fn find_jcode() -> Result<PathBuf, String> {
     Err("JCode was not found on PATH. Install JCode and ensure the jcode command is available.".to_string())
 }
 
-fn start_reader(app: AppHandle, session_key: String, stdout: std::process::ChildStdout) {
+fn start_reader(app: AppHandle, session_key: String, stdout: std::process::ChildStdout, pending: Arc<Mutex<HashMap<u64, Sender<Result<Value, String>>>>>) {
     thread::spawn(move || {
         let reader = BufReader::new(stdout);
         for line in reader.lines() {
@@ -86,9 +86,10 @@ pub fn jcode_start_session(app: AppHandle, state: State<'_, JCodeState>, workspa
     let result = read_until_response(&mut reader, 2)?;
     let session_id = result.get("sessionId").and_then(Value::as_str).ok_or_else(|| format!("JCode ACP did not return sessionId: {result}"))?.to_string();
 
-    let process = SessionProcess { child, stdin: stdin.clone(), session_id: session_id.clone() };
+    let pending = Arc::new(Mutex::new(HashMap::new()));
+    let process = SessionProcess { child, stdin: stdin.clone(), session_id: session_id.clone(), next_request_id: AtomicU64::new(100), pending: pending.clone() };
     state.0.lock().map_err(|e| e.to_string())?.insert(session_id.clone(), process);
-    start_reader(app, session_id.clone(), reader.into_inner());
+    start_reader(app, session_id.clone(), reader.into_inner(), pending);
     Ok(session_id)
 }
 
@@ -99,10 +100,18 @@ pub fn jcode_prompt(state: State<'_, JCodeState>, session_id: String, prompt: St
     if prompt.trim().is_empty() {
         return Err("Prompt cannot be empty.".to_string());
     }
-    send_rpc(&session.stdin, 100, "session/prompt", json!({
+    let request_id = session.next_request_id.fetch_add(1, Ordering::Relaxed);
+    let (tx, rx) = mpsc::channel();
+    session.pending.lock().map_err(|e| e.to_string())?.insert(request_id, tx);
+    if let Err(error) = send_rpc(&session.stdin, request_id, "session/prompt", json!({
         "sessionId": session.session_id,
         "prompt": [{"type":"text","text":prompt}]
-    }))
+    })) {
+        let _ = session.pending.lock().map_err(|e| e.to_string())?.remove(&request_id);
+        return Err(error);
+    }
+    rx.recv().map_err(|e| format!("JCode ACP response channel closed: {e}"))??;
+    Ok(())
 }
 
 #[tauri::command]
