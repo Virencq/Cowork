@@ -664,7 +664,32 @@ export function ChatView() {
                 </div>
               </motion.div>
             ) : (
+              <motion.div key={activeSessionId} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }} className="h-full flex flex-col w-full max-w-(--spacing-chat-max) mx-auto relative overflow-hidden">
+                {session && (session.sourceLabel || session.readOnly) && (
+                  <div className="sticky top-0 z-10 px-4 pt-4">
+                    <div className="rounded-lg border border-border bg-surface px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[13px] font-bold tracking-tight text-text">{session.title}</span>
+                        {session.sourceLabel && (
+                          <span className="inline-flex items-center rounded-full border border-accent/20 bg-accent/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-accent">
+                            {session.sourceLabel}
+                          </span>
+                        )}
                         {session.readOnly && (
+                          <span className="inline-flex items-center rounded-full border border-border-light bg-surface-secondary/70 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">
+                            {t('chat.session.readOnly')}
+                          </span>
+                        )}
+                      </div>
+                      {session.readOnly && (
+                        <p className="mt-2 text-[12px] font-medium text-text-tertiary">
+                          {t('chat.session.readOnlyHint')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <MessageList sessionId={activeSessionId!} />
                           <span className="inline-flex items-center rounded-full border border-border-light bg-surface-secondary/70 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">
                             {t('chat.session.readOnly')}
                           </span>
