@@ -11,6 +11,7 @@ import { SettingsModal } from './components/settings'
 import { TasksPage } from './components/tasks'
 import { GoalPage } from './components/goal/GoalPage'
 import { ExtensionsPage } from './components/extensions/ExtensionsPage'
+import { WorkspaceLibraryPage } from './components/workspace/WorkspaceLibraryPage'
 import { useAppStore } from './stores'
 import { useTaskScheduler, useTelegramChatSync } from './hooks'
 import { useMCPStore } from './stores/mcpStore'
@@ -21,7 +22,7 @@ import { getAllSessions, createSession as dbCreateSession, saveMessage as dbSave
 import { status as jcodeStatus } from './utils/jcodeClient'
 import { getActiveTokens } from './themes'
 
-export type Page = 'chat' | 'tasks' | 'projects' | 'ideas' | 'extensions'
+export type Page = 'chat' | 'tasks' | 'projects' | 'ideas' | 'extensions' | 'artifacts' | 'customize'
 
 const inTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 const APP_STORAGE_KEY = 'snotra-storage'
@@ -106,7 +107,8 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
       <nav className="px-2 space-y-0.5">
         {item(<Clock3 size={16} />, 'Scheduled', 'tasks')}
         {item(<Lightbulb size={16} />, 'Ideas', 'ideas')}
-        {item(<SlidersHorizontal size={16} />, 'Customize', 'extensions')}
+        {item(<SlidersHorizontal size={16} />, 'Customize', 'customize')}
+        {item(<FileCode2 size={16} />, 'Artifacts', 'artifacts')}
         {item(<FolderKanban size={16} />, 'Projects', 'projects')}
       </nav>
 
@@ -240,9 +242,11 @@ function App() {
         <main className="relative min-w-0 flex-1 pt-11 flex flex-col bg-[#faf9f7]">
           {page === 'chat' && <ChatView />}
           {page === 'tasks' && <TasksPage />}
-          {page === 'projects' && <div className="flex-1 grid place-items-center"><div className="text-center max-w-md"><FolderKanban className="mx-auto mb-4 text-[#b0a79e]" size={30}/><h2 className="text-xl font-semibold">Projects</h2><p className="mt-2 text-sm text-[#8c847c]">Projects will group related Cowork tasks and workspaces.</p></div></div>}
+          {page === 'projects' && <WorkspaceLibraryPage initialSection="projects" />}
           {page === 'ideas' && <div className="flex-1 grid place-items-center"><div className="text-center max-w-md"><Lightbulb className="mx-auto mb-4 text-[#b0a79e]" size={30}/><h2 className="text-xl font-semibold">Ideas</h2><p className="mt-2 text-sm text-[#8c847c]">Capture ideas here and turn them into tasks when ready.</p></div></div>}
           {page === 'extensions' && <ExtensionsPage />}
+          {page === 'customize' && <WorkspaceLibraryPage initialSection="skills" />}
+          {page === 'artifacts' && <WorkspaceLibraryPage initialSection="artifacts" />}
           {page === 'chat' && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} />}
         </main>
       </div>
