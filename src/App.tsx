@@ -106,7 +106,7 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
 
       <div className="px-3 pt-2 pb-3">
         <div className="grid grid-cols-2 h-8 rounded-md bg-[#f1f0ee] p-0.5">
-          <button onClick={() => onPage('chat')} className="rounded-md bg-white text-[#3d3833] text-[12px] font-semibold shadow-sm">☷&nbsp; Cowork</button>
+          <button onClick={() => { useAppStore.getState().setActiveSession(null); onPage('chat') }} className="rounded-md bg-white text-[#3d3833] text-[12px] font-semibold shadow-sm">☷&nbsp; Cowork</button>
           <button className="rounded-md text-[#9b9690] text-[12px] font-medium">‹/&gt;&nbsp; Code</button>
         </div>
       </div>
@@ -118,15 +118,15 @@ function LeftNav({ width, onWidth, page, onPage, onNew }: {
       </div>
 
       <div className="px-3">
-        <button className="home-nav-row"><span>Scheduled</span><ChevronRight size={14}/></button>
-        <button className="home-nav-row"><span>Pinned</span><ChevronRight size={14}/></button>
+        <button onClick={() => onPage('tasks')} className="home-nav-row"><span>Scheduled</span><ChevronRight size={14}/></button>
+        <button onClick={() => onPage('tasks')} className="home-nav-row"><span>Pinned</span><ChevronRight size={14}/></button>
       </div>
 
       <div className="mt-2 px-3 flex items-center justify-between">
-        <button className="home-nav-row flex-1 !px-0"><span>Tasks</span><ChevronRight size={14}/></button>
+        <button onClick={() => onPage('tasks')} className="home-nav-row flex-1 !px-0"><span>Tasks</span><ChevronRight size={14}/></button>
         <div className="flex items-center gap-1 text-[#8f8983]">
-          <button className="title-icon !h-7 !w-7" title="Search tasks"><Search size={14}/></button>
-          <button className="title-icon !h-7 !w-7" title="Task filters"><SlidersHorizontal size={14}/></button>
+          <button onClick={() => onPage('tasks')} className="title-icon !h-7 !w-7" title="Search tasks"><Search size={14}/></button>
+          <button onClick={() => onPage('tasks')} className="title-icon !h-7 !w-7" title="Task filters"><SlidersHorizontal size={14}/></button>
         </div>
       </div>
 
@@ -353,7 +353,7 @@ function App() {
               {page === 'customize' && <WorkspaceLibraryPage initialSection="skills" />}
               {page === 'artifacts' && <WorkspaceLibraryPage initialSection="artifacts" />}
             </div>
-            {page === 'chat' && activeSessionId && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} />}
+            {page === 'chat' && activeSessionId && (useAppStore.getState().sessionMessages[activeSessionId]?.length ?? 0) > 0 && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} />}
           </div>
         </main>
       </div>
