@@ -132,3 +132,36 @@ pub fn jcode_status() -> Result<Value, String> {
         Err(error) => Ok(json!({"installed":false,"error":error})),
     }
 }
+
+
+#[tauri::command]
+pub fn jcode_sync_mcp_config(servers: Value) -> Result<Value, String> {
+    let home = dirs::home_dir().ok_or("Unable to resolve the user home directory.")?;
+    let dir = home.join(".jcode");
+    std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create JCode config directory: {e}"))?;
+    let path = dir.join("mcp.json");
+
+    let mut mcp_servers = serde_json::Map::new();
+    if let Some(items) = servers.as_array() {
+        for server in items {
+            if server.get("type").and_then(Value::as_str).unwrap_or("stdio") != "stdio" {
+                continue;
+            }
+            let Some(name) = server.get("name").and_then(Value::as_str) else { continue };
+            let Some(command) = server.get("command").and_then(Value::as_str) else { continue };
+            if server.get("disabled").and_then(Value::as_bool).unwrap_or(false) {
+                continue;
+            }
+            let mut entry = serde_json::Map::new();
+            entry.insert("command".into(), Value::String(command.to_string()));
+            if let Some(args) = server.get("args") { entry.insert("args".into(), args.clone()); }
+            if let Some(env) = server.get("env") { entry.insert("env".into(), env.clone()); }
+            mcp_servers.insert(name.to_string(), Value::Object(entry));
+        }
+    }
+
+    let config = json!({"mcpServers": Value::Object(mcp_servers)});
+    std::fs::write(&path, serde_json::to_vec_pretty(&config).map_err(|e| e.to_string())?)
+        .map_err(|e| format!("Failed to write JCode MCP config: {e}"))?;
+    Ok(json!({"path": path.to_string_lossy(), "servers": config["mcpServers"].as_object().map(|m| m.len()).unwrap_or(0)}))
+}
