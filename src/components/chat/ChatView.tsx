@@ -318,7 +318,7 @@ export function ChatView() {
         agentSkillsBlock,
       )
 
-      const result = await JCode.prompt(pid!, enrichedContent, {
+      const promptOptions = {
         systemPrompt: agentSystemPrompt,
         workspaceDir: workspaceDir ?? undefined,
         workspaceRoots: activeAgent?.workspaceRoots || [],
@@ -330,7 +330,26 @@ export function ChatView() {
         permissionMode: activeAgent?.permissionMode,
         permissionRules: activeAgent?.permissionRules,
         images,
-      })
+      }
+
+      let result = await JCode.prompt(pid!, enrichedContent, promptOptions)
+
+      // ACP session IDs are process-local. Recover automatically if an old
+      // Cowork session contains an ID from a JCode process that has exited.
+      if (result.error && /session not found/i.test(result.error)) {
+        try {
+          const fresh = await JCode.createSession(workspaceDir ?? undefined)
+          pid = fresh.id
+          useAppStore.getState().setSessionPiId(sid, pid)
+          await subscribeStream(pid, sid)
+          result = await JCode.prompt(pid, enrichedContent, promptOptions)
+        } catch (retryError) {
+          result = {
+            text: '',
+            error: retryError instanceof Error ? retryError.message : String(retryError),
+          }
+        }
+      }
 
       if (result.error) {
         setError(result.error)
