@@ -467,74 +467,68 @@ export function ChatView() {
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     setIsDragOver(false)
+    setDragTargetZone('message')
 
-    // 1) Internal FileTree drag — has full path info
-    const fileData = e.dataTransfer.getData('application/x-s-loop-file')
-    if (fileData) {
-      const { path, name, isDir } = JSON.parse(fileData)
+    // Snapshot native files immediately. Some desktop/Tauri drag payloads can
+    // become unavailable after async work starts.
+    const nativeFiles = Array.from(e.dataTransfer?.files || [])
 
-      // Check if it's an image file dropped from FileTree
-      const imageExts = /\.(png|jpg|jpeg|gif|webp|bmp)$/i
-      if (!isDir && imageExts.test(name)) {
-        // Read image via Tauri and send as multimodal content
-        try {
-          const base64 = await invoke<string>('read_file_base64', { path })
-          const mimeType = name.endsWith('.png') ? 'image/png' :
-            name.endsWith('.gif') ? 'image/gif' :
-            name.endsWith('.webp') ? 'image/webp' :
-            name.endsWith('.bmp') ? 'image/bmp' :
-            'image/jpeg'
-          const text = `[Image: ${name}](${path})`
-          if (!useAppStore.getState().activeSessionId) {
-            useAppStore.getState().createSession()
+    try {
+      const fileData = e.dataTransfer.getData('application/x-s-loop-file')
+      if (fileData) {
+        const { path, name, isDir } = JSON.parse(fileData)
+
+        const imageExts = /\.(png|jpg|jpeg|gif|webp|bmp)$/i
+        if (!isDir && imageExts.test(name)) {
+          try {
+            const base64 = await invoke<string>('read_file_base64', { path })
+            const mimeType = name.endsWith('.png') ? 'image/png' :
+              name.endsWith('.gif') ? 'image/gif' :
+              name.endsWith('.webp') ? 'image/webp' :
+              name.endsWith('.bmp') ? 'image/bmp' : 'image/jpeg'
+            const text = `[Image: ${name}](${path})`
+            if (!useAppStore.getState().activeSessionId) useAppStore.getState().createSession()
+            await handleSubmit(text, [{ data: base64, mimeType }])
+          } catch {
+            await handleSubmit(`[File: ${name}](${path})`)
           }
-          handleSubmit(text, [{ data: base64, mimeType }])
-        } catch {
-          handleSubmit(`[File: ${name}](${path})`)
+          return
         }
+
+        if (isDir) {
+          // Do not recursively enumerate a dropped folder in the UI thread.
+          // Send the folder reference and let JCode inspect it when needed.
+          if (!useAppStore.getState().activeSessionId) useAppStore.getState().createSession()
+          await handleSubmit(`[Folder: ${name}](${path})`)
+          return
+        }
+
+        if (!useAppStore.getState().activeSessionId) useAppStore.getState().createSession()
+        await handleSubmit(`[File: ${name}](${path})`)
         return
       }
 
-      let content = ''
-      if (isDir) {
-        try {
-          const files = await listFilesRecursive(path)
-          const summary = files.length > 0
-            ? files.map(f => `- ${f}`).join('\n')
-            : '(empty folder)'
-          content = `[Folder: ${name}](${path})\n\n\`\`\`\n${summary}\n\`\`\``
-        } catch {
-          content = `[Folder: ${name}](${path})`
-        }
-      } else {
-        content = `[File: ${name}](${path})`
-      }
+      if (nativeFiles.length === 0) return
 
-      if (!useAppStore.getState().activeSessionId) {
-        useAppStore.getState().createSession()
-      }
+      const nonZipFiles = nativeFiles.filter(
+        (file) => !file.name.toLowerCase().endsWith('.zip') &&
+          file.type !== 'application/zip' &&
+          file.type !== 'application/x-zip-compressed',
+      )
+      if (nonZipFiles.length === 0) return
 
-      handleSubmit(content)
-      return
-    }
-
-    // 2) OS file drop (from desktop / file manager) — no real path, only file name
-    // In Tauri, we could potentially read the file, but for now just reference by name
-    const files = Array.from(e.dataTransfer?.files || [])
-    if (files.length > 0) {
-      // Skip .zip files — they're handled by SkillDropZone
-      const nonZipFiles = files.filter(f => !f.name.endsWith('.zip') && f.type !== 'application/zip' && f.type !== 'application/x-zip-compressed')
-      if (nonZipFiles.length > 0) {
-        const refs = nonZipFiles.map(f => `[File: ${f.name}](os-file://${f.name})`).join('\n')
-        if (!useAppStore.getState().activeSessionId) {
-          useAppStore.getState().createSession()
-        }
-        handleSubmit(refs)
-      }
+      const refs = nonZipFiles.map((file) => `[File: ${file.name}](os-file://${file.name})`).join('\n')
+      if (!useAppStore.getState().activeSessionId) useAppStore.getState().createSession()
+      await handleSubmit(refs)
+    } catch (error) {
+      console.error('[ChatView] drop failed:', error)
+      setError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setIsDragOver(false)
     }
   }, [handleSubmit])
-
   const streamingMessages = useAppStore((state) => state.streamingMessage)
   const streamingMessage = activeSessionId ? streamingMessages[activeSessionId] : EMPTY_STREAMING
   const isStreaming = streamingMessage?.isStreaming ?? false
