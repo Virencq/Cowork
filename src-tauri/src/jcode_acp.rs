@@ -104,7 +104,7 @@ pub fn jcode_start_session(app: AppHandle, state: State<'_, JCodeState>, workspa
     send_rpc(&stdin, 1, "initialize", json!({
         "protocolVersion": 1,
         "clientInfo": {"name":"Cowork","version":"0.1.0"},
-        "clientCapabilities": {"fs": {"readTextFile": true, "writeTextFile": true}, "terminal": true}
+        "clientCapabilities": {}
     }))?;
     let _ = read_until_response(&mut reader, 1)?;
 
