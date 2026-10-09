@@ -441,8 +441,13 @@ function App() {
   }, [])
 
   const newTask = () => {
-    const id = createSession()
-    setActiveSession(id)
+    const state = useAppStore.getState()
+    const currentId = state.activeSessionId
+    // Do not persist a blank task. Create a session only when the first prompt is sent.
+    if (currentId && (state.sessionMessages[currentId]?.length ?? 0) === 0) {
+      state.deleteSession(currentId)
+    }
+    setActiveSession(null)
     navigateToPage('chat')
   }
 
