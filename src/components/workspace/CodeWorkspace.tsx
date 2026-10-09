@@ -44,13 +44,6 @@ export function CodeWorkspace({ onExitCode }: { onExitCode: () => void }) {
   return (
     <div className="h-full min-h-0 flex flex-col bg-white text-[#302c28]">
       <header className="h-12 shrink-0 border-b border-[#e3dfda] bg-white flex items-center px-4">
-        <button
-          onClick={onExitCode}
-          className="mr-3 h-8 px-2.5 rounded-md hover:bg-[#f4f1ee] text-[11px] text-[#665f58]"
-        >
-          ← Cowork
-        </button>
-
         <div className="h-6 w-px bg-[#e8e3de] mr-3" />
 
         <div className="flex items-center gap-2 min-w-0">
