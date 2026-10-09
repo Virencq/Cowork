@@ -90,7 +90,7 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
   }
 
   return (
-    <div className="relative flex-1 min-h-0 overflow-hidden pt-4">
+    <div className="relative flex-1 min-h-0 overflow-hidden pt-2">
       <div
         ref={scrollRef}
         onScroll={updateBottomState}
@@ -104,7 +104,7 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
             message.info.role === 'assistant'
 
           return (
-            <div key={message.info.id} className="px-8">
+            <div key={message.info.id} className="px-4 sm:px-5">
               <MessageItem
                 message={message}
                 isStreaming={isStreaming}
