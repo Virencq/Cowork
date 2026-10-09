@@ -186,6 +186,7 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
         </div>
       )}
       {!codeMode && (
+        <>
         {/* Task navigation */}
         <div className={`${codeMode ? 'mt-3' : 'mt-3'} px-3`}>
           <button onClick={() => setFilterPinned(v => !v)} className={`home-nav-row ${filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
@@ -257,7 +258,7 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
           {visibleTasks.length===0 && <div className="px-3 py-3 text-[11px] text-[#a09a94]">{filterPinned ? 'No pinned tasks' : 'No tasks yet'}</div>}
         </div>
   
-  
+        </>
       )}
       <div className="mt-auto border-t border-[#ece9e5] px-3 py-2">
         <button onClick={onSettings} className="w-full flex items-center justify-between rounded-md px-1 py-2 text-left text-[11px] text-[#7d766f] hover:bg-[#f3f1ef] hover:text-[#302c28]" title="Open Settings">
