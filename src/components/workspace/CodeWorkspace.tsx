@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { FolderOpen, FileCode2, X, Files, GitBranch, TerminalSquare, ArrowUpRight } from 'lucide-react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { FilePreviewPanel } from '../preview/FilePreviewPanel'
@@ -13,6 +13,22 @@ export function CodeWorkspace() {
   const preview = useFilePreviewStore((s) => s.preview)
   const closePreview = useFilePreviewStore((s) => s.closePreview)
   const [showFiles, setShowFiles] = useState(false)
+  const activeSessionId = useAppStore((s) => s.activeSessionId)
+  const sessionMessages = useAppStore((s) => s.sessionMessages)
+  const activeMessages = activeSessionId ? sessionMessages[activeSessionId] ?? [] : []
+  const attachedFolder = useMemo(() => {
+    for (let i = activeMessages.length - 1; i >= 0; i--) {
+      const message = activeMessages[i]
+      if (message.info.role !== 'user') continue
+      for (const part of message.parts) {
+        if (part.type !== 'text' || typeof part.text !== 'string') continue
+        const match = part.text.match(/\[File: ([^\]]+)\]\(([^)]+)\)/)
+        if (match && /[\\\\/]/.test(match[2])) return { name: match[1], path: match[2] }
+      }
+    }
+    return null
+  }, [activeMessages])
+  const displayPath = attachedFolder?.path ?? workspaceDir
 
   const openFolder = async () => {
     const selected = await openDialog({
@@ -27,9 +43,9 @@ export function CodeWorkspace() {
     }
   }
 
-  const workspaceName = workspaceDir
+  const workspaceName = attachedFolder?.name ?? (workspaceDir
     ? workspaceDir.split(/[/\\]/).filter(Boolean).pop() || workspaceDir
-    : 'No project'
+    : 'No project')
 
   return (
     <div className="h-full min-h-0 flex flex-col bg-white text-[#302c28]">
