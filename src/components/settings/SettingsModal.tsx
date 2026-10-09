@@ -383,10 +383,9 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
                 <div className="max-w-3xl mx-auto space-y-5">
                   <div>
                     <div className="section-eyebrow mb-2">Migration</div>
-                    <h4 className="text-xl font-semibold text-text">Import existing work</h4>
+                    <h4 className="text-xl font-semibold text-text">Bring your Claude work into Cowork</h4>
                     <p className="mt-1 text-[13px] leading-6 text-text-tertiary">
-                      Import a Cowork/S-Loop bundle containing projects, artifacts, skills, and connectors.
-                      Existing items are merged rather than replacing your current setup.
+                      Import a Claude data-export ZIP, conversations.json file, or Cowork backup bundle. Supported chats, projects, artifacts, skills, and connector definitions are merged into Cowork without replacing existing data.
                     </p>
                   </div>
                   <div className="rounded-xl border border-border bg-surface p-5">
