@@ -8,12 +8,12 @@ import { useFilePreviewStore } from '../../stores/filePreviewStore'
 import { ChatView } from '../chat/ChatView'
 
 export function CodeWorkspace() {
-  const workspaceDir = useAppStore((s) => s.workspaceDir)
-  const setWorkspaceDir = useAppStore((s) => s.setWorkspaceDir)
+  const workspaceDir = useAppStore((s) => s.codeWorkspaceDir)
+  const setWorkspaceDir = useAppStore((s) => s.setCodeWorkspaceDir)
   const preview = useFilePreviewStore((s) => s.preview)
   const closePreview = useFilePreviewStore((s) => s.closePreview)
   const [showFiles, setShowFiles] = useState(false)
-  const activeSessionId = useAppStore((s) => s.activeSessionId)
+  const activeSessionId = useAppStore((s) => s.codeActiveSessionId)
   const sessionMessages = useAppStore((s) => s.sessionMessages)
   const activeMessages = activeSessionId ? sessionMessages[activeSessionId] ?? [] : []
   const attachedFolder = useMemo(() => {
@@ -130,7 +130,7 @@ export function CodeWorkspace() {
             </div>
           )}
           <div className={workspaceDir ? "min-h-0 flex-1 overflow-hidden" : "min-h-0 flex-1 overflow-hidden opacity-0 pointer-events-none"}>
-            <ChatView embedded />
+            <ChatView embedded workspaceMode="code" />
           </div>
         </section>
 
