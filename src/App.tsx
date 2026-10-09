@@ -61,7 +61,7 @@ function CoworkTitleBar({ onToggleSidebar, onToggleRightPanel, onBack, onForward
   }, [appWindow])
 
   return (
-    <header onMouseDown={drag} className="fixed top-0 left-0 right-0 z-[100] h-11 bg-white flex items-center justify-between select-none">
+    <header onMouseDown={drag} className="fixed top-0 left-0 right-0 z-[100] h-11 bg-surface border-b border-border flex items-center justify-between select-none">
       <div className="flex items-center h-full gap-1 px-3 text-[#5d5852]">
         <button onClick={onToggleSidebar} className="title-icon" title="Toggle sidebar" aria-label="Toggle sidebar"><Menu size={16}/></button>
         <button onClick={onToggleRightPanel} className="title-icon" title="Toggle project panel" aria-label="Toggle project panel"><Columns2 size={16}/></button>
@@ -568,7 +568,7 @@ function App() {
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#faf9f7] text-[#302c28]">
+    <div className="h-screen w-screen overflow-hidden bg-bg text-text">
       <CoworkTitleBar
         codeMode={codeMode}
         onCode={() => { setCodeMode(true); setPage('chat') }}
@@ -590,7 +590,7 @@ function App() {
       />
       <div className="h-full flex">
         <LeftNav width={sidebarOpen ? leftWidth : 0} onWidth={setLeftWidth} page={page} onPage={navigateToPage} onNew={newTask} onSettings={() => setShowSettings(true)} codeMode={codeMode} onCode={() => { setCodeMode(true); setPage('chat') }} onCowork={() => { setCodeMode(false); setPage('chat') }} />
-        <main className="relative min-w-0 flex-1 pt-11 flex flex-col bg-[#faf9f7]">
+        <main className="relative min-w-0 flex-1 pt-11 flex flex-col bg-bg">
           <div className="min-h-0 flex-1 flex">
             <div className="min-w-0 flex-1 flex flex-col">
               {page === 'chat' && !codeMode && <ChatView />}
@@ -624,7 +624,7 @@ function App() {
         </main>
       </div>
       {page === 'chat' && !codeMode && !rightOpen && (
-        <button onClick={() => setRightOpen(true)} className="fixed right-4 top-14 z-40 h-9 w-9 rounded-lg border border-[#e4ded7] bg-white shadow-sm grid place-items-center text-[#6e675f]"><ChevronRight size={16}/></button>
+        <button onClick={() => setRightOpen(true)} className="fixed right-4 top-14 z-40 h-9 w-9 rounded-lg border border-border bg-surface shadow-sm grid place-items-center text-text-secondary"><ChevronRight size={16}/></button>
       )}
       {showSettings && <SettingsModal initialTab="provider" onClose={() => setShowSettings(false)} />}
     </div>
