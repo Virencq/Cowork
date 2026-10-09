@@ -50,6 +50,9 @@ function CoworkTitleBar({ onToggleSidebar, onToggleRightPanel, onBack, onForward
   onToggleRightPanel: () => void
   onBack: () => void
   onForward: () => void
+  codeMode: boolean
+  onCode: () => void
+  onCowork: () => void
 }) {
   const appWindow = inTauri ? getCurrentWindow() : null
   const drag = useCallback((e: React.MouseEvent) => {
@@ -62,6 +65,10 @@ function CoworkTitleBar({ onToggleSidebar, onToggleRightPanel, onBack, onForward
       <div className="flex items-center h-full gap-1 px-3 text-[#5d5852]">
         <button onClick={onToggleSidebar} className="title-icon" title="Toggle sidebar" aria-label="Toggle sidebar"><Menu size={16}/></button>
         <button onClick={onToggleRightPanel} className="title-icon" title="Toggle project panel" aria-label="Toggle project panel"><Columns2 size={16}/></button>
+        <div className="ml-1 flex h-8 items-center rounded-lg border border-[#e7e2dc] bg-[#f5f3f0] p-0.5">
+          <button onClick={onCowork} className={`h-7 rounded-md px-3 text-[11px] font-medium transition-colors ${!codeMode ? 'bg-white text-[#302c28] shadow-sm' : 'text-[#77716b] hover:text-[#302c28]'}`}>Cowork</button>
+          <button onClick={onCode} className={`h-7 rounded-md px-3 text-[11px] font-medium transition-colors ${codeMode ? 'bg-white text-[#302c28] shadow-sm' : 'text-[#77716b] hover:text-[#302c28]'}`}>Code</button>
+        </div>
         <button onClick={onBack} className="title-icon" title="Back" aria-label="Back"><ArrowLeft size={17}/></button>
         <button onClick={onForward} className="title-icon" title="Forward" aria-label="Forward"><ArrowRight size={17}/></button>
       </div>
@@ -436,6 +443,9 @@ function App() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#faf9f7] text-[#302c28]">
       <CoworkTitleBar
+        codeMode={codeMode}
+        onCode={() => { setCodeMode(true); setPage('chat') }}
+        onCowork={() => { setCodeMode(false); setPage('chat') }}
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
         onToggleRightPanel={() => setRightOpen((open) => !open)}
         onBack={() => {
@@ -457,7 +467,7 @@ function App() {
           <div className="min-h-0 flex-1 flex">
             <div className="min-w-0 flex-1 flex flex-col">
               {page === 'chat' && !codeMode && <ChatView />}
-              {page === 'chat' && codeMode && <CodeWorkspace onExitCode={() => { setCodeMode(false); setActiveSession(null); navigateToPage('chat') }} />}
+              {page === 'chat' && codeMode && <CodeWorkspace onExitCode={() => { setCodeMode(false); setPage('chat') }} />}
 
               {page === 'tasks' && <TasksPage />}
               {page === 'projects' && <ProjectsPage onOpenProject={(project) => {
