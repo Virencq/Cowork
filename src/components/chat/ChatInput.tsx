@@ -785,7 +785,7 @@ export function ChatInput({
               </div>
             )}
 
-            <div className="flex items-end px-3">
+            <div className={isHero ? "flex flex-col px-3" : "flex items-end px-3"}>
             <div className="flex-1">
               <TextField
                 value={input}
@@ -806,7 +806,7 @@ export function ChatInput({
               </TextField>
             </div>
 
-              <div className={isHero ? "flex items-center justify-between h-11 px-4 border-t border-[#eeeae6]" : "flex items-center p-2"}>
+              <div className={isHero ? "w-full flex items-center justify-between h-11 px-1 border-t border-[#eeeae6]" : "flex items-center p-2"}>
                 {isHero ? (
                   <>
                     <div ref={addMenuRef} className="relative">
