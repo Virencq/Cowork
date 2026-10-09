@@ -13,14 +13,66 @@ type Section = 'projects' | 'artifacts' | 'skills' | 'connectors'
 
 export async function importWorkspaceFile(file: File): Promise<string> {
   let bundle: any
+  let zip: JSZip | null = null
+  let claudePortable = false
+  let archiveSkills: { name: string; description: string; content: string }[] = []
+  let archiveProjects: { id: string; name: string; instructions?: string; createdAt: number; updatedAt: number }[] = []
+  let archiveArtifacts: { id: string; name: string; type: string; content: string; createdAt: number; updatedAt: number }[] = []
+  let archiveConnectors: any[] = []
   if (file.name.toLowerCase().endsWith('.zip')) {
-    const zip = await JSZip.loadAsync(await file.arrayBuffer())
-    const entries = Object.values(zip.files) as any[]
+    zip = await JSZip.loadAsync(await file.arrayBuffer())
+    const entries = Object.values(zip.files) as JSZip.JSZipObject[]
+    const manifestEntry = entries.find((f) => !f.dir && f.name.toLowerCase() === 'manifest.json')
+    if (manifestEntry) {
+      try {
+        const manifest = JSON.parse(await manifestEntry.async('text'))
+        claudePortable = Number(manifest?.schemaVersion) > 0 && !!(manifest?.sourcePaths || manifest?.archiveTargets) && /claudeportable/i.test(file.name + ' ' + (manifest?.toolVersion || ''))
+      } catch { /* not a ClaudePortable manifest */ }
+    }
     const conversationEntry = entries.find((f) => !f.dir && /(^|[/\\\\])conversations\.json$/i.test(f.name))
-    const manifestEntry = entries.find((f) => !f.dir && /(^|[/\\\\])(cowork|s-loop|manifest).*\.json$/i.test(f.name))
-    const jsonEntry = conversationEntry || manifestEntry || entries.find((f) => !f.dir && f.name.toLowerCase().endsWith('.json'))
-    if (!jsonEntry) throw new Error('No conversations.json or supported JSON manifest was found in the archive.')
-    bundle = JSON.parse(await jsonEntry.async('text'))
+    const bundleEntry = entries.find((f) => !f.dir && /(^|[/\\\\])(cowork|s-loop).*\.json$/i.test(f.name))
+    const jsonEntry = conversationEntry || bundleEntry || (!claudePortable ? entries.find((f) => !f.dir && f.name.toLowerCase().endsWith('.json')) : undefined)
+    if (jsonEntry) {
+      try { bundle = JSON.parse(await jsonEntry.async('text')) } catch { bundle = {} }
+    } else {
+      bundle = {}
+    }
+    if (claudePortable && zip) {
+      const allFiles = Object.values(zip.files) as JSZip.JSZipObject[]
+      const skillFiles = allFiles.filter((f) => !f.dir && /(?:^|[/\\\\])skills?[/\\\\][^/\\\\]+[/\\\\]SKILL\.md$/i.test(f.name))
+      for (const skillFile of skillFiles) {
+        const text = await skillFile.async('text')
+        const nameFromPath = skillFile.name.split('/').filter(Boolean).slice(-2, -1)[0] || 'Imported skill'
+        const frontmatterName = text.match(/^---\s*[\s\S]*?^name:\s*['\"]?([^\r\n'\"]+)/m)?.[1]?.trim()
+        const description = text.match(/^---\s*[\s\S]*?^description:\s*['\"]?([^\r\n'\"]+)/m)?.[1]?.trim() || ''
+        const name = (frontmatterName || nameFromPath).replace(/[^a-zA-Z0-9 _-]/g, '').trim()
+        if (name && text.trim()) archiveSkills.push({ name, description, content: text })
+      }
+      const projectRoots = new Set(allFiles.filter((f) => !f.dir && f.name.startsWith('cowork-projects/')).map((f) => f.name.split('/').slice(0, 2).join('/')))
+      for (const root of projectRoots) {
+        const hash = root.split('/')[1] || 'project'
+        archiveProjects.push({ id: 'claudeportable-' + hash, name: 'Claude project ' + hash, createdAt: Date.now(), updatedAt: Date.now() })
+      }
+      const localJsons = allFiles.filter((f) => !f.dir && f.name.startsWith('claude-desktop/appdata/local-agent-mode-sessions/') && f.name.toLowerCase().endsWith('.json'))
+      for (const entry of localJsons) {
+        try {
+          const data = JSON.parse(await entry.async('text'))
+          const projectName = String(data.name || data.projectName || data.title || '')
+          if (projectName && !archiveProjects.some((p) => p.name === projectName)) archiveProjects.push({ id: 'claude-session-' + entry.name.split('/').slice(-2, -1)[0], name: projectName, instructions: typeof data.instructions === 'string' ? data.instructions : undefined, createdAt: toTimestamp(data.createdAt || data.created_at) || Date.now(), updatedAt: toTimestamp(data.updatedAt || data.updated_at) || Date.now() })
+          const messages = Array.isArray(data.chat_messages) ? data.chat_messages : Array.isArray(data.messages) ? data.messages : []
+          if (messages.length) {
+            const title = projectName || entry.name.split('/').pop() || 'Claude Cowork session'
+            archiveArtifacts.push({ id: 'claude-session-export-' + entry.name.replace(/[^a-zA-Z0-9_-]/g, '-'), name: title + ' (session metadata)', type: 'session-metadata', content: JSON.stringify(data, null, 2), createdAt: Date.now(), updatedAt: Date.now() })
+          }
+          const mcpServers = data.mcpServers || data.mcp_servers
+          if (mcpServers && typeof mcpServers === 'object') {
+            for (const [name, config] of Object.entries(mcpServers as Record<string, any>)) {
+              if (config && typeof config === 'object' && !archiveConnectors.some((c) => c.name === name)) archiveConnectors.push({ name, type: config.url ? (config.type === 'sse' ? 'sse' : 'http') : 'stdio', command: config.command, args: config.args || [], url: config.url, disabled: false })
+            }
+          }
+        } catch { /* skip unrelated or non-JSON state */ }
+      }
+    }
   } else {
     bundle = JSON.parse(await file.text())
   }
@@ -30,25 +82,25 @@ export async function importWorkspaceFile(file: File): Promise<string> {
   }
   if (!bundle || typeof bundle !== 'object') throw new Error('The selected file is not a supported Claude export or Cowork bundle.')
   const counts = useWorkspaceStore.getState().importBundle({
-    projects: Array.isArray(bundle.projects) ? bundle.projects : [],
-    artifacts: Array.isArray(bundle.artifacts) ? bundle.artifacts : [],
+    projects: [...(Array.isArray(bundle.projects) ? bundle.projects : []), ...archiveProjects],
+    artifacts: [...(Array.isArray(bundle.artifacts) ? bundle.artifacts : []), ...archiveArtifacts],
   })
   let importedSkills = 0
-  if (Array.isArray(bundle.skills)) {
-    for (const skill of bundle.skills) {
-      if (skill?.name && (skill.content || skill.body)) {
-        await useSkillStore.getState().addSkill(skill.name, skill.description || '', skill.content || skill.body)
-        importedSkills++
-      }
+  const skills = [...(Array.isArray(bundle.skills) ? bundle.skills : []), ...archiveSkills]
+  const seenSkillNames = new Set<string>()
+  for (const skill of skills) {
+    if (skill?.name && (skill.content || skill.body) && !seenSkillNames.has(String(skill.name).toLowerCase())) {
+      seenSkillNames.add(String(skill.name).toLowerCase())
+      await useSkillStore.getState().addSkill(skill.name, skill.description || '', skill.content || skill.body)
+      importedSkills++
     }
   }
   let importedConnectors = 0
-  if (Array.isArray(bundle.connectors)) {
-    for (const connector of bundle.connectors) {
-      if (connector?.name && connector?.type && !useMCPStore.getState().servers.some((s) => s.name === connector.name)) {
-        useMCPStore.getState().addServer({ ...connector, env: undefined, headers: undefined })
-        importedConnectors++
-      }
+  const connectors = [...(Array.isArray(bundle.connectors) ? bundle.connectors : []), ...archiveConnectors]
+  for (const connector of connectors) {
+    if (connector?.name && connector?.type && !useMCPStore.getState().servers.some((s) => s.name === connector.name)) {
+      useMCPStore.getState().addServer({ ...connector, env: undefined, headers: undefined })
+      importedConnectors++
     }
   }
   const conversations: any[] = Array.isArray(bundle.conversations) ? bundle.conversations : Array.isArray(bundle.chats) ? bundle.chats : Array.isArray(bundle.chat_history) ? bundle.chat_history : []
@@ -84,9 +136,10 @@ export async function importWorkspaceFile(file: File): Promise<string> {
     existingIds.add(sessionId)
   }
   await useAppStore.getState().loadFromDb()
-  return 'Import complete: ' + counts.projects + ' projects, ' + importedChats + ' chats, ' + importedMessages + ' messages, ' + counts.artifacts + ' artifacts, ' + importedSkills + ' skills, and ' + importedConnectors + ' connectors. Existing chats and connectors with matching IDs/names were kept.'
+  const sourceLabel = claudePortable ? 'ClaudePortable backup' : 'export/bundle'
+  const note = claudePortable ? ' ClaudePortable stores most Desktop chat history in LevelDB; raw history is preserved in the archive but is not yet decoded into Cowork chats.' : ''
+  return 'Import complete (' + sourceLabel + '): ' + counts.projects + ' projects, ' + importedChats + ' chats, ' + importedMessages + ' messages, ' + counts.artifacts + ' artifacts, ' + importedSkills + ' skills, and ' + importedConnectors + ' connectors.' + note
 }
-
 function toTimestamp(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value < 1e12 ? value * 1000 : value
   if (typeof value === 'string' && value.trim()) {
