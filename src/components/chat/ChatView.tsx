@@ -562,15 +562,6 @@ export function ChatView({ embedded = false }: { embedded?: boolean }) {
               />
             </div>
 
-            <div className="w-full max-w-[674px] -mt-1">
-              <div className="h-9 flex items-center gap-2 px-6 text-[12px] text-[#6e675f]">
-                <FolderKanban size={14}/>
-                <span>Project or folder</span>
-                <ChevronDown size={13}/>
-                <span className="ml-auto text-[#a39d96]">ⓘ</span>
-              </div>
-            </div>
-
             <div className="w-full max-w-[674px] mt-12">
               <div className="flex items-end justify-between mb-3">
                 <span className="text-[12px] text-[#8b847d]">Active</span>
@@ -661,12 +652,6 @@ export function ChatView({ embedded = false }: { embedded?: boolean }) {
                     variant="hero"
                     placeholder="What would you like me to do?"
                   />
-                  <div className="mt-2 h-9 flex items-center gap-2 px-4 text-[12px] text-[#6e675f]">
-                    <FolderKanban size={14}/>
-                    <span>Project or folder</span>
-                    <ChevronDown size={13}/>
-                    <span className="ml-auto text-[#a39d96]">ⓘ</span>
-                  </div>
                 </div>
               </motion.div>
             ) : (
