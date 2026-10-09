@@ -31,12 +31,15 @@ import { isAgentMcpToolAllowed, remoteMcpToolName } from '../../utils/agentMcpRu
 const EMPTY_MESSAGES: never[] = []
 const EMPTY_STREAMING = null
 
-export function ChatView({ embedded = false }: { embedded?: boolean }) {
+export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embedded?: boolean; workspaceMode?: 'cowork' | 'code' }) {
   const { t } = useTranslation()
   const {
-    activeSessionId,
+    activeSessionId: coworkActiveSessionId,
+    codeActiveSessionId,
+    setCodeActiveSessionId,
     sessions,
-    workspaceDir,
+    workspaceDir: coworkWorkspaceDir,
+    codeWorkspaceDir,
     leftPanelMode,
     setLeftPanelMode,
     sidebarCollapsed,
@@ -50,6 +53,17 @@ export function ChatView({ embedded = false }: { embedded?: boolean }) {
     addMessage,
     updateSessionTitle,
   } = useAppStore()
+  const activeSessionId = workspaceMode === 'code' ? codeActiveSessionId : coworkActiveSessionId
+  const workspaceDir = workspaceMode === 'code' ? codeWorkspaceDir : coworkWorkspaceDir
+  const setModeActiveSession = useCallback((id: string | null) => {
+    if (workspaceMode === 'code') setCodeActiveSessionId(id)
+    else useAppStore.getState().setActiveSession(id)
+  }, [workspaceMode, setCodeActiveSessionId])
+  const createModeSession = useCallback(() => {
+    const id = useAppStore.getState().createSession()
+    if (workspaceMode === 'code') setCodeActiveSessionId(id)
+    return id
+  }, [workspaceMode, setCodeActiveSessionId])
   const [error, setError] = useState<string | null>(null)
   const [draftValue, setDraftValue] = useState<string | null>(null)
   const [contextStatus, setContextStatus] = useState<JCode.ContextStatus | null>(null)
@@ -148,10 +162,10 @@ export function ChatView({ embedded = false }: { embedded?: boolean }) {
 
   const handleSubmit = useCallback(
     async (content: string, images?: ImageAttachment[]) => {
-      let sid = useAppStore.getState().activeSessionId
+      let sid = workspaceMode === 'code' ? useAppStore.getState().codeActiveSessionId : useAppStore.getState().activeSessionId
       if ((!content || !content.trim()) && (!images || images.length === 0)) return
       if (!sid) {
-        sid = useAppStore.getState().createSession()
+        sid = createModeSession()
       }
       setError(null)
       setContextStatus(null)
@@ -489,7 +503,7 @@ export function ChatView({ embedded = false }: { embedded?: boolean }) {
               name.endsWith('.webp') ? 'image/webp' :
               name.endsWith('.bmp') ? 'image/bmp' : 'image/jpeg'
             const text = `[Image: ${name}](${path})`
-            if (!useAppStore.getState().activeSessionId) useAppStore.getState().createSession()
+            if (!(workspaceMode === 'code' ? useAppStore.getState().codeActiveSessionId : useAppStore.getState().activeSessionId)) createModeSession()
             await handleSubmit(text, [{ data: base64, mimeType }])
           } catch {
             await handleSubmit(`[File: ${name}](${path})`)
@@ -579,7 +593,7 @@ export function ChatView({ embedded = false }: { embedded?: boolean }) {
               {homeSessions.length > 0 ? (
                 <div className="px-1">
                   {homeSessions.slice(0, 1).map(session => (
-                    <button key={session.id} onClick={() => { useAppStore.getState().setActiveSession(session.id) }}
+                    <button key={session.id} onClick={() => { setModeActiveSession(session.id) }}
                       className="w-full text-left flex items-center gap-3 py-1.5 hover:bg-[#faf8f6] rounded-md">
                       <span className="text-[#8c857e]">☷</span>
                       <span className="h-1.5 w-1.5 rounded-full bg-[#3b82f6]"/>
