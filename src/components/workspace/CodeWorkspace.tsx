@@ -7,7 +7,7 @@ import { useAppStore } from '../../stores/appStore'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
 import { ChatView } from '../chat/ChatView'
 
-export function CodeWorkspace({ onExitCode }: { onExitCode: () => void }) {
+export function CodeWorkspace() {
   const workspaceDir = useAppStore((s) => s.workspaceDir)
   const setWorkspaceDir = useAppStore((s) => s.setWorkspaceDir)
   const preview = useFilePreviewStore((s) => s.preview)
