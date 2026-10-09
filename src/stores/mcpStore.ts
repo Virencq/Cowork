@@ -306,6 +306,40 @@ export const useMCPStore = create<MCPState>()(
       },
 
       refreshAllServers: async () => {
+        // Import servers configured directly in JCode's ~/.jcode/mcp.json first.
+        // Merge by name so existing Cowork entries and secrets are not overwritten.
+        try {
+          const diskConfig = await invoke<unknown>('jcode_read_mcp_config');
+          if (diskConfig && typeof diskConfig === 'object') {
+            const rawServers = (diskConfig as Record<string, unknown>).mcpServers;
+            if (rawServers && typeof rawServers === 'object' && !Array.isArray(rawServers)) {
+              const currentNames = new Set(get().servers.map((server) => server.name));
+              for (const [name, raw] of Object.entries(rawServers as Record<string, unknown>)) {
+                if (currentNames.has(name) || !raw || typeof raw !== 'object') continue;
+                const item = raw as Record<string, unknown>;
+                const type = item.type === 'http' || item.type === 'sse' ? item.type : 'stdio';
+                const command = typeof item.command === 'string' ? item.command : undefined;
+                // JCode stdio entries need a command to be usable in Cowork.
+                if (type === 'stdio' && !command) continue;
+                const config: MCPServerConfig = {
+                  name,
+                  type,
+                  ...(command ? { command } : {}),
+                  ...(Array.isArray(item.args) ? { args: item.args.filter((arg): arg is string => typeof arg === 'string') } : {}),
+                  ...(typeof item.url === 'string' ? { url: item.url } : {}),
+                  ...(item.env && typeof item.env === 'object' && !Array.isArray(item.env) ? { env: item.env as Record<string, string> } : {}),
+                  ...(item.headers && typeof item.headers === 'object' && !Array.isArray(item.headers) ? { headers: item.headers as Record<string, string> } : {}),
+                  disabled: false,
+                };
+                await get().installRemoteServer(config, false);
+                currentNames.add(name);
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('[mcp] Could not import JCode MCP config:', error);
+        }
+
         const { servers } = get();
         const enabledServers = servers.filter((s) => !s.disabled);
         const statusMap: Record<string, MCPServerStatus> = {};
