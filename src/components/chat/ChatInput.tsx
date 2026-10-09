@@ -709,7 +709,7 @@ export function ChatInput({
         <Card
           variant={isHero ? 'glass' : 'default'}
           className={`relative group transition-colors duration-150 border border-border ${
-            isHero ? 'shadow-none rounded-[16px] bg-white p-0 overflow-visible' : 'shadow-sm rounded-xl bg-surface/96 p-1.5'
+            isHero ? 'shadow-none rounded-[16px] bg-surface p-0 overflow-visible' : 'shadow-sm rounded-xl bg-surface/96 p-1.5'
           } ${isDragOver ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg' : 'focus-ring-accent'}`}
         >
           {isDragOver && (
@@ -826,7 +826,7 @@ export function ChatInput({
               </TextField>
             </div>
 
-              <div className={isHero ? "w-full flex items-center justify-between h-11 px-1 border-t border-[#eeeae6]" : "flex items-center p-2"}>
+              <div className={isHero ? "w-full flex items-center justify-between h-11 px-1 border-t border-border" : "flex items-center p-2"}>
                 {isHero ? (
                   <>
                     <div className="flex items-center gap-1">
@@ -834,7 +834,7 @@ export function ChatInput({
                       <button
                         type="button"
                         onClick={() => setShowAddMenu((open) => !open)}
-                        className="h-8 w-8 rounded-md grid place-items-center text-[#342f2a] hover:bg-[#f2efec]"
+                        className="h-8 w-8 rounded-md grid place-items-center text-text-secondary hover:bg-surface-hover"
                         title="Add"
                         aria-label="Add"
                         aria-expanded={showAddMenu}
@@ -842,15 +842,15 @@ export function ChatInput({
                         <span className="text-[22px] leading-none">+</span>
                       </button>
                       {showAddMenu && (
-                        <div className="absolute bottom-10 left-0 z-50 w-64 overflow-hidden rounded-xl border border-[#ddd7d1] bg-white p-1.5 shadow-xl">
+                        <div className="absolute bottom-10 left-0 z-50 w-64 overflow-hidden rounded-xl border border-border bg-surface p-1.5 shadow-xl">
                           <button
                             type="button"
                             onClick={() => { setShowAddMenu(false); void pickFiles() }}
-                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-[#302c28] hover:bg-[#f5f2ef]"
+                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-text hover:bg-surface-hover"
                           >
                             <Paperclip size={16} />
                             <span>Add files or photos</span>
-                            <span className="ml-auto text-[10px] text-[#aaa39c]">Ctrl+U</span>
+                            <span className="ml-auto text-[10px] text-text-tertiary">Ctrl+U</span>
                           </button>
                           <button
                             type="button"
