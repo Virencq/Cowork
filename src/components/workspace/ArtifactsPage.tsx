@@ -54,14 +54,14 @@ export function ArtifactsPage({ onOpenArtifact }: ArtifactsPageProps) {
           <div className="grid grid-cols-3 gap-5">
             {visible.map(a => (
               <div key={a.id} className="overflow-hidden rounded-xl border border-[#e0dbd5] bg-white hover:shadow-sm transition">
-                <button onClick={() => openArtifact(a.id)} className="block w-full text-left"><div className="h-[170px] bg-[#f5f3f0] relative overflow-hidden">
+                <div onClick={() => openArtifact(a.id)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openArtifact(a.id) }} className="block w-full text-left cursor-pointer"><div className="h-[170px] bg-[#f5f3f0] relative overflow-hidden">
                   {a.content && /<(!doctype|html|body|div|table|style|script)/i.test(a.content) ? (
                     <iframe title={a.name} srcDoc={a.content} className="h-full w-full border-0 pointer-events-none bg-white" sandbox="" />
                   ) : (
                     <div className="h-full p-4 font-mono text-[8px] leading-3 text-[#777069] overflow-hidden whitespace-pre-wrap">{a.content || 'Artifact preview'}</div>
                   )}
                   <button onClick={(e) => { e.stopPropagation(); toggleArtifactPin(a.id) }} className="absolute right-2 bottom-2 h-7 w-7 rounded-full bg-white/90 grid place-items-center shadow-sm" title={pinnedArtifactIds.includes(a.id) ? 'Unpin artifact' : 'Pin artifact'}>{pinnedArtifactIds.includes(a.id) ? <Pin size={13} className="fill-current"/> : <Pin size={13} className="text-[#8f8881}"/>}</button>
-                </div></button>
+                </div></div>
                 <div className="px-3.5 py-3">
                   <div className="flex items-center justify-between gap-2">
                     <button onClick={() => openArtifact(a.id)} className="min-w-0 text-left text-[13px] font-semibold text-[#1e1a17] truncate hover:underline">{a.name}</button>
