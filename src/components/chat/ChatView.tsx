@@ -247,9 +247,9 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
 
       // Project instructions are persistent context, not just UI metadata.
       // Inject them into every JCode task launched from the matching workspace.
-      const project = useWorkspaceStore.getState().projects.find(
-        (p) => p.path && workspaceDir && p.path === workspaceDir,
-      )
+      const project = workspaceMode === 'code'
+        ? useWorkspaceStore.getState().codeProjects.find((p) => p.path && workspaceDir && p.path === workspaceDir)
+        : useWorkspaceStore.getState().projects.find((p) => p.path && workspaceDir && p.path === workspaceDir)
       if (project?.instructions?.trim()) {
         blocks.push('## Project Instructions\\n' + project.instructions.trim())
       }
