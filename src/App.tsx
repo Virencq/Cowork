@@ -508,6 +508,7 @@ function App() {
   const [rightOpen, setRightOpen] = useState(() => localStorage.getItem('cowork-right-open') !== 'false')
   const [sidebarOpen, setSidebarOpen] = useState(() => localStorage.getItem('cowork-sidebar-open') !== 'false')
   const [codeMode, setCodeMode] = useState(() => localStorage.getItem('cowork-code-mode') === 'true')
+  const [hasVisitedCode, setHasVisitedCode] = useState(() => localStorage.getItem('cowork-code-mode') === 'true')
   const [pageHistory, setPageHistory] = useState<Page[]>(['chat'])
   const [historyIndex, setHistoryIndex] = useState(0)
 
@@ -582,7 +583,7 @@ function App() {
     <div className="h-screen w-screen overflow-hidden bg-bg text-text">
       <CoworkTitleBar
         codeMode={codeMode}
-        onCode={() => { setCodeMode(true); setPage('chat') }}
+        onCode={() => { setHasVisitedCode(true); setCodeMode(true); setPage('chat') }}
         onCowork={() => { setCodeMode(false); setPage('chat') }}
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
         onToggleRightPanel={() => setRightOpen((open) => !open)}
@@ -600,12 +601,20 @@ function App() {
         }}
       />
       <div className="h-full flex">
-        <LeftNav width={sidebarOpen ? leftWidth : 0} onWidth={setLeftWidth} page={page} onPage={navigateToPage} onNew={newTask} onSettings={() => setShowSettings(true)} codeMode={codeMode} onCode={() => { setCodeMode(true); setPage('chat') }} onCowork={() => { setCodeMode(false); setPage('chat') }} />
+        <LeftNav width={sidebarOpen ? leftWidth : 0} onWidth={setLeftWidth} page={page} onPage={navigateToPage} onNew={newTask} onSettings={() => setShowSettings(true)} codeMode={codeMode} onCode={() => { setHasVisitedCode(true); setCodeMode(true); setPage('chat') }} onCowork={() => { setCodeMode(false); setPage('chat') }} />
         <main className="relative min-w-0 flex-1 pt-11 flex flex-col bg-bg">
           <div className="min-h-0 flex-1 flex">
             <div className="min-w-0 flex-1 flex flex-col">
-              {page === 'chat' && !codeMode && <ChatView />}
-              {page === 'chat' && codeMode && <CodeWorkspace />}
+              {page === 'chat' && (
+                <div className={codeMode ? 'hidden' : 'min-w-0 flex-1 flex flex-col'}>
+                  <ChatView />
+                </div>
+              )}
+              {hasVisitedCode && (
+                <div className={page === 'chat' && codeMode ? 'min-w-0 flex-1 flex flex-col' : 'hidden'}>
+                  <CodeWorkspace />
+                </div>
+              )}
 
               {page === 'tasks' && <TasksPage />}
               {page === 'projects' && <ProjectsPage onOpenProject={(project) => {
@@ -637,7 +646,9 @@ function App() {
       {page === 'chat' && !codeMode && !rightOpen && (
         <button onClick={() => setRightOpen(true)} className="fixed right-4 top-14 z-40 h-9 w-9 rounded-lg border border-border bg-surface shadow-sm grid place-items-center text-text-secondary"><ChevronRight size={16}/></button>
       )}
-      {showSettings && <SettingsModal initialTab="provider" onClose={() => setShowSettings(false)} />}
+      <div style={{ display: showSettings ? 'contents' : 'none' }} aria-hidden={!showSettings}>
+        <SettingsModal initialTab="provider" onClose={() => setShowSettings(false)} />
+      </div>
     </div>
   )
 }
