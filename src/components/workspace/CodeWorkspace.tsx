@@ -24,7 +24,11 @@ export function CodeWorkspace() {
   useEffect(() => {
     if (!activeCodeProject) return
     if (workspaceDir !== activeCodeProject.path) setWorkspaceDir(activeCodeProject.path)
-    if (activeCodeProject.sessionId) useAppStore.getState().setCodeActiveSessionId(activeCodeProject.sessionId)
+    if (activeCodeProject.sessionId) {
+      useAppStore.getState().setCodeActiveSessionId(activeCodeProject.sessionId)
+      useAppStore.getState().markCodeSession(activeCodeProject.sessionId)
+      void useAppStore.getState().loadMessages(activeCodeProject.sessionId)
+    }
   }, [activeCodeProject?.id])
 
   const openFolder = async () => {
