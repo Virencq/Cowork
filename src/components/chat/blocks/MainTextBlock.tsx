@@ -25,10 +25,10 @@ export function MainTextBlock({ parts, isStreaming, isDocument }: MainTextBlockP
   }
 
   return (
-    <div className={`relative px-6 py-5 rounded-[28px] rounded-tl-[4px] transition-all duration-700 group/text-part ${
+    <div className={`relative transition-colors duration-200 group/text-part ${
       isStreaming
-        ? 'bg-[var(--color-accent-subtle)]/20 border border-[var(--color-accent)]/20 shadow-[0_8px_32px_rgba(var(--color-accent-rgb),0.08)]'
-        : 'bg-[var(--color-surface)]/40 backdrop-blur-xl border border-black/[0.03] dark:border-white/[0.03] shadow-sm hover:shadow-md hover:bg-[var(--color-surface)]/60'
+        ? 'rounded-xl bg-[var(--color-accent-subtle)]/35 px-3 py-2 border border-[var(--color-accent)]/15'
+        : 'bg-transparent border border-transparent px-0 py-0'
     }`}>
       <TextPartView text={allText} isStreaming={isStreaming} />
       {isStreaming && (
