@@ -353,3 +353,21 @@ pub fn jcode_sync_mcp_config(servers: Value) -> Result<Value, String> {
         .map_err(|e| format!("Failed to write JCode MCP config: {e}"))?;
     Ok(json!({"path": path.to_string_lossy(), "servers": server_count}))
 }
+
+/// Read JCode's on-disk MCP configuration so the settings UI can import servers
+/// that were added outside Cowork. This is read-only and never rewrites the file.
+#[tauri::command]
+pub fn jcode_read_mcp_config() -> Result<Value, String> {
+    let home = std::env::var_os("USERPROFILE")
+        .or_else(|| std::env::var_os("HOME"))
+        .map(PathBuf::from)
+        .ok_or("Unable to resolve the user home directory.")?;
+    let path = home.join(".jcode").join("mcp.json");
+    if !path.exists() {
+        return Ok(json!({ "mcpServers": {} }));
+    }
+    let raw = std::fs::read_to_string(&path)
+        .map_err(|e| format!("Failed to read {}: {e}", path.display()))?;
+    serde_json::from_str::<Value>(&raw)
+        .map_err(|e| format!("Invalid JSON in {}: {e}", path.display()))
+}
