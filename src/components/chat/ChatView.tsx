@@ -61,10 +61,9 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
     else useAppStore.getState().setActiveSession(id)
   }, [workspaceMode, setCodeActiveSessionId, markCodeSession])
   const createModeSession = useCallback(() => {
-    const id = useAppStore.getState().createSession()
-    if (workspaceMode === 'code') { setCodeActiveSessionId(id); markCodeSession(id) }
-    return id
-  }, [workspaceMode, setCodeActiveSessionId])
+    if (workspaceMode === 'code') return useAppStore.getState().createCodeSession()
+    return useAppStore.getState().createSession()
+  }, [workspaceMode])
   const [error, setError] = useState<string | null>(null)
   const [draftValue, setDraftValue] = useState<string | null>(null)
   const [contextStatus, setContextStatus] = useState<JCode.ContextStatus | null>(null)
