@@ -32,7 +32,8 @@ function getLanguageExtension(ext: string): (() => Promise<Extension>) | null {
 
 export function TextPreview({ filePath, onLoaded, onError }: TextPreviewProps) {
   const [content, setContent] = useState<string | null>(null)
-  const [langExts, setLangExts] = useState<Extension[]>([])  const theme = useAppStore((s) => s.theme)
+  const [langExts, setLangExts] = useState<Extension[]>([])
+  const theme = useAppStore((s) => s.theme)
 
   useEffect(() => {
     let cancelled = false
