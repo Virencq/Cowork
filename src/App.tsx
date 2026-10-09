@@ -157,8 +157,9 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
     setActiveCodeProject(project.id)
     setCodeWorkspaceDir(project.path)
     useFilePreviewStore.getState().closePreview()
-    const existing = useAppStore.getState().sessions.find((session) => session.id === project.sessionId)
-    if (project.sessionId && existing) {
+    // The project owns its persistent session ID. Do not create a new chat
+    // just because the session list has not finished loading from SQLite yet.
+    if (project.sessionId) {
       setCodeSession(project.sessionId)
       useAppStore.getState().markCodeSession(project.sessionId)
       void useAppStore.getState().loadMessages(project.sessionId)
