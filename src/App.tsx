@@ -146,98 +146,119 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
         </button>
       </div>
 
-      {/* Cowork destinations are hidden in Code mode to keep the coding workspace focused. */}
-      <nav className="px-3 space-y-0.5">
-        <button onClick={() => onPage('projects')} className={`home-nav-row ${page === 'projects' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
-          <span className="inline-flex items-center gap-2"><FolderKanban size={14}/>Projects</span>
-        </button>
-        {!codeMode && (
-          <>
-            <button onClick={() => onPage('artifacts')} className={`home-nav-row ${page === 'artifacts' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
-              <span className="inline-flex items-center gap-2"><FileCode2 size={14}/>Artifacts</span>
-            </button>
-            <button onClick={() => { setFilterPinned(false); onPage('tasks') }} className={`home-nav-row ${page === 'tasks' && !filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
-              <span className="inline-flex items-center gap-2"><CalendarClock size={14}/>Scheduled</span>
-              <ChevronRight size={14}/>
-            </button>
-            <button onClick={() => onPage('customize')} className={`home-nav-row ${page === 'customize' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
-              <span className="inline-flex items-center gap-2"><Sparkles size={14}/>Customize</span>
-            </button>
-          </>
-        )}
-      </nav>
-
-      {/* Task navigation */}
-      <div className={`${codeMode ? 'mt-3' : 'mt-3'} px-3`}>
-        <button onClick={() => setFilterPinned(v => !v)} className={`home-nav-row ${filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
-          <span className="inline-flex items-center gap-2"><Pin size={14}/>Pinned</span>
-          <ChevronRight size={14}/>
-        </button>
-      </div>
-
-      <div className="mt-2 px-3">
-        <div className="flex items-center justify-between">
-          <button onClick={() => onPage('tasks')} className="home-nav-row flex-1 !px-0"><span>Tasks</span><ChevronRight size={14}/></button>
-          <div className="flex items-center gap-1 text-[#8f8983]">
-            <button onClick={() => setSearchOpen(v => !v)} className={`title-icon !h-7 !w-7 ${searchOpen ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`} title="Search tasks"><Search size={14}/></button>
-            <button onClick={() => setFilterPinned(v => !v)} className={`title-icon !h-7 !w-7 ${filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`} title="Show pinned tasks"><SlidersHorizontal size={14}/></button>
+      {!codeMode ? (
+        <nav className="px-3 space-y-0.5">
+          <button onClick={() => onPage('projects')} className={`home-nav-row ${page === 'projects' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
+            <span className="inline-flex items-center gap-2"><FolderKanban size={14}/>Projects</span>
+          </button>
+          <button onClick={() => onPage('artifacts')} className={`home-nav-row ${page === 'artifacts' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
+            <span className="inline-flex items-center gap-2"><FileCode2 size={14}/>Artifacts</span>
+          </button>
+          <button onClick={() => { setFilterPinned(false); onPage('tasks') }} className={`home-nav-row ${page === 'tasks' && !filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
+            <span className="inline-flex items-center gap-2"><CalendarClock size={14}/>Scheduled</span><ChevronRight size={14}/>
+          </button>
+          <button onClick={() => onPage('customize')} className={`home-nav-row ${page === 'customize' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
+            <span className="inline-flex items-center gap-2"><Sparkles size={14}/>Customize</span>
+          </button>
+        </nav>
+      ) : (
+        <div className="mt-3 px-3">
+          <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.12em] text-[#a09890]">
+            <span>Projects</span>
+            <button onClick={() => onPage('projects')} title="Manage projects" className="normal-case tracking-normal text-[11px] hover:text-[#302c28]"><Plus size={13}/></button>
           </div>
-        </div>
-        {searchOpen && (
-          <input
-            autoFocus
-            value={taskQuery}
-            onChange={e => setTaskQuery(e.target.value)}
-            placeholder="Search tasks"
-            className="mb-1 w-full h-8 rounded-md border border-[#e2ded9] bg-white px-3 text-[11px] outline-none focus:border-[#d97745]/50"
-          />
-        )}
-      </div>
-
-      <div className="px-2 mt-1 overflow-auto min-h-0 pb-28">
-        {visibleTasks.map(s => (
-          <div key={s.id} className="relative group">
-            {renaming === s.id ? (
-              <div className="flex items-center gap-1 px-2 py-1">
-                <input autoFocus value={renameValue} onChange={e=>setRenameValue(e.target.value)}
-                  onKeyDown={e=>{if(e.key==='Enter')commitRename(s.id);if(e.key==='Escape')setRenaming(null)}}
-                  className="min-w-0 flex-1 h-7 rounded-md border border-[#d8d3ce] px-2 text-[11px]"/>
-                <button onClick={()=>commitRename(s.id)} className="h-7 w-7 grid place-items-center"><Check size={13}/></button>
-              </div>
-            ) : (
-              <>
-                <button onClick={()=>{onPage('chat');setActiveSession(s.id);setUnread(p=>{const n=new Set(p);n.delete(s.id);return n})}}
-                  className={`w-full text-left rounded-md px-3 py-2 text-[11px] truncate hover:bg-[#f3f1ef] ${activeSessionId===s.id?'bg-[#f1efec] text-[#302c28]':''}`}>
-                  <span className="inline-flex items-center gap-1.5 max-w-full">
-                    <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${unread.has(s.id)?'bg-[#3b82f6]':'border border-[#bcb6b0]'}`}/>
-                    <span className="truncate">{s.title || 'Untitled task'}</span>
-                  </span>
-                </button>
-                <button onClick={e=>{e.stopPropagation();setMenuId(menuId===s.id?null:s.id)}} className="absolute right-1 top-1.5 h-7 w-7 rounded-md opacity-0 group-hover:opacity-100 hover:bg-[#eae7e3] grid place-items-center"><MoreHorizontal size={14}/></button>
-                {menuId===s.id && (
-                  <div className="absolute right-1 top-9 z-50 w-48 rounded-xl border border-[#ddd8d2] bg-white p-1.5 shadow-lg">
-                    <button onClick={()=>{
-                      setPinned(p=>{
-                        const n=new Set(p)
-                        if (n.has(s.id)) n.delete(s.id); else n.add(s.id)
-                        return n
-                      })
-                      setMenuId(null)
-                    }} className="menu-row"><Pin size={14}/>{pinned.has(s.id)?'Unpin':'Pin'}</button>
-                    <button onClick={()=>beginRename(s.id,s.title)} className="menu-row"><Pencil size={14}/>Rename</button>
-                    <button onClick={()=>{setUnread(p=>new Set(p).add(s.id));setMenuId(null)}} className="menu-row"><MailOpen size={14}/>Mark as unread</button>
-                    <div className="my-1 border-t border-[#eeeae6]"/>
-                    <button onClick={()=>{setArchived(p=>new Set(p).add(s.id));setMenuId(null)}} className="menu-row"><Archive size={14}/>Archive</button>
-                    <button onClick={()=>{deleteSession(s.id);setMenuId(null)}} className="menu-row text-[#b54d40]"><Trash2 size={14}/>Delete</button>
-                  </div>
-                )}
-              </>
+          <div className="space-y-1">
+            {useWorkspaceStore.getState().projects.map((project) => (
+              <button key={project.id} onClick={() => {
+                if (project.path) useAppStore.getState().setWorkspaceDir(project.path)
+                onPage('chat')
+              }} className={`w-full rounded-md px-2 py-2 text-left hover:bg-[#f3f1ef] ${useAppStore.getState().workspaceDir === project.path ? 'bg-[#f0eeeb]' : ''}`}>
+                <span className="flex items-center gap-2 text-[11px] font-medium text-[#514a43]">
+                  <FolderKanban size={13} className="shrink-0 text-[#8f857b}"/><span className="truncate">{project.name}</span>
+                </span>
+                {project.path && <span className="mt-0.5 block truncate pl-5 text-[9px] text-[#a49b92]">{project.path}</span>}
+              </button>
+            ))}
+            {useWorkspaceStore.getState().projects.length === 0 && (
+              <button onClick={() => onPage('projects')} className="w-full rounded-md border border-dashed border-[#e3ddd6] px-3 py-3 text-left text-[11px] text-[#8f857b] hover:bg-[#f8f6f3]">+ Add your first project</button>
             )}
           </div>
-        ))}
-        {visibleTasks.length===0 && <div className="px-3 py-3 text-[11px] text-[#a09a94]">{filterPinned ? 'No pinned tasks' : 'No tasks yet'}</div>}
-      </div>
-
+        </div>
+      )}
+      {!codeMode && (
+        {/* Task navigation */}
+        <div className={`${codeMode ? 'mt-3' : 'mt-3'} px-3`}>
+          <button onClick={() => setFilterPinned(v => !v)} className={`home-nav-row ${filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
+            <span className="inline-flex items-center gap-2"><Pin size={14}/>Pinned</span>
+            <ChevronRight size={14}/>
+          </button>
+        </div>
+  
+        <div className="mt-2 px-3">
+          <div className="flex items-center justify-between">
+            <button onClick={() => onPage('tasks')} className="home-nav-row flex-1 !px-0"><span>Tasks</span><ChevronRight size={14}/></button>
+            <div className="flex items-center gap-1 text-[#8f8983]">
+              <button onClick={() => setSearchOpen(v => !v)} className={`title-icon !h-7 !w-7 ${searchOpen ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`} title="Search tasks"><Search size={14}/></button>
+              <button onClick={() => setFilterPinned(v => !v)} className={`title-icon !h-7 !w-7 ${filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`} title="Show pinned tasks"><SlidersHorizontal size={14}/></button>
+            </div>
+          </div>
+          {searchOpen && (
+            <input
+              autoFocus
+              value={taskQuery}
+              onChange={e => setTaskQuery(e.target.value)}
+              placeholder="Search tasks"
+              className="mb-1 w-full h-8 rounded-md border border-[#e2ded9] bg-white px-3 text-[11px] outline-none focus:border-[#d97745]/50"
+            />
+          )}
+        </div>
+  
+        <div className="px-2 mt-1 overflow-auto min-h-0 pb-28">
+          {visibleTasks.map(s => (
+            <div key={s.id} className="relative group">
+              {renaming === s.id ? (
+                <div className="flex items-center gap-1 px-2 py-1">
+                  <input autoFocus value={renameValue} onChange={e=>setRenameValue(e.target.value)}
+                    onKeyDown={e=>{if(e.key==='Enter')commitRename(s.id);if(e.key==='Escape')setRenaming(null)}}
+                    className="min-w-0 flex-1 h-7 rounded-md border border-[#d8d3ce] px-2 text-[11px]"/>
+                  <button onClick={()=>commitRename(s.id)} className="h-7 w-7 grid place-items-center"><Check size={13}/></button>
+                </div>
+              ) : (
+                <>
+                  <button onClick={()=>{onPage('chat');setActiveSession(s.id);setUnread(p=>{const n=new Set(p);n.delete(s.id);return n})}}
+                    className={`w-full text-left rounded-md px-3 py-2 text-[11px] truncate hover:bg-[#f3f1ef] ${activeSessionId===s.id?'bg-[#f1efec] text-[#302c28]':''}`}>
+                    <span className="inline-flex items-center gap-1.5 max-w-full">
+                      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${unread.has(s.id)?'bg-[#3b82f6]':'border border-[#bcb6b0]'}`}/>
+                      <span className="truncate">{s.title || 'Untitled task'}</span>
+                    </span>
+                  </button>
+                  <button onClick={e=>{e.stopPropagation();setMenuId(menuId===s.id?null:s.id)}} className="absolute right-1 top-1.5 h-7 w-7 rounded-md opacity-0 group-hover:opacity-100 hover:bg-[#eae7e3] grid place-items-center"><MoreHorizontal size={14}/></button>
+                  {menuId===s.id && (
+                    <div className="absolute right-1 top-9 z-50 w-48 rounded-xl border border-[#ddd8d2] bg-white p-1.5 shadow-lg">
+                      <button onClick={()=>{
+                        setPinned(p=>{
+                          const n=new Set(p)
+                          if (n.has(s.id)) n.delete(s.id); else n.add(s.id)
+                          return n
+                        })
+                        setMenuId(null)
+                      }} className="menu-row"><Pin size={14}/>{pinned.has(s.id)?'Unpin':'Pin'}</button>
+                      <button onClick={()=>beginRename(s.id,s.title)} className="menu-row"><Pencil size={14}/>Rename</button>
+                      <button onClick={()=>{setUnread(p=>new Set(p).add(s.id));setMenuId(null)}} className="menu-row"><MailOpen size={14}/>Mark as unread</button>
+                      <div className="my-1 border-t border-[#eeeae6]"/>
+                      <button onClick={()=>{setArchived(p=>new Set(p).add(s.id));setMenuId(null)}} className="menu-row"><Archive size={14}/>Archive</button>
+                      <button onClick={()=>{deleteSession(s.id);setMenuId(null)}} className="menu-row text-[#b54d40]"><Trash2 size={14}/>Delete</button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+          {visibleTasks.length===0 && <div className="px-3 py-3 text-[11px] text-[#a09a94]">{filterPinned ? 'No pinned tasks' : 'No tasks yet'}</div>}
+        </div>
+  
+  
+      )}
       <div className="mt-auto border-t border-[#ece9e5] px-3 py-2">
         <button onClick={onSettings} className="w-full flex items-center justify-between rounded-md px-1 py-2 text-left text-[11px] text-[#7d766f] hover:bg-[#f3f1ef] hover:text-[#302c28]" title="Open Settings">
           <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full bg-[#e7e4e0] grid place-items-center text-[9px]">✦</span>Workspace</span>
