@@ -621,8 +621,24 @@ function App() {
               {page === 'tasks' && <TasksPage />}
               {page === 'projects' && <ProjectsPage onOpenProject={(project) => {
                 if (project.path) setWorkspaceDir(project.path)
-                const id = createSession()
-                setActiveSession(id)
+                // Reopen this project's existing chat instead of creating a new
+                // session on every click. Associate a session on first open only.
+                const storedProject = useWorkspaceStore.getState().projects.find((item) => item.id === project.id)
+                const storedSessionId = storedProject?.sessionId
+                const existingSession = storedSessionId
+                  ? useAppStore.getState().sessions.some((session) => session.id === storedSessionId)
+                  : false
+                if (storedSessionId && existingSession) {
+                  setActiveSession(storedSessionId)
+                  void useAppStore.getState().loadMessages(storedSessionId)
+                } else if (storedSessionId) {
+                  setActiveSession(storedSessionId)
+                  void useAppStore.getState().loadMessages(storedSessionId)
+                } else {
+                  const id = createSession()
+                  useWorkspaceStore.getState().updateProject(project.id, { sessionId: id })
+                  setActiveSession(id)
+                }
                 navigateToPage('chat')
               }} />}
               {page === 'ideas' && <div className="flex-1 grid place-items-center"><div className="text-center max-w-md"><Lightbulb className="mx-auto mb-4 text-[#b0a79e]" size={30}/><h2 className="text-xl font-semibold">Ideas</h2><p className="mt-2 text-sm text-[#8c847c]">Capture ideas here and turn them into tasks when ready.</p></div></div>}
