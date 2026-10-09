@@ -457,7 +457,7 @@ function App() {
           <div className="min-h-0 flex-1 flex">
             <div className="min-w-0 flex-1 flex flex-col">
               {page === 'chat' && !codeMode && <ChatView />}
-              {page === 'chat' && codeMode && <CodeWorkspace />}
+              {page === 'chat' && codeMode && <CodeWorkspace onExitCode={() => { setCodeMode(false); setActiveSession(null); navigateToPage('chat') }} />}
 
               {page === 'tasks' && <TasksPage />}
               {page === 'projects' && <ProjectsPage onOpenProject={(project) => {
@@ -469,7 +469,18 @@ function App() {
               {page === 'ideas' && <div className="flex-1 grid place-items-center"><div className="text-center max-w-md"><Lightbulb className="mx-auto mb-4 text-[#b0a79e]" size={30}/><h2 className="text-xl font-semibold">Ideas</h2><p className="mt-2 text-sm text-[#8c847c]">Capture ideas here and turn them into tasks when ready.</p></div></div>}
               {page === 'extensions' && <ExtensionsPage />}
               {page === 'customize' && <WorkspaceLibraryPage initialSection="skills" />}
-              {page === 'artifacts' && <ArtifactsPage />}
+              {page === 'artifacts' && <ArtifactsPage onOpenArtifact={(artifactId) => {
+                const artifact = useWorkspaceStore.getState().artifacts.find((a) => a.id === artifactId)
+                if (!artifact) return
+                let sessionId = artifact.sessionId
+                const sessions = useAppStore.getState().sessions
+                if (!sessionId || !sessions.some((s) => s.id === sessionId)) {
+                  sessionId = createSession()
+                  useWorkspaceStore.getState().upsertArtifact({ ...artifact, sessionId, updatedAt: Date.now() })
+                }
+                setActiveSession(sessionId)
+                navigateToPage('chat')
+              }} />}
             </div>
             {page === 'chat' && !codeMode && activeSessionId && activeSessionMessageCount > 0 && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} onAddScheduled={() => navigateToPage('tasks')} />}
           </div>
