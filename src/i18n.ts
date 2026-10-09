@@ -8,6 +8,14 @@ void i18n.use(initReactI18next).init({
   resources: {
     en: {
       translation: {
+        mcp: {
+          title: 'MCP Servers',
+          description: 'Manage Model Context Protocol servers available to Cowork and JCode.',
+          syncAll: 'Sync All',
+          addServer: 'Add Server',
+          emptyTitle: 'No MCP servers configured',
+          emptyDesc: 'Add a server or sync to import servers from your JCode configuration.',
+        },
         chat: {
           input: {
             placeholder: 'What would you like me to do?',
