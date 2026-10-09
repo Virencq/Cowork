@@ -58,10 +58,10 @@ export function CodeWorkspace({ onExitCode }: { onExitCode: () => void }) {
       </header>
 
       <div className="min-h-0 flex-1 flex">
-        <aside className="w-[235px] shrink-0 border-r border-[#e3dfda] bg-white flex flex-col">
+        <aside className="w-[250px] shrink-0 border-r border-[#e3dfda] bg-white flex flex-col">
           <div className="h-10 px-3 flex items-center justify-between border-b border-[#eeeae6]">
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#8e877f]">Explorer</span>
-            <button onClick={openFolder} className="h-6 w-6 rounded hover:bg-[#f1eee9] grid place-items-center text-[#817a72]"><FolderOpen size={13}/></button>
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#8e877f]">Project</span>
+            <button onClick={openFolder} className="h-6 w-6 rounded hover:bg-[#f1eee9] grid place-items-center text-[#817a72]" title="Open folder"><FolderOpen size={13}/></button>
           </div>
           <div className="px-2 py-2 border-b border-[#eeeae6]">
             <div className="h-7 rounded-md border border-[#e5e0da] bg-[#faf9f7] flex items-center gap-1.5 px-2">
@@ -76,56 +76,41 @@ export function CodeWorkspace({ onExitCode }: { onExitCode: () => void }) {
                 <div>
                   <FolderOpen size={25} className="mx-auto mb-2 text-[#c1b9b1]"/>
                   <div className="text-[11px] font-semibold text-[#625b54]">No workspace</div>
-                  <p className="mt-1 text-[10px] leading-4 text-[#a09890]">Open a project folder to browse its code.</p>
+                  <p className="mt-1 text-[10px] leading-4 text-[#a09890]">Open a project folder to give JCode a working directory.</p>
                   <button onClick={openFolder} className="mt-3 h-7 px-3 rounded-md bg-[#302c28] text-white text-[10px]">Open folder</button>
                 </div>
               </div>
             )}
           </div>
-          <div className="h-8 shrink-0 border-t border-[#eeeae6] px-3 flex items-center gap-2 text-[9px] text-[#918981]"><GitBranch size={11}/> local workspace</div>
+          <div className="h-8 shrink-0 border-t border-[#eeeae6] px-3 flex items-center gap-2 text-[9px] text-[#918981]"><GitBranch size={11}/> {workspaceDir ? 'workspace active' : 'no workspace'}</div>
         </aside>
 
-        <section className="min-w-0 flex-1 flex flex-col bg-[#faf9f7]">
-          {preview ? (
-            <>
-              <div className="h-9 shrink-0 border-b border-[#e5e0da] bg-white flex items-center">
-                <div className="h-full px-3 border-r border-[#e5e0da] flex items-center gap-2 text-[10px] text-[#514a43]">
-                  <FileCode2 size={12} className="text-[#d97745]"/>
-                  <span className="max-w-[300px] truncate">{preview.fileName}</span>
-                  <button onClick={closePreview} className="ml-1 text-[#aaa29a] hover:text-[#302c28]"><X size={11}/></button>
-                </div>
-              </div>
-              <div className="min-h-0 flex-1"><FilePreviewPanel/></div>
-            </>
-          ) : (
-            <div className="h-full grid place-items-center">
-              <div className="text-center max-w-sm px-6">
-                <FileCode2 size={34} className="mx-auto mb-3 text-[#c5beb6]"/>
-                <h2 className="text-[15px] font-semibold text-[#514a43]">Code workspace</h2>
-                <p className="mt-1.5 text-[11px] leading-5 text-[#948c84]">Open a project folder and select a file from Explorer to start working.</p>
-              </div>
+        <section className="min-w-0 flex-1 flex flex-col bg-white">
+          <div className="h-9 shrink-0 border-b border-[#e5e0da] bg-[#faf9f7] px-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileCode2 size={13} className="text-[#d97745]"/>
+              <span className="text-[10px] font-semibold text-[#514a43]">{activeSessionId ? 'Coding session' : 'JCode'}</span>
             </div>
-          )}
-          <div className="h-7 shrink-0 border-t border-[#e3dfda] bg-white px-3 flex items-center justify-between text-[9px] text-[#8f8780]">
-            <div className="flex items-center gap-3"><span>Ready</span><span>UTF-8</span><span>Spaces: 2</span></div>
-            <span className="truncate max-w-[50%]">{preview?.filePath || workspaceName}</span>
+            <div className="text-[9px] text-[#9b938b] truncate max-w-[45%]">{workspaceName}</div>
+          </div>
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <ChatView embedded />
           </div>
         </section>
 
-        {rightOpen && (
-          <aside className="w-[390px] shrink-0 border-l border-[#e3dfda] bg-white flex flex-col min-h-0">
-            <div className="h-12 shrink-0 border-b border-[#e5e0da] px-4 flex items-center justify-between">
-              <div>
-                <div className="text-[12px] font-semibold">JCode</div>
-                <div className="text-[9px] text-[#9b938b]">Coding assistant</div>
+        {preview && (
+          <aside className="w-[460px] shrink-0 border-l border-[#e3dfda] bg-[#faf9f7] flex flex-col min-h-0">
+            <div className="h-9 shrink-0 border-b border-[#e5e0da] bg-white px-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <FileCode2 size={12} className="text-[#d97745]"/>
+                <span className="text-[10px] font-semibold truncate">{preview.fileName}</span>
               </div>
-              <button onClick={() => setRightOpen(false)} className="h-7 w-7 rounded hover:bg-[#f1eee9] grid place-items-center"><X size={14}/></button>
+              <button onClick={closePreview} className="h-6 w-6 rounded hover:bg-[#f1eee9] grid place-items-center text-[#817a72]" title="Close preview"><X size={12}/></button>
             </div>
-            <div className="min-h-0 flex-1 overflow-hidden">
-              <ChatView embedded />
-            </div>
+            <div className="min-h-0 flex-1 overflow-hidden"><FilePreviewPanel/></div>
           </aside>
         )}
+      </div>
       </div>
     </div>
   )
