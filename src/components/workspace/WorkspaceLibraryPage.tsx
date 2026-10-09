@@ -6,6 +6,8 @@ import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useSkillStore } from '../../stores/skillStore'
 import { useMCPStore } from '../../stores/mcpStore'
 import { useAppStore } from '../../stores'
+import * as db from '../../utils/database'
+import type { KiloMessage, MessagePart } from '../../types'
 
 type Section = 'projects' | 'artifacts' | 'skills' | 'connectors'
 
@@ -14,35 +16,100 @@ export async function importWorkspaceFile(file: File): Promise<string> {
   if (file.name.toLowerCase().endsWith('.zip')) {
     const zip = await JSZip.loadAsync(await file.arrayBuffer())
     const entries = Object.values(zip.files) as any[]
-    const jsonEntry = entries.find((f) => !f.dir && /(^|[/\\\\])(cowork|s-loop|manifest).*\\.json$/i.test(f.name))
-      || entries.find((f) => !f.dir && f.name.toLowerCase().endsWith('.json'))
-    if (!jsonEntry) throw new Error('No JSON manifest found in the archive.')
+    const conversationEntry = entries.find((f) => !f.dir && /(^|[/\\\\])conversations\\.json$/i.test(f.name))
+    const manifestEntry = entries.find((f) => !f.dir && /(^|[/\\\\])(cowork|s-loop|manifest).*\\.json$/i.test(f.name))
+    const jsonEntry = conversationEntry || manifestEntry || entries.find((f) => !f.dir && f.name.toLowerCase().endsWith('.json'))
+    if (!jsonEntry) throw new Error('No conversations.json or supported JSON manifest was found in the archive.')
     bundle = JSON.parse(await jsonEntry.async('text'))
   } else {
     bundle = JSON.parse(await file.text())
   }
-
-  const counts = useWorkspaceStore.getState().importBundle(bundle)
+  if (Array.isArray(bundle)) {
+    if (bundle.some((item) => item && (Array.isArray(item.chat_messages) || Array.isArray(item.messages)))) bundle = { conversations: bundle }
+    else throw new Error('This JSON file does not look like a Claude conversation export.')
+  }
+  if (!bundle || typeof bundle !== 'object') throw new Error('The selected file is not a supported Claude export or Cowork bundle.')
+  const counts = useWorkspaceStore.getState().importBundle({
+    projects: Array.isArray(bundle.projects) ? bundle.projects : [],
+    artifacts: Array.isArray(bundle.artifacts) ? bundle.artifacts : [],
+  })
+  let importedSkills = 0
   if (Array.isArray(bundle.skills)) {
     for (const skill of bundle.skills) {
       if (skill?.name && (skill.content || skill.body)) {
         await useSkillStore.getState().addSkill(skill.name, skill.description || '', skill.content || skill.body)
+        importedSkills++
       }
     }
   }
+  let importedConnectors = 0
   if (Array.isArray(bundle.connectors)) {
     for (const connector of bundle.connectors) {
-      if (connector?.name && connector?.type) useMCPStore.getState().addServer(connector)
+      if (connector?.name && connector?.type && !useMCPStore.getState().servers.some((s) => s.name === connector.name)) {
+        useMCPStore.getState().addServer({ ...connector, env: undefined, headers: undefined })
+        importedConnectors++
+      }
     }
   }
-  return `Imported ${counts.projects} projects, ${counts.artifacts} artifacts, ${bundle.skills?.length || 0} skills, and ${bundle.connectors?.length || 0} connectors.`
+  const conversations: any[] = Array.isArray(bundle.conversations) ? bundle.conversations : Array.isArray(bundle.chats) ? bundle.chats : Array.isArray(bundle.chat_history) ? bundle.chat_history : []
+  let importedChats = 0
+  let importedMessages = 0
+  const existingSessions = await db.getAllSessions()
+  const existingIds = new Set(existingSessions.map((session) => session.id))
+  for (const conversation of conversations) {
+    if (!conversation || typeof conversation !== 'object') continue
+    const originalId = String(conversation.uuid || conversation.id || conversation.conversation_id || '')
+    const stableSourceId = originalId || String(conversation.name || conversation.title || 'chat') + '-' + String(conversation.created_at || '')
+    const sessionId = 'claude-' + stableSourceId.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 80)
+    if (existingIds.has(sessionId)) continue
+    const rawMessages: any[] = Array.isArray(conversation.chat_messages) ? conversation.chat_messages : Array.isArray(conversation.messages) ? conversation.messages : []
+    if (!rawMessages.length) continue
+    const title = String(conversation.name || conversation.title || 'Imported Claude chat').trim() || 'Imported Claude chat'
+    const createdAt = toTimestamp(conversation.created_at) || Date.now()
+    await db.createSession(sessionId, title)
+    for (let index = 0; index < rawMessages.length; index++) {
+      const raw = rawMessages[index]
+      const sender = String(raw.sender || raw.role || raw.author?.role || '').toLowerCase()
+      const role: 'user' | 'assistant' = ['human', 'user'].includes(sender) ? 'user' : 'assistant'
+      const textContent = extractClaudeMessageText(raw)
+      if (!textContent) continue
+      const messageId = ('claude-' + sessionId + '-' + index).slice(0, 120)
+      const created = toTimestamp(raw.created_at || raw.updated_at) || createdAt + index
+      const parts: MessagePart[] = [{ id: messageId + '-text', type: 'text', text: textContent, time: { created } }]
+      const message: KiloMessage = { info: { id: messageId, sessionID: sessionId, role, time: { created } }, parts }
+      await db.saveMessage(messageId, sessionId, role, parts, message.info as unknown as Record<string, unknown>)
+      importedMessages++
+    }
+    importedChats++
+    existingIds.add(sessionId)
+  }
+  await useAppStore.getState().loadFromDb()
+  return 'Import complete: ' + counts.projects + ' projects, ' + importedChats + ' chats, ' + importedMessages + ' messages, ' + counts.artifacts + ' artifacts, ' + importedSkills + ' skills, and ' + importedConnectors + ' connectors. Existing chats and connectors with matching IDs/names were kept.'
 }
 
+function toTimestamp(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value < 1e12 ? value * 1000 : value
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Date.parse(value)
+    if (Number.isFinite(parsed)) return parsed
+    const numeric = Number(value)
+    if (Number.isFinite(numeric)) return numeric < 1e12 ? numeric * 1000 : numeric
+  }
+  return null
+}
+
+function extractClaudeMessageText(message: any): string {
+  if (typeof message.text === 'string' && message.text.trim()) return message.text
+  if (typeof message.content === 'string') return message.content
+  if (Array.isArray(message.content)) return message.content.map((part: any) => typeof part === 'string' ? part : (typeof part?.text === 'string' ? part.text : typeof part?.content === 'string' ? part.content : '')).filter(Boolean).join('\n')
+  if (Array.isArray(message.message?.content)) return message.message.content.map((part: any) => typeof part === 'string' ? part : (part?.text || '')).filter(Boolean).join('\n')
+  return ''
+}
 export function ImportLibraryButton({ className = '' }: { className?: string }) {
   const [message, setMessage] = useState('')
   return (
     <label className={`cursor-pointer inline-flex items-center justify-center gap-2 rounded-lg bg-[#d97745] px-4 py-2.5 text-[12px] font-semibold text-white hover:bg-[#c96838] ${className}`}>
-      <Upload size={15}/> Import
+      <Upload size={15}/> Import Claude Cowork
       <input type="file" className="hidden" accept=".json,.zip" onChange={async (e) => {
         const f = e.target.files?.[0]
         if (f) setMessage(await importWorkspaceFile(f).catch((err) => err instanceof Error ? err.message : 'Import failed.'))
