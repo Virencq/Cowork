@@ -390,23 +390,23 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
   }
 
   return (
-    <aside style={{ width }} className="relative shrink-0 h-full border-l border-[#e7e2dc] bg-[#fbfaf8] pt-11 overflow-auto">
+    <aside style={{ width }} className="relative shrink-0 h-full border-l border-border bg-surface pt-11 overflow-auto">
       <ResizeHandle side="right" onDrag={(d) => onWidth(Math.max(280, Math.min(440, width + d)))} />
-      <div className="h-14 px-5 flex items-center justify-between border-b border-[#ebe6e0]">
+      <div className="h-14 px-5 flex items-center justify-between border-b border-border">
         <div>
-          <div className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#9a938c]">Project</div>
-          <div className="text-[14px] font-semibold text-[#302c28] truncate max-w-[210px]">{project?.name || 'Workspace'}</div>
+          <div className="text-[11px] uppercase tracking-[.12em] font-semibold text-text-tertiary">Project</div>
+          <div className="text-[14px] font-semibold text-text truncate max-w-[210px]">{project?.name || 'Workspace'}</div>
         </div>
-        <button onClick={onClose} className="h-8 w-8 rounded-md hover:bg-[#f0ece7] grid place-items-center text-[#817a72]" title="Close panel"><X size={16}/></button>
+        <button onClick={onClose} className="h-8 w-8 rounded-md hover:bg-surface-hover grid place-items-center text-text-secondary" title="Close panel"><X size={16}/></button>
       </div>
 
-      <section className="border-b border-[#ebe6e0]">
+      <section className="border-b border-border">
         <div className="px-5 py-4 flex items-center justify-between">
           <div>
-            <div className="text-[13px] font-semibold text-[#302c28]">Instructions</div>
-            <div className="mt-1 text-[11px] text-[#9a938c]">Instructions for this project</div>
+            <div className="text-[13px] font-semibold text-text">Instructions</div>
+            <div className="mt-1 text-[11px] text-text-tertiary">Instructions for this project</div>
           </div>
-          <button onClick={() => { setDraftInstructions(project?.instructions || ''); setEditingInstructions(true) }} className="h-8 w-8 rounded-md hover:bg-[#eee9e3] grid place-items-center text-[#817a72]" title={project?.instructions ? 'Edit instructions' : 'Add instructions'}>
+          <button onClick={() => { setDraftInstructions(project?.instructions || ''); setEditingInstructions(true) }} className="h-8 w-8 rounded-md hover:bg-surface-hover grid place-items-center text-text-secondary" title={project?.instructions ? 'Edit instructions' : 'Add instructions'}>
             {project?.instructions ? <Pencil size={15}/> : <Plus size={16}/>}
           </button>
         </div>
@@ -418,36 +418,36 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
                 value={draftInstructions}
                 onChange={e => setDraftInstructions(e.target.value)}
                 placeholder="Tell JCode how to work in this project..."
-                className="w-full min-h-[130px] resize-y rounded-lg border border-[#d8d0c8] bg-white p-3 text-[12px] leading-5 text-[#403a35] outline-none focus:border-[#d97745]/60"
+                className="w-full min-h-[130px] resize-y rounded-lg border border-border bg-surface-secondary p-3 text-[12px] leading-5 text-text outline-none focus:border-[#d97745]/60"
               />
               <div className="mt-2 flex justify-end gap-2">
-                <button onClick={() => setEditingInstructions(false)} className="rounded-lg px-3 py-1.5 text-[11px] text-[#746c64] hover:bg-[#eee9e3]">Cancel</button>
-                <button onClick={saveInstructions} className="rounded-lg bg-[#302c28] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-black">Save</button>
+                <button onClick={() => setEditingInstructions(false)} className="rounded-lg px-3 py-1.5 text-[11px] text-text-secondary hover:bg-surface-hover">Cancel</button>
+                <button onClick={saveInstructions} className="rounded-lg bg-accent px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-accent-light">Save</button>
               </div>
             </div>
           ) : (
-            <p className="text-[12px] leading-5 text-[#6f675f] whitespace-pre-wrap">
+            <p className="text-[12px] leading-5 text-text-secondary whitespace-pre-wrap">
               {project?.instructions || 'Add instructions to guide JCode on goals, style, constraints, and project conventions.'}
             </p>
           )}
         </div>
       </section>
 
-      <section className="border-b border-[#ebe6e0]">
+      <section className="border-b border-border">
         <div className="px-5 py-4">
-          <div className="text-[13px] font-semibold text-[#302c28]">Memory</div>
-          <div className="mt-1 text-[11px] text-[#9a938c]">Project memory</div>
+          <div className="text-[13px] font-semibold text-text">Memory</div>
+          <div className="mt-1 text-[11px] text-text-tertiary">Project memory</div>
         </div>
         <div className="px-5 pb-5 text-[12px] leading-5 text-[#777068]">
           JCode manages persistent memory for its sessions. Use /memory in chat to inspect or change memory behavior.
         </div>
       </section>
 
-      <section className="border-b border-[#ebe6e0]">
+      <section className="border-b border-border">
         <div className="px-5 py-4 flex items-center justify-between">
           <div>
-            <div className="text-[13px] font-semibold text-[#302c28]">Context</div>
-            <div className="mt-1 text-[11px] text-[#9a938c]">Files and folders available to JCode</div>
+            <div className="text-[13px] font-semibold text-text">Context</div>
+            <div className="mt-1 text-[11px] text-text-tertiary">Files and folders available to JCode</div>
           </div>
           <button
             onClick={async () => {
@@ -456,14 +456,14 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
                 useAppStore.getState().setWorkspaceDir(selected)
               }
             }}
-            className="h-7 w-7 rounded-md hover:bg-[#eee9e3] grid place-items-center text-[#817a72]"
+            className="h-7 w-7 rounded-md hover:bg-surface-hover grid place-items-center text-text-secondary"
             title="Add context folder"
           ><Plus size={15}/></button>
         </div>
         <div className="px-5 pb-5">
-          <div className="rounded-lg border border-[#e7e0d9] bg-white px-3 py-2.5 flex items-center gap-2">
-            <FolderKanban size={15} className="text-[#8c837b]"/>
-            <span className="text-[11px] truncate text-[#5f5851]">{project?.path || workspaceDir || 'No project folder selected'}</span>
+          <div className="rounded-lg border border-border bg-surface-secondary px-3 py-2.5 flex items-center gap-2">
+            <FolderKanban size={15} className="text-text-tertiary"/>
+            <span className="text-[11px] truncate text-text-secondary">{project?.path || workspaceDir || 'No project folder selected'}</span>
           </div>
         </div>
       </section>
@@ -471,10 +471,10 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
       <section>
         <div className="px-5 py-4 flex items-center justify-between">
           <div>
-            <div className="text-[13px] font-semibold text-[#302c28]">Scheduled</div>
-            <div className="mt-1 text-[11px] text-[#9a938c]">Recurring tasks for this project</div>
+            <div className="text-[13px] font-semibold text-text">Scheduled</div>
+            <div className="mt-1 text-[11px] text-text-tertiary">Recurring tasks for this project</div>
           </div>
-          <button onClick={onAddScheduled} className="h-7 w-7 rounded-md hover:bg-[#eee9e3] grid place-items-center text-[#817a72]" title="Add scheduled task"><Plus size={15}/></button>
+          <button onClick={onAddScheduled} className="h-7 w-7 rounded-md hover:bg-surface-hover grid place-items-center text-text-secondary" title="Add scheduled task"><Plus size={15}/></button>
         </div>
       </section>
     </aside>
