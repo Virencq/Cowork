@@ -45,7 +45,7 @@ function WindowControls() {
   )
 }
 
-function CoworkTitleBar({ onToggleSidebar, onToggleRightPanel, onBack, onForward }: {
+function CoworkTitleBar({ onToggleSidebar, onToggleRightPanel, onBack, onForward, codeMode, onCode, onCowork }: {
   onToggleSidebar: () => void
   onToggleRightPanel: () => void
   onBack: () => void
