@@ -1,50 +1,58 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { FolderOpen, FileCode2, X, Files, GitBranch, TerminalSquare, ArrowUpRight } from 'lucide-react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { FilePreviewPanel } from '../preview/FilePreviewPanel'
 import { FileTree } from './FileTree'
 import { useAppStore } from '../../stores/appStore'
+import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
 import { ChatView } from '../chat/ChatView'
 
 export function CodeWorkspace() {
   const workspaceDir = useAppStore((s) => s.codeWorkspaceDir)
   const setWorkspaceDir = useAppStore((s) => s.setCodeWorkspaceDir)
+  const codeProjects = useWorkspaceStore((s) => s.codeProjects)
+  const activeCodeProjectId = useWorkspaceStore((s) => s.activeCodeProjectId)
+  const activeCodeProject = codeProjects.find((project) => project.id === activeCodeProjectId) ?? null
+  const addCodeProject = useWorkspaceStore((s) => s.addCodeProject)
+  const updateCodeProject = useWorkspaceStore((s) => s.updateCodeProject)
+  const setActiveCodeProject = useWorkspaceStore((s) => s.setActiveCodeProject)
   const preview = useFilePreviewStore((s) => s.preview)
   const closePreview = useFilePreviewStore((s) => s.closePreview)
   const [showFiles, setShowFiles] = useState(false)
-  const activeSessionId = useAppStore((s) => s.codeActiveSessionId)
-  const sessionMessages = useAppStore((s) => s.sessionMessages)
-  const activeMessages = activeSessionId ? sessionMessages[activeSessionId] ?? [] : []
-  const attachedFolder = useMemo(() => {
-    for (let i = activeMessages.length - 1; i >= 0; i--) {
-      const message = activeMessages[i]
-      if (message.info.role !== 'user') continue
-      for (const part of message.parts) {
-        if (part.type !== 'text' || typeof part.text !== 'string') continue
-        const match = part.text.match(/\[File: ([^\]]+)\]\(([^)]+)\)/)
-        if (match && /[\\\\/]/.test(match[2])) return { name: match[1], path: match[2] }
-      }
-    }
-    return null
-  }, [activeMessages])
-  const displayPath = attachedFolder?.path ?? workspaceDir
 
   const openFolder = async () => {
     const selected = await openDialog({
       directory: true,
       multiple: false,
-      title: 'Open code workspace',
+      title: 'Add codebase folder',
     })
+    if (typeof selected !== 'string') return
 
-    if (typeof selected === 'string') {
-      setWorkspaceDir(selected)
-      closePreview()
+    let project = useWorkspaceStore.getState().codeProjects.find((item) => item.path === selected)
+    if (!project) {
+      const name = selected.split(/[/\\\\]/).filter(Boolean).pop() || 'Code project'
+      const projectId = addCodeProject({ name, path: selected })
+      project = useWorkspaceStore.getState().codeProjects.find((item) => item.id === projectId)
+    }
+    if (!project) return
+
+    setActiveCodeProject(project.id)
+    setWorkspaceDir(project.path)
+    closePreview()
+
+    const existing = useAppStore.getState().sessions.find((session) => session.id === project?.sessionId)
+    if (project.sessionId && existing) {
+      useAppStore.getState().setCodeActiveSessionId(project.sessionId)
+      useAppStore.getState().markCodeSession(project.sessionId)
+    } else {
+      const sessionId = useAppStore.getState().createCodeSession()
+      updateCodeProject(project.id, { sessionId })
     }
   }
 
-  const workspaceName = attachedFolder?.name ?? (workspaceDir
-    ? workspaceDir.split(/[/\\]/).filter(Boolean).pop() || workspaceDir
+  const workspaceName = activeCodeProject?.name ?? (workspaceDir
+    ? workspaceDir.split(/[/\\\\]/).filter(Boolean).pop() || workspaceDir
     : 'No project')
 
   return (
