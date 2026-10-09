@@ -44,18 +44,18 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
 
   if (isUser) {
     return (
-      <div className="flex justify-end py-4 group animate-message-appear">
-        <div className="flex flex-row-reverse gap-4 max-w-[85%] lg:max-w-[70%]">
+      <div className="flex justify-end py-2.5 group animate-message-appear">
+        <div className="flex flex-row-reverse items-start gap-2.5 max-w-[85%] lg:max-w-[70%]">
           {/* Avatar */}
           <div className="shrink-0 mt-1">
-            <div className="w-10 h-10 rounded-[14px] bg-accent flex items-center justify-center text-white shadow-lg transition-transform duration-500">
-              <User size={20} strokeWidth={3} />
+            <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center text-white shadow-sm">
+              <User size={16} strokeWidth={2.5} />
             </div>
           </div>
 
           <div className="flex flex-col items-end gap-2 min-w-0">
             <div
-              className="bg-accent text-accent-foreground px-6 py-5 text-[15px] leading-relaxed wrap-break-word shadow-xl shadow-accent/10 rounded-[28px] rounded-tr-[4px] group-hover:shadow-accent/20 transition-all duration-500 font-medium"
+              className="bg-accent text-accent-foreground px-4 py-2.5 text-[14px] leading-[1.65] wrap-break-word rounded-2xl rounded-tr-md shadow-sm font-normal"
             >
               {message.parts.map((part, idx) => {
                 if (part.type !== 'text') return null
@@ -91,9 +91,9 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
   }
 
   return (
-    <div className="flex justify-start py-6 group animate-message-appear">
+    <div className="flex justify-start py-4 group animate-message-appear">
       <div
-        className={`flex gap-4 ${
+        className={`flex gap-3 ${
           isDocument
             ? 'w-full max-w-full'
             : 'max-w-[96%] lg:max-w-[85%]'
@@ -102,8 +102,8 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
         {/* Avatar */}
         <div className="shrink-0 mt-1">
           <div className="relative group/bot">
-            <div className="relative w-10 h-10 rounded-[14px] bg-surface border border-border flex items-center justify-center text-accent shadow-sm group-hover:scale-105 transition-transform duration-500">
-              <Cpu size={20} strokeWidth={3} className="drop-shadow-[0_0_8px_rgba(var(--color-accent-rgb),0.3)]" />
+            <div className="relative w-8 h-8 rounded-xl bg-surface border border-border flex items-center justify-center text-accent">
+              <Cpu size={16} strokeWidth={2} />
             </div>
           </div>
         </div>
