@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { FolderOpen, FileCode2, X, Files } from 'lucide-react'
+import { useState } from 'react'
+import { FolderOpen, FileCode2, X, Files, GitBranch, TerminalSquare, ArrowUpRight } from 'lucide-react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { FilePreviewPanel } from '../preview/FilePreviewPanel'
 import { FileTree } from './FileTree'
@@ -13,16 +13,6 @@ export function CodeWorkspace() {
   const preview = useFilePreviewStore((s) => s.preview)
   const closePreview = useFilePreviewStore((s) => s.closePreview)
   const [showFiles, setShowFiles] = useState(false)
-  const activeSessionId = useAppStore((s) => s.activeSessionId)
-  const createSession = useAppStore((s) => s.createSession)
-  const setActiveSession = useAppStore((s) => s.setActiveSession)
-
-  useEffect(() => {
-    if (!activeSessionId) {
-      const id = createSession()
-      setActiveSession(id)
-    }
-  }, [activeSessionId, createSession, setActiveSession])
 
   const openFolder = async () => {
     const selected = await openDialog({
@@ -80,7 +70,7 @@ export function CodeWorkspace() {
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 flex bg-white">
+      <main className="min-h-0 flex-1 flex bg-[#fcfbfa]">
         {showFiles && workspaceDir && (
           <aside className="w-[260px] shrink-0 border-r border-[#e8e3de] bg-[#fcfbfa] flex flex-col">
             <div className="h-10 shrink-0 px-3 border-b border-[#eee9e4] flex items-center justify-between">
@@ -92,8 +82,38 @@ export function CodeWorkspace() {
             </div>
           </aside>
         )}
-        <section className="min-w-0 flex-1 flex flex-col">
-          <div className="min-h-0 flex-1 overflow-hidden">
+        <section className="min-w-0 flex-1 flex flex-col relative">
+          {!workspaceDir && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center px-6 bg-[#fcfbfa]">
+              <div className="w-full max-w-[620px]">
+                <div className="mb-7 text-center">
+                  <div className="mx-auto mb-5 h-12 w-12 rounded-2xl border border-[#eee2d8] bg-white shadow-sm grid place-items-center text-[#d97745]">
+                    <FileCode2 size={23}/>
+                  </div>
+                  <h1 className="text-[34px] leading-tight tracking-[-0.04em] font-serif text-[#201b17]">What are we building?</h1>
+                  <p className="mt-2 text-[13px] text-[#8b837b]">Choose a project, then ask JCode to inspect, change, or build something.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mb-5">
+                  <button onClick={openFolder} className="group rounded-xl border border-[#e6dfd8] bg-white p-4 text-left hover:border-[#d7b59e] hover:shadow-sm transition-all">
+                    <div className="mb-3 h-9 w-9 rounded-lg bg-[#f8f1eb] text-[#c66d3c] grid place-items-center"><FolderOpen size={17}/></div>
+                    <div className="text-[13px] font-semibold text-[#302c28]">Open a project</div>
+                    <div className="mt-1 text-[11px] leading-relaxed text-[#8d857d]">Select a local folder to give JCode project context.</div>
+                    <div className="mt-3 inline-flex items-center gap-1 text-[11px] font-medium text-[#a85d35]">Choose folder <ArrowUpRight size={12}/></div>
+                  </button>
+                  <button onClick={() => setShowFiles(true)} disabled={!workspaceDir} className="rounded-xl border border-[#e6dfd8] bg-white p-4 text-left hover:border-[#d7b59e] transition-all disabled:opacity-45">
+                    <div className="mb-3 h-9 w-9 rounded-lg bg-[#f2f0ed] text-[#71675e] grid place-items-center"><Files size={17}/></div>
+                    <div className="text-[13px] font-semibold text-[#302c28]">Browse project files</div>
+                    <div className="mt-1 text-[11px] leading-relaxed text-[#8d857d]">Explore files and open one in the editor.</div>
+                    <div className="mt-3 inline-flex items-center gap-1 text-[11px] font-medium text-[#756b62]">Open file tree <ArrowUpRight size={12}/></div>
+                  </button>
+                </div>
+                <div className="flex items-center justify-center gap-2 text-[11px] text-[#a49b92]">
+                  <GitBranch size={13}/> Your files stay local until JCode uses an enabled tool to read or edit them.
+                </div>
+              </div>
+            </div>
+          )}
+          <div className={workspaceDir ? "min-h-0 flex-1 overflow-hidden" : "min-h-0 flex-1 overflow-hidden opacity-0 pointer-events-none"}>
             <ChatView embedded />
           </div>
         </section>
