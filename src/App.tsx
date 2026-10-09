@@ -65,10 +65,6 @@ function CoworkTitleBar({ onToggleSidebar, onToggleRightPanel, onBack, onForward
       <div className="flex items-center h-full gap-1 px-3 text-[#5d5852]">
         <button onClick={onToggleSidebar} className="title-icon" title="Toggle sidebar" aria-label="Toggle sidebar"><Menu size={16}/></button>
         <button onClick={onToggleRightPanel} className="title-icon" title="Toggle project panel" aria-label="Toggle project panel"><Columns2 size={16}/></button>
-        <div className="ml-1 flex h-8 items-center rounded-lg border border-[#e7e2dc] bg-[#f5f3f0] p-0.5">
-          <button onClick={onCowork} className={`h-7 rounded-md px-3 text-[11px] font-medium transition-colors ${!codeMode ? 'bg-white text-[#302c28] shadow-sm' : 'text-[#77716b] hover:text-[#302c28]'}`}>Cowork</button>
-          <button onClick={onCode} className={`h-7 rounded-md px-3 text-[11px] font-medium transition-colors ${codeMode ? 'bg-white text-[#302c28] shadow-sm' : 'text-[#77716b] hover:text-[#302c28]'}`}>Code</button>
-        </div>
         <button onClick={onBack} className="title-icon" title="Back" aria-label="Back"><ArrowLeft size={17}/></button>
         <button onClick={onForward} className="title-icon" title="Forward" aria-label="Forward"><ArrowRight size={17}/></button>
       </div>
