@@ -16,8 +16,8 @@ export async function importWorkspaceFile(file: File): Promise<string> {
   if (file.name.toLowerCase().endsWith('.zip')) {
     const zip = await JSZip.loadAsync(await file.arrayBuffer())
     const entries = Object.values(zip.files) as any[]
-    const conversationEntry = entries.find((f) => !f.dir && /(^|[/\\\\])conversations\\.json$/i.test(f.name))
-    const manifestEntry = entries.find((f) => !f.dir && /(^|[/\\\\])(cowork|s-loop|manifest).*\\.json$/i.test(f.name))
+    const conversationEntry = entries.find((f) => !f.dir && /(^|[/\\\\])conversations\.json$/i.test(f.name))
+    const manifestEntry = entries.find((f) => !f.dir && /(^|[/\\\\])(cowork|s-loop|manifest).*\.json$/i.test(f.name))
     const jsonEntry = conversationEntry || manifestEntry || entries.find((f) => !f.dir && f.name.toLowerCase().endsWith('.json'))
     if (!jsonEntry) throw new Error('No conversations.json or supported JSON manifest was found in the archive.')
     bundle = JSON.parse(await jsonEntry.async('text'))
@@ -115,7 +115,7 @@ export function ImportLibraryButton({ className = '' }: { className?: string }) 
         if (f) setMessage(await importWorkspaceFile(f).catch((err) => err instanceof Error ? err.message : 'Import failed.'))
         e.currentTarget.value = ''
       }} />
-      {message && <span className="sr-only">{message}</span>}
+      {message && <span role="status" className="ml-2 max-w-[280px] text-[11px] font-medium text-text-secondary">{message}</span>}
     </label>
   )
 }
