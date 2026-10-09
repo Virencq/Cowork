@@ -382,6 +382,73 @@ textarea[data-slot="input"] {
 }
 
 
+
+/* Claude-inspired dark palette: apply consistently to legacy fixed-color components. */
+.dark {
+  color-scheme: dark;
+  --claude-bg: #111110;
+  --claude-panel: #1a1a19;
+  --claude-elevated: #262625;
+  --claude-text: #e8e6e3;
+  --claude-muted: #a09f99;
+  --claude-border: #3b3b39;
+}
+.dark body,
+.dark #root { background: var(--claude-bg); color: var(--claude-text); }
+.dark [class*="bg-white"],
+.dark [class*="bg-[#faf9f7]"],
+.dark [class*="bg-[#faf9f6]"] { background-color: var(--claude-panel) !important; }
+.dark [class*="bg-[#f1f0ee]"],
+.dark [class*="bg-[#f4f3f1]"],
+.dark [class*="bg-[#f5f3f0]"],
+.dark [class*="bg-[#f9f8f6]"],
+.dark [class*="bg-[#f0eeeb]"],
+.dark [class*="bg-[#f5f2ef]"],
+.dark [class*="bg-[#fbfaf8]"] { background-color: var(--claude-elevated) !important; }
+.dark [class*="hover:bg-[#eceae7]"]:hover,
+.dark [class*="hover:bg-[#f2efec]"]:hover,
+.dark [class*="hover:bg-[#f5f2ef]"]:hover,
+.dark [class*="hover:bg-[#f0eeeb]"]:hover { background-color: #30302e !important; }
+.dark [class*="text-[#302c28]"],
+.dark [class*="text-[#3f3a35]"],
+.dark [class*="text-[#3d3833]"],
+.dark [class*="text-[#37322d]"],
+.dark [class*="text-[#342f2a]"],
+.dark [class*="text-[#262624]"] { color: var(--claude-text) !important; }
+.dark [class*="text-[#6e675f]"],
+.dark [class*="text-[#77716b]"],
+.dark [class*="text-[#5d5852]"],
+.dark [class*="text-[#5d554d]"],
+.dark [class*="text-[#777068]"] { color: var(--claude-muted) !important; }
+.dark [class*="border-[#e5e2de]"],
+.dark [class*="border-[#e4e1dd]"],
+.dark [class*="border-[#e4ded7]"],
+.dark [class*="border-[#eeeae6]"],
+.dark [class*="border-[#ddd7d1]"] { border-color: var(--claude-border) !important; }
+.dark .cowork-nav-item,
+.dark .home-nav-row,
+.dark .title-control,
+.dark .title-icon { color: var(--claude-muted); }
+.dark .cowork-nav-item:hover,
+.dark .cowork-nav-item.active,
+.dark .home-nav-row:hover,
+.dark .title-control:hover,
+.dark .title-icon:hover { background: var(--claude-elevated); color: var(--claude-text); }
+.dark input,
+.dark textarea,
+.dark select { color: var(--claude-text); }
+.dark input::placeholder,
+.dark textarea::placeholder { color: #77766f; opacity: 1; }
+.dark ::selection { background: rgba(217, 119, 87, .28); color: var(--claude-text); }
+
+/* Keep the chat close to Claude's restrained typography. */
+html, body, #root {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
 /* ── Consistent dark theme for legacy Cowork shell utility classes ── */
 .dark {
   color-scheme: dark;
