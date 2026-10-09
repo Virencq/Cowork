@@ -55,6 +55,7 @@ export function CodeWorkspace() {
     if (project.sessionId && existing) {
       useAppStore.getState().setCodeActiveSessionId(project.sessionId)
       useAppStore.getState().markCodeSession(project.sessionId)
+      void useAppStore.getState().loadMessages(project.sessionId)
     } else {
       const sessionId = useAppStore.getState().createCodeSession()
       updateCodeProject(project.id, { sessionId })
