@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FolderOpen, FileCode2, X, Files, GitBranch, TerminalSquare, ArrowUpRight } from 'lucide-react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { FilePreviewPanel } from '../preview/FilePreviewPanel'
@@ -20,6 +20,12 @@ export function CodeWorkspace() {
   const preview = useFilePreviewStore((s) => s.preview)
   const closePreview = useFilePreviewStore((s) => s.closePreview)
   const [showFiles, setShowFiles] = useState(false)
+
+  useEffect(() => {
+    if (!activeCodeProject) return
+    if (workspaceDir !== activeCodeProject.path) setWorkspaceDir(activeCodeProject.path)
+    if (activeCodeProject.sessionId) useAppStore.getState().setCodeActiveSessionId(activeCodeProject.sessionId)
+  }, [activeCodeProject?.id])
 
   const openFolder = async () => {
     const selected = await openDialog({
