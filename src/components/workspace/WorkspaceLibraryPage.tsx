@@ -26,7 +26,7 @@ export async function importWorkspaceFile(file: File): Promise<string> {
     if (manifestEntry) {
       try {
         const manifest = JSON.parse(await manifestEntry.async('text'))
-        claudePortable = Number(manifest?.schemaVersion) > 0 && !!(manifest?.sourcePaths || manifest?.archiveTargets) && /claudeportable/i.test(file.name + ' ' + (manifest?.toolVersion || ''))
+        claudePortable = Number(manifest?.schemaVersion) > 0 && !!(manifest?.sourcePaths || manifest?.archiveTargets) && (/claudeportable|claude-cowork-backup|claude-backup_/i.test(file.name) || Object.keys(manifest?.archiveTargets || {}).some((key) => /^(claude-desktop|claude-code|cowork-projects)\//i.test(key)))
       } catch { /* not a ClaudePortable manifest */ }
     }
     const conversationEntry = entries.find((f) => !f.dir && /(^|[/\\\\])conversations\.json$/i.test(f.name))
