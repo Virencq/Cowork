@@ -51,8 +51,9 @@ export function CodeWorkspace() {
     setWorkspaceDir(project.path)
     closePreview()
 
-    const existing = useAppStore.getState().sessions.find((session) => session.id === project?.sessionId)
-    if (project.sessionId && existing) {
+    // Reuse the project's saved session ID even if session metadata is still
+    // loading; otherwise opening an existing project can accidentally fork a chat.
+    if (project.sessionId) {
       useAppStore.getState().setCodeActiveSessionId(project.sessionId)
       useAppStore.getState().markCodeSession(project.sessionId)
       void useAppStore.getState().loadMessages(project.sessionId)
