@@ -37,6 +37,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
     activeSessionId: coworkActiveSessionId,
     codeActiveSessionId,
     setCodeActiveSessionId,
+    markCodeSession,
     sessions,
     workspaceDir: coworkWorkspaceDir,
     codeWorkspaceDir,
@@ -56,12 +57,12 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
   const activeSessionId = workspaceMode === 'code' ? codeActiveSessionId : coworkActiveSessionId
   const workspaceDir = workspaceMode === 'code' ? codeWorkspaceDir : coworkWorkspaceDir
   const setModeActiveSession = useCallback((id: string | null) => {
-    if (workspaceMode === 'code') setCodeActiveSessionId(id)
+    if (workspaceMode === 'code') { setCodeActiveSessionId(id); if (id) markCodeSession(id) }
     else useAppStore.getState().setActiveSession(id)
-  }, [workspaceMode, setCodeActiveSessionId])
+  }, [workspaceMode, setCodeActiveSessionId, markCodeSession])
   const createModeSession = useCallback(() => {
     const id = useAppStore.getState().createSession()
-    if (workspaceMode === 'code') setCodeActiveSessionId(id)
+    if (workspaceMode === 'code') { setCodeActiveSessionId(id); markCodeSession(id) }
     return id
   }, [workspaceMode, setCodeActiveSessionId])
   const [error, setError] = useState<string | null>(null)
