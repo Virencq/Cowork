@@ -110,7 +110,10 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
   const [projectMenuId, setProjectMenuId] = useState<string | null>(null)
   const [renamingProjectId, setRenamingProjectId] = useState<string | null>(null)
   const [renameProjectValue, setRenameProjectValue] = useState('')
-  const sessions = codeMode ? allSessions.filter((s) => codeSessionIds.includes(s.id)) : allSessions.filter((s) => !codeSessionIds.includes(s.id))
+  const codeProjectSessionIds = codeProjects.flatMap((project) => project.sessionId ? [project.sessionId] : [])
+  const sessions = codeMode
+    ? allSessions.filter((s) => codeSessionIds.includes(s.id) || codeProjectSessionIds.includes(s.id))
+    : allSessions.filter((s) => !codeSessionIds.includes(s.id) && !codeProjectSessionIds.includes(s.id))
   const activeSessionId = codeMode ? codeActiveSessionId : coworkActiveSessionId
   const setActiveSession = useAppStore((s) => s.setActiveSession)
   const setCodeActiveSessionId = useAppStore((s) => s.setCodeActiveSessionId)
@@ -151,6 +154,7 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
     if (project.sessionId && existing) {
       setCodeSession(project.sessionId)
       useAppStore.getState().markCodeSession(project.sessionId)
+      void useAppStore.getState().loadMessages(project.sessionId)
     } else {
       const sessionId = useAppStore.getState().createCodeSession()
       updateCodeProject(project.id, { sessionId })
