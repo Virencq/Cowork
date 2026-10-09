@@ -316,7 +316,7 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
               { id: 'skills', icon: Sparkles, label: 'Skills' },
               { id: 'websearch', icon: Globe, label: 'Web Search' },
               { id: 'appearance', icon: theme === 'light' ? Sun : Moon, label: 'Appearance' },
-              { id: 'library', icon: Upload, label: 'Import & Library' },
+              { id: 'library', icon: Upload, label: 'Import Claude Cowork' },
             ].map((item) => (
               <button
                 key={item.id}
@@ -362,7 +362,7 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
               {activeTab === 'skills' && 'Skills'}
               {activeTab === 'websearch' && 'Web Search'}
               {activeTab === 'appearance' && 'Appearance'}
-              {activeTab === 'library' && 'Import & Library'}
+              {activeTab === 'library' && 'Import Claude Cowork'}
               </h3>
               <p className="text-[12px] text-text-tertiary mt-1">Runtime and workspace configuration for the installed JCode CLI.</p>
             </div>
@@ -392,8 +392,8 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
                   <div className="rounded-xl border border-border bg-surface p-5">
                     <div className="flex items-center justify-between gap-5">
                       <div>
-                        <div className="text-[14px] font-semibold text-text">Import bundle</div>
-                        <p className="mt-1 text-[12px] leading-5 text-text-tertiary">JSON or ZIP with a Cowork/S-Loop manifest.</p>
+                        <div className="text-[14px] font-semibold text-text">Import Claude Cowork data</div>
+                        <p className="mt-1 text-[12px] leading-5 text-text-tertiary">Choose the export or backup file. Chat history is added to your conversation list; duplicate chat IDs and connector names are skipped.</p>
                       </div>
                       <ImportLibraryButton />
                     </div>
@@ -417,7 +417,7 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
                     <div className="text-[13px] font-semibold text-[#684f42]">About Claude imports</div>
                     <p className="mt-1 text-[12px] leading-5 text-[#8b6d5b]">
                       Claude provides a personal data export, but it does not provide a general API that lets this app pull private projects, connectors, or artifacts directly.
-                      Use an exported file or a local bundle rather than entering Claude credentials here.
+                      This workflow imports data present in the selected file. Local project folders, plugin packages, and credentials that are not included in the export must be added or reconnected separately. Imported plugin/configuration files are not executed automatically.
                     </p>
                   </div>
                 </div>
