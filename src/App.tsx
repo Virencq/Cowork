@@ -208,14 +208,12 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
     <aside style={{ width }} className="relative shrink-0 h-full border-r border-[#e5e2de] bg-white pt-11 flex flex-col text-[#3f3a35]">
       <ResizeHandle side="left" onDrag={(d) => onWidth(Math.max(262, Math.min(340, width + d)))} />
 
-      {!codeMode && (
-        <div className="px-3 pt-2 pb-3">
-          <div className="grid grid-cols-2 h-8 rounded-md bg-[#f1f0ee] p-0.5">
-            <button onClick={onCowork} className={`rounded-md text-[12px] font-semibold transition-colors ${!codeMode ? 'bg-white text-[#3d3833] shadow-sm' : 'text-[#77716b] hover:text-[#3d3833]'}`}>☷&nbsp; Cowork</button>
-            <button onClick={onCode} className={`rounded-md text-[12px] font-medium transition-colors ${codeMode ? 'bg-white text-[#3d3833] shadow-sm' : 'text-[#77716b] hover:text-[#3d3833]'}`}>‹/&gt;&nbsp; Code</button>
-          </div>
+      <div className="px-3 pt-2 pb-3">
+        <div className="grid grid-cols-2 h-8 rounded-md bg-[#f1f0ee] p-0.5">
+          <button onClick={onCowork} className={`rounded-md text-[12px] font-semibold transition-colors ${!codeMode ? 'bg-white text-[#3d3833] shadow-sm' : 'text-[#77716b] hover:text-[#3d3833]'}`}>☷&nbsp; Cowork</button>
+          <button onClick={onCode} className={`rounded-md text-[12px] font-medium transition-colors ${codeMode ? 'bg-white text-[#3d3833] shadow-sm' : 'text-[#77716b] hover:text-[#3d3833]'}`}>‹/&gt;&nbsp; Code</button>
         </div>
-      )}
+      </div>
 
       <div className="px-3 pb-3">
         <button onClick={codeMode ? () => void createCodeProject() : onNew} className="w-full h-9 rounded-md border border-[#e4e1dd] bg-[#f4f3f1] hover:bg-[#eceae7] text-[#37322d] text-[12px] font-medium flex items-center gap-2 px-3">
