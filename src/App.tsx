@@ -131,12 +131,14 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
     <aside style={{ width }} className="relative shrink-0 h-full border-r border-[#e5e2de] bg-white pt-11 flex flex-col text-[#3f3a35]">
       <ResizeHandle side="left" onDrag={(d) => onWidth(Math.max(262, Math.min(340, width + d)))} />
 
-      <div className="px-3 pt-2 pb-3">
-        <div className="grid grid-cols-2 h-8 rounded-md bg-[#f1f0ee] p-0.5">
-          <button onClick={onCowork} className={`rounded-md text-[12px] font-semibold transition-colors ${!codeMode ? 'bg-white text-[#3d3833] shadow-sm' : 'text-[#77716b] hover:text-[#3d3833]'}`}>☷&nbsp; Cowork</button>
-          <button onClick={onCode} className={`rounded-md text-[12px] font-medium transition-colors ${codeMode ? 'bg-white text-[#3d3833] shadow-sm' : 'text-[#77716b] hover:text-[#3d3833]'}`}>‹/&gt;&nbsp; Code</button>
+      {!codeMode && (
+        <div className="px-3 pt-2 pb-3">
+          <div className="grid grid-cols-2 h-8 rounded-md bg-[#f1f0ee] p-0.5">
+            <button onClick={onCowork} className={`rounded-md text-[12px] font-semibold transition-colors ${!codeMode ? 'bg-white text-[#3d3833] shadow-sm' : 'text-[#77716b] hover:text-[#3d3833]'}`}>☷&nbsp; Cowork</button>
+            <button onClick={onCode} className={`rounded-md text-[12px] font-medium transition-colors ${codeMode ? 'bg-white text-[#3d3833] shadow-sm' : 'text-[#77716b] hover:text-[#3d3833]'}`}>‹/&gt;&nbsp; Code</button>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="px-3 pb-3">
         <button onClick={onNew} className="w-full h-9 rounded-md border border-[#e4e1dd] bg-[#f4f3f1] hover:bg-[#eceae7] text-[#37322d] text-[12px] font-medium flex items-center gap-2 px-3">
@@ -144,25 +146,29 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
         </button>
       </div>
 
-      {/* Global Cowork navigation */}
+      {/* Cowork destinations are hidden in Code mode to keep the coding workspace focused. */}
       <nav className="px-3 space-y-0.5">
         <button onClick={() => onPage('projects')} className={`home-nav-row ${page === 'projects' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
           <span className="inline-flex items-center gap-2"><FolderKanban size={14}/>Projects</span>
         </button>
-        <button onClick={() => onPage('artifacts')} className={`home-nav-row ${page === 'artifacts' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
-          <span className="inline-flex items-center gap-2"><FileCode2 size={14}/>Artifacts</span>
-        </button>
-        <button onClick={() => { setFilterPinned(false); onPage('tasks') }} className={`home-nav-row ${page === 'tasks' && !filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
-          <span className="inline-flex items-center gap-2"><CalendarClock size={14}/>Scheduled</span>
-          <ChevronRight size={14}/>
-        </button>
-        <button onClick={() => onPage('customize')} className={`home-nav-row ${page === 'customize' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
-          <span className="inline-flex items-center gap-2"><Sparkles size={14}/>Customize</span>
-        </button>
+        {!codeMode && (
+          <>
+            <button onClick={() => onPage('artifacts')} className={`home-nav-row ${page === 'artifacts' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
+              <span className="inline-flex items-center gap-2"><FileCode2 size={14}/>Artifacts</span>
+            </button>
+            <button onClick={() => { setFilterPinned(false); onPage('tasks') }} className={`home-nav-row ${page === 'tasks' && !filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
+              <span className="inline-flex items-center gap-2"><CalendarClock size={14}/>Scheduled</span>
+              <ChevronRight size={14}/>
+            </button>
+            <button onClick={() => onPage('customize')} className={`home-nav-row ${page === 'customize' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
+              <span className="inline-flex items-center gap-2"><Sparkles size={14}/>Customize</span>
+            </button>
+          </>
+        )}
       </nav>
 
       {/* Task navigation */}
-      <div className="mt-3 px-3">
+      <div className={`${codeMode ? 'mt-3' : 'mt-3'} px-3`}>
         <button onClick={() => setFilterPinned(v => !v)} className={`home-nav-row ${filterPinned ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
           <span className="inline-flex items-center gap-2"><Pin size={14}/>Pinned</span>
           <ChevronRight size={14}/>
