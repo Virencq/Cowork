@@ -20,6 +20,7 @@ import * as Pi from '../../utils/jcodeClient'
 interface SettingsModalProps {
   onClose: () => void
   initialTab?: string
+  open?: boolean
 }
 
 const BUILT_IN_PROVIDERS: ProviderInfo[] = [
@@ -160,7 +161,7 @@ function JCodeRuntimeSettings() {
   )
 }
 
-export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModalProps) {
+export function SettingsModal({ onClose, initialTab = 'provider', open = true }: SettingsModalProps) {
   const {
     activeProvider,
     setActiveProvider,
@@ -297,6 +298,10 @@ export function SettingsModal({ onClose, initialTab = 'provider' }: SettingsModa
   const [showModelDropdown, setShowModelDropdown] = useState(false)
 
   const envVar = provider?.env || ''
+
+  // The modal is rendered through a portal, so hiding its parent in App.tsx
+  // does not hide this overlay. Keep hooks warm but remove the portal when closed.
+  if (!open) return null
 
   return createPortal(
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-8 bg-black/45 backdrop-blur-sm animate-fade-in">
