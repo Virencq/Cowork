@@ -44,6 +44,8 @@ interface AppState {
   leftPanelMode: 'sessions' | 'files'
   workspaceCollapsed: boolean
   workspaceDir: string | null
+  codeWorkspaceDir: string | null
+  codeActiveSessionId: string | null
   fileTreeVersion: number
   kokoroSpeakerId: KokoroSpeakerId
 
@@ -102,6 +104,8 @@ interface AppState {
   toggleLeftPanelMode: () => void
   toggleWorkspace: () => void
   setWorkspaceDir: (dir: string | null) => void
+  setCodeWorkspaceDir: (dir: string | null) => void
+  setCodeActiveSessionId: (id: string | null) => void
   incrementFileTreeVersion: () => void
   setKokoroSpeakerId: (speakerId: KokoroSpeakerId) => void
 
@@ -142,6 +146,8 @@ export const useAppStore = create<AppState>()(
       leftPanelMode: 'sessions',
       workspaceCollapsed: false,
       workspaceDir: null,
+      codeWorkspaceDir: null,
+      codeActiveSessionId: null,
       fileTreeVersion: 0,
       kokoroSpeakerId: DEFAULT_KOKORO_SPEAKER_ID,
       githubMirror: 'https://mirror.ghproxy.com/https://github.com/',
@@ -590,6 +596,8 @@ export const useAppStore = create<AppState>()(
       })),
       toggleWorkspace: () => set((state) => ({ workspaceCollapsed: !state.workspaceCollapsed })),
       setWorkspaceDir: (dir) => set({ workspaceDir: dir }),
+      setCodeWorkspaceDir: (dir) => set({ codeWorkspaceDir: dir }),
+      setCodeActiveSessionId: (id) => set({ codeActiveSessionId: id }),
       incrementFileTreeVersion: () => set((state) => ({ fileTreeVersion: state.fileTreeVersion + 1 })),
       setKokoroSpeakerId: (speakerId) => set({
         kokoroSpeakerId: normalizeKokoroSpeakerId(speakerId),
