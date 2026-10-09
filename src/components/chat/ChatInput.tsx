@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Send, Square, X, File, Paperclip, Mic, LoaderCircle, AudioLines, PhoneCall } from 'lucide-react'
+import { Send, Square, X, File, Paperclip, FolderPlus, Mic, LoaderCircle, AudioLines, PhoneCall } from 'lucide-react'
 import { TextField, TextArea } from "@heroui/react"
 import { open as openFileDialog } from '@tauri-apps/plugin-dialog'
 import { Button, Card } from '../ui'
 import { runtimeInfo } from '../../utils/jcodeClient'
+import { useAppStore } from '../../stores/appStore'
 import {
   cancelDictation,
   getDictationLevel,
@@ -123,6 +124,21 @@ export function ChatInput({
       document.removeEventListener('keydown', onKey)
     }
   }, [showAddMenu])
+
+  const pickFolder = useCallback(async () => {
+    if (!isTauriRuntime() || disabled || isStreaming) return
+    try {
+      const selected = await openFileDialog({
+        directory: true,
+        multiple: false,
+        title: 'Choose project folder',
+      })
+      if (typeof selected !== 'string' || !selected) return
+      useAppStore.getState().setWorkspaceDir(selected)
+    } catch (error) {
+      console.warn('[ChatInput] folder picker failed:', error)
+    }
+  }, [disabled, isStreaming])
 
   const pickFiles = useCallback(async () => {
     if (!isTauriRuntime() || disabled || isStreaming) return
@@ -689,7 +705,7 @@ export function ChatInput({
         <Card
           variant={isHero ? 'glass' : 'default'}
           className={`relative group transition-colors duration-150 border border-border ${
-            isHero ? 'shadow-none rounded-[16px] bg-white p-0 overflow-hidden' : 'shadow-sm rounded-xl bg-surface/96 p-1.5'
+            isHero ? 'shadow-none rounded-[16px] bg-white p-0 overflow-visible' : 'shadow-sm rounded-xl bg-surface/96 p-1.5'
           } ${isDragOver ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg' : 'focus-ring-accent'}`}
         >
           {isDragOver && (
@@ -809,7 +825,8 @@ export function ChatInput({
               <div className={isHero ? "w-full flex items-center justify-between h-11 px-1 border-t border-[#eeeae6]" : "flex items-center p-2"}>
                 {isHero ? (
                   <>
-                    <div ref={addMenuRef} className="relative">
+                    <div className="flex items-center gap-1">
+                    <div ref={addMenuRef} className="relative z-[80]">
                       <button
                         type="button"
                         onClick={() => setShowAddMenu((open) => !open)}
@@ -860,6 +877,17 @@ export function ChatInput({
                           </button>
                         </div>
                       )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void pickFolder()}
+                      disabled={disabled || isStreaming}
+                      className="h-8 w-8 rounded-md grid place-items-center text-[#625b54] hover:bg-[#f2efec] disabled:opacity-40"
+                      title="Choose project folder"
+                      aria-label="Choose project folder"
+                    >
+                      <FolderPlus size={16} />
+                    </button>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[12px] font-medium text-[#302c28]">{jcodeRuntime?.model || 'JCode'}</span>
