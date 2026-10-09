@@ -493,7 +493,8 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
 }
 
 function App() {
-  const { theme, colorScheme } = useAppStore()
+  const theme = useAppStore((s) => s.theme)
+  const colorScheme = useAppStore((s) => s.colorScheme)
   const createSession = useAppStore((s) => s.createSession)
   const setActiveSession = useAppStore((s) => s.setActiveSession)
   const setWorkspaceDir = useAppStore((s) => s.setWorkspaceDir)
