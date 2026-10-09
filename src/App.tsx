@@ -99,6 +99,17 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
   const codeSessionIds = useAppStore((s) => s.codeSessionIds)
   const coworkActiveSessionId = useAppStore((s) => s.activeSessionId)
   const codeActiveSessionId = useAppStore((s) => s.codeActiveSessionId)
+  const codeProjects = useWorkspaceStore((s) => s.codeProjects)
+  const activeCodeProjectId = useWorkspaceStore((s) => s.activeCodeProjectId)
+  const addCodeProject = useWorkspaceStore((s) => s.addCodeProject)
+  const updateCodeProject = useWorkspaceStore((s) => s.updateCodeProject)
+  const removeCodeProject = useWorkspaceStore((s) => s.removeCodeProject)
+  const setActiveCodeProject = useWorkspaceStore((s) => s.setActiveCodeProject)
+  const setCodeWorkspaceDir = useAppStore((s) => s.setCodeWorkspaceDir)
+  const setCodeSession = useAppStore((s) => s.setCodeActiveSessionId)
+  const [projectMenuId, setProjectMenuId] = useState<string | null>(null)
+  const [renamingProjectId, setRenamingProjectId] = useState<string | null>(null)
+  const [renameProjectValue, setRenameProjectValue] = useState('')
   const sessions = codeMode ? allSessions.filter((s) => codeSessionIds.includes(s.id)) : allSessions.filter((s) => !codeSessionIds.includes(s.id))
   const activeSessionId = codeMode ? codeActiveSessionId : coworkActiveSessionId
   const setActiveSession = useAppStore((s) => s.setActiveSession)
@@ -130,6 +141,62 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
     const title = renameValue.trim()
     if (title) updateSessionTitle(id, title)
     setRenaming(null)
+  }
+
+  const openCodeProject = (project: (typeof codeProjects)[number]) => {
+    setActiveCodeProject(project.id)
+    setCodeWorkspaceDir(project.path)
+    useFilePreviewStore.getState().closePreview()
+    const existing = useAppStore.getState().sessions.find((session) => session.id === project.sessionId)
+    if (project.sessionId && existing) {
+      setCodeSession(project.sessionId)
+      useAppStore.getState().markCodeSession(project.sessionId)
+    } else {
+      const sessionId = useAppStore.getState().createCodeSession()
+      updateCodeProject(project.id, { sessionId })
+    }
+    onPage('chat')
+    setProjectMenuId(null)
+  }
+
+  const createCodeProject = async () => {
+    const selected = await openDialog({ directory: true, multiple: false, title: 'Add codebase folder' })
+    if (typeof selected !== 'string') return
+    const name = selected.split(/[\\/]/).filter(Boolean).pop() || 'Code project'
+    const projectId = addCodeProject({ name, path: selected })
+    const sessionId = useAppStore.getState().createCodeSession()
+    updateCodeProject(projectId, { sessionId })
+    setCodeWorkspaceDir(selected)
+    useFilePreviewStore.getState().closePreview()
+    onPage('chat')
+  }
+
+  const commitProjectRename = (id: string) => {
+    const name = renameProjectValue.trim()
+    if (name) updateCodeProject(id, { name })
+    setRenamingProjectId(null)
+  }
+
+  const deleteCodeProject = (project: (typeof codeProjects)[number]) => {
+    if (!window.confirm('Remove "' + project.name + '" from Code projects? The codebase folder and its files will not be deleted.')) return
+    if (project.sessionId) useAppStore.getState().deleteSession(project.sessionId)
+    const next = codeProjects.find((item) => item.id !== project.id)
+    removeCodeProject(project.id)
+    if (activeCodeProjectId === project.id) {
+      setActiveCodeProject(next?.id ?? null)
+      setCodeWorkspaceDir(next?.path ?? null)
+      if (next?.sessionId && useAppStore.getState().sessions.some((session) => session.id === next.sessionId)) {
+        setCodeSession(next.sessionId)
+        useAppStore.getState().markCodeSession(next.sessionId)
+      } else if (next) {
+        const sessionId = useAppStore.getState().createCodeSession()
+        updateCodeProject(next.id, { sessionId })
+      } else {
+        setCodeSession(null)
+      }
+      useFilePreviewStore.getState().closePreview()
+    }
+    setProjectMenuId(null)
   }
 
   return (
@@ -167,25 +234,44 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
           </button>
         </nav>
       ) : (
-        <div className="mt-3 px-3">
-          <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.12em] text-[#a09890]">
-            <span>Projects</span>
-            <button onClick={() => onPage('projects')} title="Manage projects" className="normal-case tracking-normal text-[11px] hover:text-[#302c28]"><Plus size={13}/></button>
+        <div className="mt-3 px-2">
+          <div className="mb-2 flex items-center justify-between px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#a09890]">
+            <span>Code projects</span>
+            <button onClick={() => void createCodeProject()} title="Add codebase folder" className="h-6 w-6 grid place-items-center rounded hover:bg-[#f0eeeb] text-[#5d554d]"><Plus size={14}/></button>
           </div>
-          <div className="space-y-1">
-            {useWorkspaceStore.getState().projects.map((project) => (
-              <button key={project.id} onClick={() => {
-                if (project.path) useAppStore.getState().setWorkspaceDir(project.path)
-                onPage('chat')
-              }} className={`w-full rounded-md px-2 py-2 text-left hover:bg-[#f3f1ef] ${useAppStore.getState().workspaceDir === project.path ? 'bg-[#f0eeeb]' : ''}`}>
-                <span className="flex items-center gap-2 text-[11px] font-medium text-[#514a43]">
-                  <FolderKanban size={13} className="shrink-0 text-[#8f857b}"/><span className="truncate">{project.name}</span>
-                </span>
-                {project.path && <span className="mt-0.5 block truncate pl-5 text-[9px] text-[#a49b92]">{project.path}</span>}
-              </button>
+          <div className="space-y-1 overflow-auto">
+            {codeProjects.map((project) => (
+              <div key={project.id} className="relative group">
+                {renamingProjectId === project.id ? (
+                  <div className="flex items-center gap-1 px-1 py-1">
+                    <input autoFocus value={renameProjectValue} onChange={(e) => setRenameProjectValue(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') commitProjectRename(project.id); if (e.key === 'Escape') setRenamingProjectId(null) }}
+                      className="min-w-0 flex-1 h-7 rounded-md border border-[#d8d3ce] px-2 text-[11px]" />
+                    <button onClick={() => commitProjectRename(project.id)} className="h-7 w-7 grid place-items-center" title="Save name"><Check size={13}/></button>
+                  </div>
+                ) : (
+                  <>
+                    <button onClick={() => openCodeProject(project)}
+                      className={`w-full rounded-md px-2 py-2.5 pr-9 text-left hover:bg-[#f3f1ef] ${activeCodeProjectId === project.id ? 'bg-[#f0eeeb]' : ''}`}>
+                      <span className="flex items-center gap-2 text-[11px] font-medium text-[#514a43]">
+                        <FolderKanban size={13} className="shrink-0 text-[#8f857b]"/><span className="truncate">{project.name}</span>
+                      </span>
+                      <span className="mt-0.5 block truncate pl-5 text-[9px] text-[#a49b92]">{project.path}</span>
+                    </button>
+                    <button onClick={() => setProjectMenuId(projectMenuId === project.id ? null : project.id)}
+                      className="absolute right-1 top-1.5 h-7 w-7 rounded-md opacity-0 group-hover:opacity-100 hover:bg-[#eae7e3] grid place-items-center" title="Project options"><MoreHorizontal size={14}/></button>
+                    {projectMenuId === project.id && (
+                      <div className="absolute right-1 top-9 z-50 w-40 rounded-xl border border-[#ddd8d2] bg-white p-1.5 shadow-lg">
+                        <button onClick={() => { setRenamingProjectId(project.id); setRenameProjectValue(project.name); setProjectMenuId(null) }} className="menu-row"><Pencil size={14}/>Rename project</button>
+                        <button onClick={() => deleteCodeProject(project)} className="menu-row text-[#b54d40]"><Trash2 size={14}/>Delete project</button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             ))}
-            {useWorkspaceStore.getState().projects.length === 0 && (
-              <button onClick={() => onPage('projects')} className="w-full rounded-md border border-dashed border-[#e3ddd6] px-3 py-3 text-left text-[11px] text-[#8f857b] hover:bg-[#f8f6f3]">+ Add your first project</button>
+            {codeProjects.length === 0 && (
+              <button onClick={() => void createCodeProject()} className="w-full rounded-md border border-dashed border-[#e3ddd6] px-3 py-3 text-left text-[11px] text-[#8f857b] hover:bg-[#f8f6f3]">+ Add a codebase folder</button>
             )}
           </div>
         </div>
