@@ -16,6 +16,7 @@ export interface CoworkArtifact {
   type?: string
   path?: string
   content?: string
+  sessionId?: string
   createdAt: number
   updatedAt: number
 }
@@ -29,7 +30,7 @@ interface WorkspaceLibraryState {
   upsertProject: (project: CoworkProject) => void
   updateProject: (id: string, updates: Partial<Omit<CoworkProject, 'id' | 'createdAt'>>) => void
   removeProject: (id: string) => void
-  addArtifact: (artifact: Omit<CoworkArtifact, 'id' | 'createdAt' | 'updatedAt'>) => void
+  addArtifact: (artifact: Omit<CoworkArtifact, 'id' | 'createdAt' | 'updatedAt'>) => string
   upsertArtifact: (artifact: CoworkArtifact) => void
   removeArtifact: (id: string) => void
   toggleProjectPin: (id: string) => void
@@ -65,10 +66,12 @@ export const useWorkspaceStore = create<WorkspaceLibraryState>()(
         projects: s.projects.filter((p) => p.id !== id),
         pinnedProjectIds: s.pinnedProjectIds.filter((item) => item !== id),
       })),
-      addArtifact: (artifact) => set((s) => {
+      addArtifact: (artifact) => {
+        const artifactId = id()
         const now = Date.now()
-        return { artifacts: [...s.artifacts, { ...artifact, id: id(), createdAt: now, updatedAt: now }] }
-      }),
+        set((s) => ({ artifacts: [...s.artifacts, { ...artifact, id: artifactId, createdAt: now, updatedAt: now }] }))
+        return artifactId
+      },
       upsertArtifact: (artifact) => set((s) => ({
         artifacts: s.artifacts.some((a) => a.id === artifact.id)
           ? s.artifacts.map((a) => a.id === artifact.id ? artifact : a)
@@ -96,7 +99,7 @@ export const useWorkspaceStore = create<WorkspaceLibraryState>()(
         }))
         const artifacts = (bundle.artifacts || []).map((a) => ({
           id: a.id || id(), name: a.name || 'Imported artifact', type: a.type,
-          path: a.path, content: a.content, createdAt: a.createdAt || now, updatedAt: a.updatedAt || now,
+          path: a.path, content: a.content, sessionId: a.sessionId, createdAt: a.createdAt || now, updatedAt: a.updatedAt || now,
         }))
         set((s) => ({
           projects: [...s.projects.filter((p) => !projects.some((x) => x.id === p.id)), ...projects],
