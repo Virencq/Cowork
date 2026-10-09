@@ -407,7 +407,7 @@ function MarkdownInner({ children, className = '', variant = 'default' }: Markdo
     },
   }), [])
 
-  const proseClass = `prose max-w-none break-words ${isDocument ? 'prose-base leading-relaxed' : 'prose-sm'} dark:prose-invert ${className}`
+  const proseClass = `prose max-w-none break-words prose-base leading-[1.7] dark:prose-invert ${className}`
 
   const remarkPlugins = useMemo<PluggableList>(() => [
     remarkGfm,
