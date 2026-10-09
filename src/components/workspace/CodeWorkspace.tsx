@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
-import { FolderOpen, FileCode2, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { FolderOpen, FileCode2, X, Files } from 'lucide-react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { FilePreviewPanel } from '../preview/FilePreviewPanel'
+import { FileTree } from './FileTree'
 import { useAppStore } from '../../stores/appStore'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
 import { ChatView } from '../chat/ChatView'
@@ -11,6 +12,7 @@ export function CodeWorkspace({ onExitCode }: { onExitCode: () => void }) {
   const setWorkspaceDir = useAppStore((s) => s.setWorkspaceDir)
   const preview = useFilePreviewStore((s) => s.preview)
   const closePreview = useFilePreviewStore((s) => s.closePreview)
+  const [showFiles, setShowFiles] = useState(false)
   const activeSessionId = useAppStore((s) => s.activeSessionId)
   const createSession = useAppStore((s) => s.createSession)
   const setActiveSession = useAppStore((s) => s.setActiveSession)
@@ -67,6 +69,15 @@ export function CodeWorkspace({ onExitCode }: { onExitCode: () => void }) {
 
         <div className="ml-auto flex items-center gap-1.5">
           <button
+            onClick={() => setShowFiles((open) => !open)}
+            disabled={!workspaceDir}
+            className={`h-8 px-2.5 rounded-md border text-[11px] flex items-center gap-1.5 disabled:opacity-40 ${showFiles ? 'border-[#d8c5b5] bg-[#f6eee7] text-[#9b562f]' : 'border-[#e2ddd7] bg-white hover:bg-[#f5f2ef]'}`}
+            title="Toggle project files"
+          >
+            <Files size={14} />
+            Files
+          </button>
+          <button
             onClick={openFolder}
             className="h-8 px-2.5 rounded-md border border-[#e2ddd7] bg-white hover:bg-[#f5f2ef] text-[11px] flex items-center gap-1.5"
           >
@@ -77,6 +88,17 @@ export function CodeWorkspace({ onExitCode }: { onExitCode: () => void }) {
       </header>
 
       <main className="min-h-0 flex-1 flex bg-white">
+        {showFiles && workspaceDir && (
+          <aside className="w-[260px] shrink-0 border-r border-[#e8e3de] bg-[#fcfbfa] flex flex-col">
+            <div className="h-10 shrink-0 px-3 border-b border-[#eee9e4] flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-[.1em] text-[#8e877f]">Project files</span>
+              <button onClick={() => setShowFiles(false)} className="h-6 w-6 rounded grid place-items-center hover:bg-[#f1eee9]" title="Close files"><X size={12}/></button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto p-2">
+              <FileTree rootPath={workspaceDir} />
+            </div>
+          </aside>
+        )}
         <section className="min-w-0 flex-1 flex flex-col">
           <div className="min-h-0 flex-1 overflow-hidden">
             <ChatView embedded />
