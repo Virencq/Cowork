@@ -85,7 +85,7 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
       <Virtuoso
         ref={virtuosoRef}
         data={groupedMessages}
-        followOutput={(isAtBottom) => isAtBottom ? 'auto' : false}
+        followOutput={() => 'auto'}
         alignToBottom
         atBottomThreshold={24}
         atBottomStateChange={setAtBottom}
