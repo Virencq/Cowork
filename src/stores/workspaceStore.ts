@@ -10,6 +10,16 @@ export interface CoworkProject {
   updatedAt: number
 }
 
+export interface CodeProject {
+  id: string
+  name: string
+  path: string
+  sessionId?: string
+  instructions?: string
+  createdAt: number
+  updatedAt: number
+}
+
 export interface CoworkArtifact {
   id: string
   name: string
@@ -23,10 +33,16 @@ export interface CoworkArtifact {
 
 interface WorkspaceLibraryState {
   projects: CoworkProject[]
+  codeProjects: CodeProject[]
+  activeCodeProjectId: string | null
   artifacts: CoworkArtifact[]
   pinnedProjectIds: string[]
   pinnedArtifactIds: string[]
   addProject: (project: Omit<CoworkProject, 'id' | 'createdAt' | 'updatedAt'>) => void
+  addCodeProject: (project: Omit<CodeProject, 'id' | 'createdAt' | 'updatedAt'>) => string
+  updateCodeProject: (id: string, updates: Partial<Omit<CodeProject, 'id' | 'createdAt'>>) => void
+  removeCodeProject: (id: string) => void
+  setActiveCodeProject: (id: string | null) => void
   upsertProject: (project: CoworkProject) => void
   updateProject: (id: string, updates: Partial<Omit<CoworkProject, 'id' | 'createdAt'>>) => void
   removeProject: (id: string) => void
@@ -47,6 +63,8 @@ export const useWorkspaceStore = create<WorkspaceLibraryState>()(
   persist(
     (set) => ({
       projects: [],
+      codeProjects: [],
+      activeCodeProjectId: null,
       artifacts: [],
       pinnedProjectIds: [],
       pinnedArtifactIds: [],
@@ -54,6 +72,15 @@ export const useWorkspaceStore = create<WorkspaceLibraryState>()(
         const now = Date.now()
         return { projects: [...s.projects, { ...project, id: id(), createdAt: now, updatedAt: now }] }
       }),
+      addCodeProject: (project) => {
+        const projectId = id()
+        const now = Date.now()
+        set((s) => ({ codeProjects: [...s.codeProjects, { ...project, id: projectId, createdAt: now, updatedAt: now }], activeCodeProjectId: projectId }))
+        return projectId
+      },
+      updateCodeProject: (projectId, updates) => set((s) => ({ codeProjects: s.codeProjects.map((p) => p.id === projectId ? { ...p, ...updates, updatedAt: Date.now() } : p) })),
+      removeCodeProject: (projectId) => set((s) => ({ codeProjects: s.codeProjects.filter((p) => p.id !== projectId), activeCodeProjectId: s.activeCodeProjectId === projectId ? (s.codeProjects.find((p) => p.id !== projectId)?.id ?? null) : s.activeCodeProjectId })),
+      setActiveCodeProject: (id) => set({ activeCodeProjectId: id }),
       upsertProject: (project) => set((s) => ({
         projects: s.projects.some((p) => p.id === project.id)
           ? s.projects.map((p) => p.id === project.id ? project : p)
@@ -114,6 +141,8 @@ export const useWorkspaceStore = create<WorkspaceLibraryState>()(
       name: 'cowork-workspace-library',
       partialize: (state) => ({
         projects: state.projects,
+        codeProjects: state.codeProjects,
+        activeCodeProjectId: state.activeCodeProjectId,
         artifacts: state.artifacts,
         pinnedProjectIds: state.pinnedProjectIds,
         pinnedArtifactIds: state.pinnedArtifactIds,
