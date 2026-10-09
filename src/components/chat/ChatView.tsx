@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useTranslation } from 'react-i18next'
 import { useAppStore, useAgentStore, useWebSearchStore, usePetStore } from '../../stores'
 import { useSkillStore } from '../../stores/skillStore'
@@ -53,7 +54,27 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
     commitStreamingMessage,
     addMessage,
     updateSessionTitle,
-  } = useAppStore()
+  } = useAppStore(useShallow((s) => ({
+    activeSessionId: s.activeSessionId,
+    codeActiveSessionId: s.codeActiveSessionId,
+    setCodeActiveSessionId: s.setCodeActiveSessionId,
+    markCodeSession: s.markCodeSession,
+    sessions: s.sessions,
+    workspaceDir: s.workspaceDir,
+    codeWorkspaceDir: s.codeWorkspaceDir,
+    leftPanelMode: s.leftPanelMode,
+    setLeftPanelMode: s.setLeftPanelMode,
+    sidebarCollapsed: s.sidebarCollapsed,
+    toggleSidebar: s.toggleSidebar,
+    startStreaming: s.startStreaming,
+    appendStreamingDelta: s.appendStreamingDelta,
+    finishStreaming: s.finishStreaming,
+    deleteMessage: s.deleteMessage,
+    deleteMessagesFrom: s.deleteMessagesFrom,
+    commitStreamingMessage: s.commitStreamingMessage,
+    addMessage: s.addMessage,
+    updateSessionTitle: s.updateSessionTitle,
+  })))
   const activeSessionId = workspaceMode === 'code' ? codeActiveSessionId : coworkActiveSessionId
   const workspaceDir = workspaceMode === 'code' ? codeWorkspaceDir : coworkWorkspaceDir
   const setModeActiveSession = useCallback((id: string | null) => {
