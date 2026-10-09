@@ -380,3 +380,48 @@ textarea[data-slot="input"] {
   background: rgba(220, 70, 70, .08);
   color: #c94747;
 }
+
+
+/* ── Consistent dark theme for legacy Cowork shell utility classes ── */
+.dark {
+  color-scheme: dark;
+}
+.dark [class~="bg-white"] { background-color: var(--color-surface) !important; }
+.dark [class~="bg-[#faf9f7]"] { background-color: var(--color-bg) !important; }
+.dark [class~="bg-[#f1f0ee]"],
+.dark [class~="bg-[#f4f3f1]"],
+.dark [class~="bg-[#f5f3f0]"],
+.dark [class~="bg-[#f9f8f6]"],
+.dark [class~="bg-[#f0eeeb]"],
+.dark [class~="bg-[#f5f2ef]"] { background-color: var(--color-surface-secondary) !important; }
+.dark [class~="hover:bg-[#eceae7]"]:hover,
+.dark [class~="hover:bg-[#f2efec]"]:hover,
+.dark [class~="hover:bg-[#f5f2ef]"]:hover,
+.dark [class~="hover:bg-[#f0eeeb]"]:hover { background-color: var(--color-surface-hover) !important; }
+.dark [class~="text-[#302c28]"],
+.dark [class~="text-[#3f3a35]"],
+.dark [class~="text-[#3d3833]"],
+.dark [class~="text-[#37322d]"],
+.dark [class~="text-[#342f2a]"] { color: var(--color-text) !important; }
+.dark [class~="text-[#6e675f]"],
+.dark [class~="text-[#77716b]"],
+.dark [class~="text-[#5d5852]"],
+.dark [class~="text-[#5d554d]"] { color: var(--color-text-secondary) !important; }
+.dark [class~="border-[#e5e2de]"],
+.dark [class~="border-[#e4e1dd]"],
+.dark [class~="border-[#e4ded7]"],
+.dark [class~="border-[#eeeae6]"],
+.dark [class~="border-[#ddd7d1]"] { border-color: var(--color-border) !important; }
+.dark .cowork-nav-item { color: var(--color-text-secondary); }
+.dark .cowork-nav-item:hover,
+.dark .cowork-nav-item.active { background: var(--color-surface-hover); color: var(--color-text); }
+.dark .home-nav-row { color: var(--color-text-secondary); }
+.dark .home-nav-row:hover { color: var(--color-text); }
+.dark .title-control,
+.dark .title-icon { color: var(--color-text-secondary); }
+.dark .title-control:hover,
+.dark .title-icon:hover { background: var(--color-surface-hover); color: var(--color-text); }
+.dark .cowork-hero-input [data-slot="input-wrapper"],
+.dark .cowork-hero-input [data-slot="inner-wrapper"] { background: var(--color-surface) !important; }
+.dark .cowork-hero-input textarea { color: var(--color-text) !important; }
+.dark .cowork-hero-input textarea::placeholder { color: var(--color-text-tertiary) !important; }
