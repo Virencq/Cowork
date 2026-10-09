@@ -462,7 +462,7 @@ function App() {
         }}
       />
       <div className="h-full flex">
-        {!codeMode && <LeftNav width={sidebarOpen ? leftWidth : 0} onWidth={setLeftWidth} page={page} onPage={navigateToPage} onNew={newTask} onSettings={() => setShowSettings(true)} codeMode={codeMode} onCode={() => { setCodeMode(true); navigateToPage('chat') }} onCowork={() => { setCodeMode(false); setActiveSession(null); navigateToPage('chat') }} />}
+        <LeftNav width={sidebarOpen ? leftWidth : 0} onWidth={setLeftWidth} page={page} onPage={navigateToPage} onNew={newTask} onSettings={() => setShowSettings(true)} codeMode={codeMode} onCode={() => { setCodeMode(true); setPage('chat') }} onCowork={() => { setCodeMode(false); setPage('chat') }} />
         <main className="relative min-w-0 flex-1 pt-11 flex flex-col bg-[#faf9f7]">
           <div className="min-h-0 flex-1 flex">
             <div className="min-w-0 flex-1 flex flex-col">
