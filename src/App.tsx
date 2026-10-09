@@ -95,9 +95,14 @@ function ResizeHandle({ side, onDrag }: { side: 'left' | 'right'; onDrag: (delta
 function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, onCode, onCowork }: {
   width: number; onWidth: (n: number) => void; page: Page; onPage: (p: Page) => void; onNew: () => void; onSettings: () => void; codeMode: boolean; onCode: () => void; onCowork: () => void
 }) {
-  const sessions = useAppStore((s) => s.sessions)
-  const activeSessionId = useAppStore((s) => s.activeSessionId)
+  const allSessions = useAppStore((s) => s.sessions)
+  const codeSessionIds = useAppStore((s) => s.codeSessionIds)
+  const coworkActiveSessionId = useAppStore((s) => s.activeSessionId)
+  const codeActiveSessionId = useAppStore((s) => s.codeActiveSessionId)
+  const sessions = codeMode ? allSessions.filter((s) => codeSessionIds.includes(s.id)) : allSessions.filter((s) => !codeSessionIds.includes(s.id))
+  const activeSessionId = codeMode ? codeActiveSessionId : coworkActiveSessionId
   const setActiveSession = useAppStore((s) => s.setActiveSession)
+  const setCodeActiveSessionId = useAppStore((s) => s.setCodeActiveSessionId)
   const updateSessionTitle = useAppStore((s) => s.updateSessionTitle)
   const deleteSession = useAppStore((s) => s.deleteSession)
   const [menuId, setMenuId] = useState<string | null>(null)
