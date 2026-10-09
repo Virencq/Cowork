@@ -467,7 +467,7 @@ function App() {
           <div className="min-h-0 flex-1 flex">
             <div className="min-w-0 flex-1 flex flex-col">
               {page === 'chat' && !codeMode && <ChatView />}
-              {page === 'chat' && codeMode && <CodeWorkspace onExitCode={() => { setCodeMode(false); setPage('chat') }} />}
+              {page === 'chat' && codeMode && <CodeWorkspace />}
 
               {page === 'tasks' && <TasksPage />}
               {page === 'projects' && <ProjectsPage onOpenProject={(project) => {
