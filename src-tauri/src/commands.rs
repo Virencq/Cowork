@@ -82,17 +82,6 @@ pub fn read_text_file(path: String) -> Result<String, String> {
     std::fs::read_to_string(&path).map_err(|e| format!("Failed to read file: {e}"))
 }
 
-/// Save UTF-8 text to a file. The selected project path is supplied by the desktop UI.
-#[tauri::command]
-pub fn write_text_file(path: String, content: String) -> Result<(), String> {
-    let metadata = std::fs::metadata(&path)
-        .map_err(|e| format!("Failed to inspect file: {e}"))?;
-    if !metadata.is_file() {
-        return Err("The target path is not a regular file.".to_string());
-    }
-    std::fs::write(&path, content).map_err(|e| format!("Failed to save file: {e}"))
-}
-
 /// Read a binary file and return its contents as base64
 #[tauri::command]
 pub fn read_file_base64(path: String) -> Result<String, String> {
