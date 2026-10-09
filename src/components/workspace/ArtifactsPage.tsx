@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react'
-import { FileCode2, Pin, Plus, Search, ListFilter, Trash2, Pencil } from 'lucide-react'
+import { FileCode2, Pin, Plus, Search, ListFilter, Trash2, Pencil, MessageSquare } from 'lucide-react'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
+import { useAppStore } from '../../stores/appStore'
 
-export function ArtifactsPage() {
+interface ArtifactsPageProps { onOpenArtifact?: (artifactId: string) => void }
+
+export function ArtifactsPage({ onOpenArtifact }: ArtifactsPageProps) {
   const artifacts = useWorkspaceStore(s => s.artifacts)
   const addArtifact = useWorkspaceStore(s => s.addArtifact)
   const updateArtifact = useWorkspaceStore(s => s.upsertArtifact)
@@ -12,8 +15,15 @@ export function ArtifactsPage() {
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [filter, setFilter] = useState<'all' | 'pinned'>('all')
+  const createSession = useAppStore(s => s.createSession)
 
-  const createArtifact = () => addArtifact({ name: 'Untitled artifact', type: 'document', content: 'New artifact' })
+  const createArtifact = () => {
+    const sessionId = createSession()
+    const artifactId = addArtifact({ name: 'Untitled artifact', type: 'document', content: 'New artifact', sessionId })
+    onOpenArtifact?.(artifactId)
+  }
+
+  const openArtifact = (artifactId: string) => onOpenArtifact?.(artifactId)
   const visible = useMemo(() => artifacts.filter(a =>
     (filter === 'all' || pinnedArtifactIds.includes(a.id)) &&
     a.name.toLowerCase().includes(query.toLowerCase())
@@ -44,18 +54,19 @@ export function ArtifactsPage() {
           <div className="grid grid-cols-3 gap-5">
             {visible.map(a => (
               <div key={a.id} className="overflow-hidden rounded-xl border border-[#e0dbd5] bg-white hover:shadow-sm transition">
-                <div className="h-[170px] bg-[#f5f3f0] relative overflow-hidden">
+                <button onClick={() => openArtifact(a.id)} className="block w-full text-left"><div className="h-[170px] bg-[#f5f3f0] relative overflow-hidden">
                   {a.content && /<(!doctype|html|body|div|table|style|script)/i.test(a.content) ? (
                     <iframe title={a.name} srcDoc={a.content} className="h-full w-full border-0 pointer-events-none bg-white" sandbox="" />
                   ) : (
                     <div className="h-full p-4 font-mono text-[8px] leading-3 text-[#777069] overflow-hidden whitespace-pre-wrap">{a.content || 'Artifact preview'}</div>
                   )}
-                  <button onClick={() => toggleArtifactPin(a.id)} className="absolute right-2 bottom-2 h-7 w-7 rounded-full bg-white/90 grid place-items-center shadow-sm" title={pinnedArtifactIds.includes(a.id) ? 'Unpin artifact' : 'Pin artifact'}>{pinnedArtifactIds.includes(a.id) ? <Pin size={13} className="fill-current"/> : <Pin size={13} className="text-[#8f8881}"/>}</button>
-                </div>
+                  <button onClick={(e) => { e.stopPropagation(); toggleArtifactPin(a.id) }} className="absolute right-2 bottom-2 h-7 w-7 rounded-full bg-white/90 grid place-items-center shadow-sm" title={pinnedArtifactIds.includes(a.id) ? 'Unpin artifact' : 'Pin artifact'}>{pinnedArtifactIds.includes(a.id) ? <Pin size={13} className="fill-current"/> : <Pin size={13} className="text-[#8f8881}"/>}</button>
+                </div></button>
                 <div className="px-3.5 py-3">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="text-[13px] font-semibold text-[#1e1a17] truncate">{a.name}</div>
+                    <button onClick={() => openArtifact(a.id)} className="min-w-0 text-left text-[13px] font-semibold text-[#1e1a17] truncate hover:underline">{a.name}</button>
                     <div className="flex items-center shrink-0">
+                      <button onClick={() => openArtifact(a.id)} className="h-7 w-7 grid place-items-center rounded-md hover:bg-[#f3f1ee]" title="Open artifact chat"><MessageSquare size={13}/></button>
                       <button onClick={() => {
                         const name = window.prompt('Artifact name', a.name)
                         if (name?.trim()) updateArtifact({ ...a, name: name.trim(), updatedAt: Date.now() })
@@ -65,7 +76,7 @@ export function ArtifactsPage() {
                       }} className="h-7 w-7 grid place-items-center rounded-md hover:bg-[#f3f1ee] text-[#9b5b52]" title="Delete artifact"><Trash2 size={13}/></button>
                     </div>
                   </div>
-                  <div className="mt-1 text-[11px] text-[#8c847d]">{a.createdAt ? `Created ${new Date(a.createdAt).toLocaleDateString(undefined, {month:'short',day:'numeric'})}` : 'Artifact'}</div>
+                  <div className="mt-1 text-[11px] text-[#8c847d]">{a.sessionId ? 'Persistent chat' : 'No chat linked'} · {a.createdAt ? `Created ${new Date(a.createdAt).toLocaleDateString(undefined, {month:'short',day:'numeric'})}` : 'Artifact'}</div>
                 </div>
               </div>
             ))}
