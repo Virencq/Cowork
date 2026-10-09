@@ -166,6 +166,11 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
   const createCodeProject = async () => {
     const selected = await openDialog({ directory: true, multiple: false, title: 'Add codebase folder' })
     if (typeof selected !== 'string') return
+    const existingProject = codeProjects.find((project) => project.path === selected)
+    if (existingProject) {
+      openCodeProject(existingProject)
+      return
+    }
     const name = selected.split(/[\\/]/).filter(Boolean).pop() || 'Code project'
     const projectId = addCodeProject({ name, path: selected })
     const sessionId = useAppStore.getState().createCodeSession()
@@ -217,8 +222,8 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
       )}
 
       <div className="px-3 pb-3">
-        <button onClick={onNew} className="w-full h-9 rounded-md border border-[#e4e1dd] bg-[#f4f3f1] hover:bg-[#eceae7] text-[#37322d] text-[12px] font-medium flex items-center gap-2 px-3">
-          <Plus size={15}/> New
+        <button onClick={codeMode ? () => void createCodeProject() : onNew} className="w-full h-9 rounded-md border border-[#e4e1dd] bg-[#f4f3f1] hover:bg-[#eceae7] text-[#37322d] text-[12px] font-medium flex items-center gap-2 px-3">
+          <Plus size={15}/> {codeMode ? 'Add codebase' : 'New'}
         </button>
       </div>
 
