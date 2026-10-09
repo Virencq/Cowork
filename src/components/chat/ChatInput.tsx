@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Send, Square, X, File, Paperclip, FolderPlus, Mic, LoaderCircle, AudioLines, PhoneCall } from 'lucide-react'
+import { Send, Square, X, File, Folder, Paperclip, FolderPlus, Mic, LoaderCircle, AudioLines, PhoneCall } from 'lucide-react'
 import { TextField, TextArea } from "@heroui/react"
 import { open as openFileDialog } from '@tauri-apps/plugin-dialog'
 import { Button, Card } from '../ui'
 import { runtimeInfo } from '../../utils/jcodeClient'
-import { useAppStore } from '../../stores/appStore'
 import {
   cancelDictation,
   getDictationLevel,
@@ -41,6 +40,7 @@ interface FileAttachment {
   name: string
   data?: string       // base64 for images
   mimeType?: string   // MIME type for images
+  isDir?: boolean
 }
 
 export interface ImageAttachment {
@@ -134,7 +134,11 @@ export function ChatInput({
         title: 'Choose project folder',
       })
       if (typeof selected !== 'string' || !selected) return
-      useAppStore.getState().setWorkspaceDir(selected)
+      const name = selected.split(/[\\/]/).filter(Boolean).pop() || selected
+      setAttachments((prev) => {
+        if (prev.some((attachment) => attachment.path === selected)) return prev
+        return [...prev, { path: selected, name, isDir: true }]
+      })
     } catch (error) {
       console.warn('[ChatInput] folder picker failed:', error)
     }
@@ -728,7 +732,7 @@ export function ChatInput({
                     className="group/att inline-flex items-center gap-2 rounded-lg border border-border bg-surface-secondary/70 pl-3 pr-2 py-2 text-[12px] transition-colors hover:border-accent/50 hover:bg-surface-secondary"
                     title={att.path}
                   >
-                    <File size={14} className="text-accent" />
+                    {att.isDir ? <Folder size={14} className="text-accent" /> : <File size={14} className="text-accent" />}
                     <span className="max-w-[180px] truncate text-text-secondary font-bold tracking-tight">{att.name}</span>
                     <button
                       type="button"
