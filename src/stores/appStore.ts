@@ -63,6 +63,7 @@ interface AppState {
 
   // Actions - Sessions
   createSession: () => string
+  createCodeSession: () => string
   deleteSession: (id: string) => void
   deleteMessage: (sessionId: string, messageId: string) => void
   deleteMessagesFrom: (sessionId: string, messageId: string) => void
@@ -199,6 +200,15 @@ export const useAppStore = create<AppState>()(
           activeSessionId: id,
           sessionMessages: { ...state.sessionMessages, [id]: [] },
         }))
+        db.createSession(id, 'New Chat').catch(console.warn)
+        return id
+      },
+
+      createCodeSession: () => {
+        const id = generateId()
+        const now = Date.now()
+        const session: Session = enrichSession({ id, title: 'New Chat', model: '', createdAt: now, updatedAt: now })
+        set((state) => ({ sessions: [...state.sessions, session], codeActiveSessionId: id, codeSessionIds: state.codeSessionIds.includes(id) ? state.codeSessionIds : [...state.codeSessionIds, id], sessionMessages: { ...state.sessionMessages, [id]: [] } }))
         db.createSession(id, 'New Chat').catch(console.warn)
         return id
       },
