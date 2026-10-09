@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react'
-import { invoke } from '@tauri-apps/api/core'
-import { Check, Save, RotateCcw } from 'lucide-react'
 import CodeMirror from '@uiw/react-codemirror'
 import { oneDark } from '@codemirror/theme-one-dark'
 import type { Extension } from '@codemirror/state'
@@ -34,26 +32,7 @@ function getLanguageExtension(ext: string): (() => Promise<Extension>) | null {
 
 export function TextPreview({ filePath, onLoaded, onError }: TextPreviewProps) {
   const [content, setContent] = useState<string | null>(null)
-  const [savedContent, setSavedContent] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
-  const [langExts, setLangExts] = useState<Extension[]>([])
-  const dirty = content !== null && savedContent !== null && content !== savedContent
-
-  const saveFile = async () => {
-    if (content === null || !dirty || saving) return
-    setSaving(true)
-    setSaveError(null)
-    try {
-      await invoke('write_text_file', { path: filePath, content })
-      setSavedContent(content)
-    } catch (error) {
-      setSaveError(error instanceof Error ? error.message : String(error))
-    } finally {
-      setSaving(false)
-    }
-  }
-  const theme = useAppStore((s) => s.theme)
+  const [langExts, setLangExts] = useState<Extension[]>([])  const theme = useAppStore((s) => s.theme)
 
   useEffect(() => {
     let cancelled = false
@@ -65,8 +44,6 @@ export function TextPreview({ filePath, onLoaded, onError }: TextPreviewProps) {
         const text = await invoke<string>('read_text_file', { path: filePath })
         if (!cancelled) {
           setContent(text)
-          setSavedContent(text)
-          setSaveError(null)
 
           const loader = getLanguageExtension(ext)
           if (loader) {
@@ -94,35 +71,13 @@ export function TextPreview({ filePath, onLoaded, onError }: TextPreviewProps) {
   if (content === null) return null
 
   return (
-    <div className="h-full min-h-0 flex flex-col">
-      <div className="h-9 shrink-0 border-b border-border-light/60 px-3 flex items-center gap-2">
-        <span className="mr-auto text-[10px] text-text-tertiary">
-          {dirty ? 'Unsaved changes' : 'Read / edit file'}
-        </span>
-        {saveError && <span className="max-w-[45%] truncate text-[10px] text-red-500" title={saveError}>{saveError}</span>}
-        <button
-          type="button"
-          onClick={() => { setContent(savedContent); setSaveError(null) }}
-          disabled={!dirty || saving}
-          className="h-7 px-2 rounded-md text-[10px] flex items-center gap-1.5 text-text-secondary hover:bg-surface-secondary disabled:opacity-40"
-          title="Discard unsaved changes"
-        ><RotateCcw size={12}/> Discard</button>
-        <button
-          type="button"
-          onClick={saveFile}
-          disabled={!dirty || saving}
-          className="h-7 px-2.5 rounded-md bg-accent text-white text-[10px] font-medium flex items-center gap-1.5 disabled:opacity-40"
-          title="Save file"
-        >{saving ? 'Saving…' : savedContent === content ? <><Check size={12}/> Saved</> : <><Save size={12}/> Save</>}</button>
-      </div>
-      <div className="min-h-0 flex-1 overflow-auto">
+    <div className="h-full overflow-auto">
       <CodeMirror
         value={content}
-        onChange={setContent}
         theme={theme === 'dark' ? oneDark : undefined}
         extensions={langExts}
-        readOnly={false}
-        editable={true}
+        readOnly={true}
+        editable={false}
         className="h-full text-[13px] [&_.cm-editor]:h-full [&_.cm-scroller]:font-mono"
         basicSetup={{
           lineNumbers: true,
@@ -134,7 +89,6 @@ export function TextPreview({ filePath, onLoaded, onError }: TextPreviewProps) {
           searchKeymap: false,
         }}
       />
-      </div>
     </div>
   )
 }
