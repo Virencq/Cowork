@@ -1,7 +1,5 @@
-import { useRef, useMemo, useState, useEffect } from 'react'
-import type { VirtuosoHandle } from 'react-virtuoso'
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react'
 import { ArrowDown } from 'lucide-react'
-import { Virtuoso } from 'react-virtuoso'
 import { useAppStore } from '../../stores'
 import { MessageItem } from './MessageItem'
 import type { KiloMessage } from '../../types'
@@ -17,8 +15,10 @@ interface MessageListProps {
 export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
   const messages = useAppStore((state) => state.sessionMessages[sessionId]) ?? EMPTY_MESSAGES
   const streamingMessage = useAppStore((state) => state.streamingMessage[sessionId])
-  const virtuosoRef = useRef<VirtuosoHandle>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const [atBottom, setAtBottom] = useState(true)
+  const wasAtBottomRef = useRef(true)
+  const previousMessageCountRef = useRef(0)
 
   const groupedMessages = useMemo(() => {
     const rawMessages = [...messages]
@@ -36,20 +36,15 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
 
     if (rawMessages.length === 0) return []
 
-    // Merge consecutive assistant messages into one visual bubble
+    // Merge consecutive assistant messages into one visual bubble.
     const result: KiloMessage[] = []
     for (const msg of rawMessages) {
       const last = result[result.length - 1]
       if (last && last.info.role === 'assistant' && msg.info.role === 'assistant') {
-        // Create a new object to avoid mutating store data
         result[result.length - 1] = {
           ...last,
           parts: [...last.parts, ...msg.parts],
-          // Keep the latest info/stats
-          info: {
-            ...msg.info,
-            time: last.info.time, // Keep original start time
-          }
+          info: { ...msg.info, time: last.info.time },
         }
       } else {
         result.push({ ...msg })
@@ -58,50 +53,58 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
     return result
   }, [messages, streamingMessage, sessionId])
 
+  const updateBottomState = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const isBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 32
+    wasAtBottomRef.current = isBottom
+    setAtBottom(isBottom)
+  }, [])
 
-  const scrollToBottom = () => {
-    virtuosoRef.current?.scrollToIndex({
-      index: Math.max(0, groupedMessages.length - 1),
-      align: 'end',
-      behavior: 'auto',
-    })
-  }
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollTo({ top: el.scrollHeight, behavior })
+    wasAtBottomRef.current = true
+    setAtBottom(true)
+  }, [])
 
-  // Always follow a newly-sent user message. Once the user deliberately scrolls
-  // upward, streaming output will no longer yank the viewport away from them.
+  // Only jump when a new user message is added. While reading older messages,
+  // normal mouse-wheel scrolling stays entirely under the user's control.
   useEffect(() => {
+    const previousCount = previousMessageCountRef.current
+    previousMessageCountRef.current = groupedMessages.length
     const last = groupedMessages[groupedMessages.length - 1]
-    if (last?.info.role === 'user') {
-      requestAnimationFrame(scrollToBottom)
+    if (groupedMessages.length > previousCount && last?.info.role === 'user') {
+      requestAnimationFrame(() => scrollToBottom('auto'))
     }
-  }, [groupedMessages.length])
+  }, [groupedMessages, scrollToBottom])
+
+  // When switching conversations, start at the bottom without intercepting wheel input.
+  useEffect(() => {
+    requestAnimationFrame(() => scrollToBottom('auto'))
+  }, [sessionId, scrollToBottom])
 
   if (groupedMessages.length === 0) {
     return null
   }
 
   return (
-    <div className="relative flex-1 overflow-hidden pt-4">
-      <Virtuoso
-        ref={virtuosoRef}
-        data={groupedMessages}
-        followOutput={() => 'auto'}
-        alignToBottom
-        atBottomThreshold={24}
-        atBottomStateChange={setAtBottom}
-        initialTopMostItemIndex={groupedMessages.length - 1}
-        className="flex-1 h-full chat-scroll-area"
-        components={{
-          Footer: () => <div className="h-2" />
-        }}
-        itemContent={(index, message) => {
-          const isStreaming = 
-            streamingMessage?.isStreaming && 
-            index === groupedMessages.length - 1 && 
+    <div className="relative flex-1 min-h-0 overflow-hidden pt-4">
+      <div
+        ref={scrollRef}
+        onScroll={updateBottomState}
+        className="h-full w-full overflow-y-auto overscroll-y-contain chat-scroll-area"
+        style={{ overflowAnchor: 'auto', scrollbarGutter: 'stable' }}
+      >
+        {groupedMessages.map((message, index) => {
+          const isStreaming =
+            !!streamingMessage?.isStreaming &&
+            index === groupedMessages.length - 1 &&
             message.info.role === 'assistant'
 
           return (
-            <div className="px-8">
+            <div key={message.info.id} className="px-8">
               <MessageItem
                 message={message}
                 isStreaming={isStreaming}
@@ -110,12 +113,13 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
               />
             </div>
           )
-        }}
-      />
+        })}
+        <div aria-hidden="true" className="h-2" />
+      </div>
       {!atBottom && (
         <button
           type="button"
-          onClick={scrollToBottom}
+          onClick={() => scrollToBottom('smooth')}
           aria-label="Scroll to bottom"
           title="Scroll to bottom"
           className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full border border-border bg-surface px-3 py-2 shadow-lg transition-all hover:bg-surface-secondary"
