@@ -332,7 +332,7 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
                 </div>
               ) : (
                 <>
-                  <button onClick={()=>{onPage('chat');setActiveSession(s.id);setUnread(p=>{const n=new Set(p);n.delete(s.id);return n})}}
+                  <button onClick={()=>{onPage('chat');if(codeMode){setCodeActiveSessionId(s.id);useAppStore.getState().markCodeSession(s.id);void useAppStore.getState().loadMessages(s.id)}else{setActiveSession(s.id)}setUnread(p=>{const n=new Set(p);n.delete(s.id);return n})}}
                     className={`w-full text-left rounded-md px-3 py-2 text-[11px] truncate hover:bg-surface-hover ${activeSessionId===s.id?'bg-accent-subtle text-text':''}`}>
                     <span className="inline-flex items-center gap-1.5 max-w-full">
                       <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${unread.has(s.id)?'bg-[#3b82f6]':'border border-[#bcb6b0]'}`}/>
