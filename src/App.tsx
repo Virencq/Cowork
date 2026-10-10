@@ -204,6 +204,7 @@ function App() {
   const setWorkspaceDir = useAppStore((s) => s.setWorkspaceDir)
   const workspaceDir = useAppStore((s) => s.workspaceDir)
   const activeSessionId = useAppStore((s) => s.activeSessionId)
+  const activeCodeProjectId = useWorkspaceStore((s) => s.activeCodeProjectId)
   const activeSessionMessageCount = useAppStore((s) => activeSessionId ? (s.sessionMessages[activeSessionId]?.length ?? 0) : 0)
   const [page, setPage] = useState<Page>('chat')
   const [showSettings, setShowSettings] = useState(false)
@@ -404,12 +405,12 @@ function App() {
                 navigateToPage('chat')
               }} />}
             </div>
-            {page === 'chat' && rightOpen && ((codeMode && !!useWorkspaceStore.getState().activeCodeProjectId) || (!codeMode && !!activeSessionId && activeSessionMessageCount > 0)) && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} onAddScheduled={() => navigateToPage('tasks')} codeMode={codeMode} />}
+            {page === 'chat' && rightOpen && ((codeMode && !!activeCodeProjectId) || (!codeMode && !!activeSessionId && activeSessionMessageCount > 0)) && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} onAddScheduled={() => navigateToPage('tasks')} codeMode={codeMode} />}
           </div>
           </Suspense>
         </main>
       </div>
-      {page === 'chat' && !codeMode && !rightOpen && (
+      {page === 'chat' && !rightOpen && ((codeMode && !!activeCodeProjectId) || (!codeMode && !!activeSessionId && activeSessionMessageCount > 0)) && (
         <button onClick={() => setRightOpen(true)} className="fixed right-4 top-14 z-40 h-9 w-9 rounded-lg border border-border bg-surface shadow-sm grid place-items-center text-text-secondary"><ChevronRight size={16}/></button>
       )}
       {showSettings && (
