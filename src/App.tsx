@@ -65,10 +65,6 @@ function CoworkTitleBar({ onToggleSidebar, onToggleRightPanel, onBack, onForward
         <button onClick={onToggleRightPanel} className="title-icon" title="Toggle project panel" aria-label="Toggle project panel"><Columns2 size={16}/></button>
         <button onClick={onBack} className="title-icon" title="Back" aria-label="Back"><ArrowLeft size={17}/></button>
         <button onClick={onForward} className="title-icon" title="Forward" aria-label="Forward"><ArrowRight size={17}/></button>
-        <div className="ml-2 flex h-7 items-center rounded-md border border-border bg-surface-secondary p-0.5" aria-label="Workspace mode">
-          <button onClick={onCowork} aria-pressed={!codeMode} className={`h-6 rounded px-2.5 text-[11px] font-medium transition-colors ${!codeMode ? 'bg-surface text-text shadow-sm' : 'text-text-secondary hover:text-text'}`}>Cowork</button>
-          <button onClick={onCode} aria-pressed={codeMode} className={`h-6 rounded px-2.5 text-[11px] font-medium transition-colors ${codeMode ? 'bg-surface text-text shadow-sm' : 'text-text-secondary hover:text-text'}`}>Code / JCode</button>
-        </div>
       </div>
       <WindowControls />
     </header>
