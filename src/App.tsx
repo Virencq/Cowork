@@ -369,7 +369,7 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
   const workspaceDir = useAppStore((s) => s.workspaceDir)
   const projects = useWorkspaceStore((s) => s.projects)
   const updateProject = useWorkspaceStore((s) => s.updateProject)
-  const project = projects.find((p) => p.path && workspaceDir && p.path === workspaceDir)
+  const project = projects.find((p) => p.path && workspaceDir && projectPathsEqual(p.path, workspaceDir))
   const [editingInstructions, setEditingInstructions] = useState(false)
   const [draftInstructions, setDraftInstructions] = useState(project?.instructions || '')
 
