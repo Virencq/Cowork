@@ -210,7 +210,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [leftWidth, setLeftWidth] = useState(() => Number(localStorage.getItem('cowork-left-width')) || 200)
   const [rightWidth, setRightWidth] = useState(() => Math.min(360, Math.max(280, Number(localStorage.getItem('cowork-right-width')) || 330)))
-  const [rightOpen, setRightOpen] = useState(() => localStorage.getItem('cowork-right-open') !== 'false')
+  const [rightOpen, setRightOpen] = useState(() => localStorage.getItem('cowork-right-open-v2') !== 'false')
   const [sidebarOpen, setSidebarOpen] = useState(() => localStorage.getItem('cowork-sidebar-open') !== 'false')
   const [codeMode, setCodeMode] = useState(() => localStorage.getItem('cowork-code-mode') === 'true')
   const [hasVisitedCode, setHasVisitedCode] = useState(() => localStorage.getItem('cowork-code-mode') === 'true')
@@ -229,7 +229,7 @@ function App() {
 
   useEffect(() => { localStorage.setItem('cowork-left-width', String(leftWidth)) }, [leftWidth])
   useEffect(() => { localStorage.setItem('cowork-right-width', String(rightWidth)) }, [rightWidth])
-  useEffect(() => { localStorage.setItem('cowork-right-open', String(rightOpen)) }, [rightOpen])
+  useEffect(() => { localStorage.setItem('cowork-right-open-v2', String(rightOpen)) }, [rightOpen])
   useEffect(() => { localStorage.setItem('cowork-sidebar-open', String(sidebarOpen)) }, [sidebarOpen])
   useEffect(() => { localStorage.setItem('cowork-code-mode', String(codeMode)) }, [codeMode])
 
