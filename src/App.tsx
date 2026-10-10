@@ -112,7 +112,6 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
   const addCodeProject = useWorkspaceStore((s) => s.addCodeProject)
   const updateCodeProject = useWorkspaceStore((s) => s.updateCodeProject)
   const removeCodeProject = useWorkspaceStore((s) => s.removeCodeProject)
-  const setActiveCodeProject = useWorkspaceStore((s) => s.setActiveCodeProject)
   const [projectMenuId, setProjectMenuId] = useState<string | null>(null)
   const [renamingProjectId, setRenamingProjectId] = useState<string | null>(null)
   const [renameProjectValue, setRenameProjectValue] = useState('')
