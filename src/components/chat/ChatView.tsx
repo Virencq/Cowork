@@ -607,7 +607,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
                 key="empty-task"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="h-full flex flex-col items-center justify-center px-8"
+                className="h-full flex flex-col items-center justify-center px-4"
               >
                 <div className="w-full max-w-[674px]">
                   <div className="mb-8 text-center">
@@ -634,9 +634,9 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
                 </div>
               </motion.div>
             ) : (
-              <motion.div key={activeSessionId} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }} className="h-full flex flex-col w-full max-w-(--spacing-chat-max) mx-auto relative overflow-hidden">
+              <motion.div key={activeSessionId} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }} className="h-full flex flex-col w-full max-w-(--spacing-chat-max) mx-auto relative overflow-hidden px-2">
                 {session && (session.sourceLabel || session.readOnly) && (
-                  <div className="sticky top-0 z-10 px-4 pt-4">
+                  <div className="sticky top-0 z-10 px-3 pt-2">
                     <div className="rounded-lg border border-border bg-surface px-4 py-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-[13px] font-bold tracking-tight text-text">{session.title}</span>
@@ -671,7 +671,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
           </AnimatePresence>
         </div>
         <div className={`bg-linear-to-t from-bg to-transparent pt-1 pb-2 shrink-0 ${isEmpty ? "hidden" : ""}`}>
-          <div className="w-full max-w-(--spacing-chat-max) mx-auto relative px-4">
+          <div className="w-full max-w-(--spacing-chat-max) mx-auto relative px-2">
             {contextStatus && (
               <div className="mb-2 flex justify-center" role="status" aria-live="polite">
                 <div className="rounded-full border border-accent/20 bg-accent/8 px-3 py-1 text-[10px] font-semibold text-text-secondary">

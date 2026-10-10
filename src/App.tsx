@@ -105,7 +105,7 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled, codeMode }: {
 
   return (
     <aside data-project-properties-panel style={{ width, backgroundColor: '#1f1f1f', borderColor: '#333333' }} className="fixed right-0 top-11 bottom-0 z-[80] border-l pt-0 overflow-auto text-[#f2f2f2] shadow-2xl">
-      <ResizeHandle side="right" onDrag={(d) => onWidth(Math.max(280, Math.min(440, width + d)))} />
+      <ResizeHandle side="right" onDrag={(d) => onWidth(Math.max(280, Math.min(360, width + d)))} />
       <div className="h-14 px-4 flex items-center justify-between border-b border-[#303030]">
         <div>
           <div className="text-[12px] uppercase tracking-[.08em] font-semibold text-[#9b9b9b]">Project</div>
@@ -209,7 +209,7 @@ function App() {
   const [page, setPage] = useState<Page>('chat')
   const [showSettings, setShowSettings] = useState(false)
   const [leftWidth, setLeftWidth] = useState(() => Number(localStorage.getItem('cowork-left-width')) || 200)
-  const [rightWidth, setRightWidth] = useState(() => Number(localStorage.getItem('cowork-right-width')) || 330)
+  const [rightWidth, setRightWidth] = useState(() => Math.min(360, Math.max(280, Number(localStorage.getItem('cowork-right-width')) || 330)))
   const [rightOpen, setRightOpen] = useState(() => localStorage.getItem('cowork-right-open') !== 'false')
   const [sidebarOpen, setSidebarOpen] = useState(() => localStorage.getItem('cowork-sidebar-open') !== 'false')
   const [codeMode, setCodeMode] = useState(() => localStorage.getItem('cowork-code-mode') === 'true')
