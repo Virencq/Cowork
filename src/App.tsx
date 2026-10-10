@@ -623,22 +623,44 @@ function App() {
                 if (project.path) setWorkspaceDir(project.path)
                 // Reopen this project's existing chat instead of creating a new
                 // session on every click. Associate a session on first open only.
-                const storedProject = useWorkspaceStore.getState().projects.find((item) => item.id === project.id)
+                const workspaceState = useWorkspaceStore.getState()
+                const storedProject = workspaceState.projects.find((item) => item.id === project.id)
                 const storedSessionId = storedProject?.sessionId
-                const existingSession = storedSessionId
-                  ? useAppStore.getState().sessions.some((session) => session.id === storedSessionId)
-                  : false
-                if (storedSessionId && existingSession) {
-                  setActiveSession(storedSessionId)
-                  void useAppStore.getState().loadMessages(storedSessionId)
-                } else if (storedSessionId) {
-                  setActiveSession(storedSessionId)
-                  void useAppStore.getState().loadMessages(storedSessionId)
-                } else {
-                  const id = createSession()
-                  useWorkspaceStore.getState().updateProject(project.id, { sessionId: id })
-                  setActiveSession(id)
+                const appState = useAppStore.getState()
+                const sessions = appState.sessions
+                const linkedSessionIds = new Set(
+                  workspaceState.projects
+                    .filter((item) => item.id !== project.id && item.sessionId)
+                    .map((item) => item.sessionId as string),
+                )
+
+                // Prefer the project's saved session. For projects created before
+                // session linking existed, recover a likely existing chat rather
+                // than silently creating "New Chat" on every project click.
+                let sessionId = storedSessionId
+                if (!sessionId || !sessions.some((session) => session.id === sessionId)) {
+                  const projectName = project.name.trim().toLowerCase()
+                  const namedMatch = sessions
+                    .filter((session) => !linkedSessionIds.has(session.id))
+                    .find((session) => session.title?.toLowerCase().includes(projectName))
+                  const activeWithHistory = appState.activeSessionId
+                    ? sessions.find((session) => session.id === appState.activeSessionId &&
+                        (appState.sessionMessages[session.id]?.length ?? 0) > 0 &&
+                        !linkedSessionIds.has(session.id))
+                    : undefined
+                  const mostRecentWithHistory = [...sessions]
+                    .filter((session) => !linkedSessionIds.has(session.id) &&
+                      (appState.sessionMessages[session.id]?.length ?? 0) > 0)
+                    .sort((a, b) => b.updatedAt - a.updatedAt)[0]
+                  sessionId = namedMatch?.id ?? activeWithHistory?.id ?? mostRecentWithHistory?.id
                 }
+
+                if (!sessionId) {
+                  sessionId = createSession()
+                }
+                workspaceState.updateProject(project.id, { sessionId })
+                setActiveSession(sessionId)
+                void useAppStore.getState().loadMessages(sessionId)
                 navigateToPage('chat')
               }} />}
               {page === 'ideas' && <div className="flex-1 grid place-items-center"><div className="text-center max-w-md"><Lightbulb className="mx-auto mb-4 text-[#b0a79e]" size={30}/><h2 className="text-xl font-semibold">Ideas</h2><p className="mt-2 text-sm text-[#8c847c]">Capture ideas here and turn them into tasks when ready.</p></div></div>}
