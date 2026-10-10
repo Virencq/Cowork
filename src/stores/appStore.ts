@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { useWorkspaceStore } from './workspaceStore'
 import i18n from '../i18n'
 import type { Session, ProviderConfig, Companion, ProviderInfo, KiloMessage, MessagePart, MessageInfo } from '../types'
 import * as db from '../utils/database'
@@ -216,6 +217,14 @@ export const useAppStore = create<AppState>()(
       deleteSession: (id) => {
         const state = get()
         const piId = state.sessions.find((session) => session.id === id)?.piId
+        // A Code project must never keep pointing at a conversation that was
+        // deleted independently from the project itself.
+        const workspace = useWorkspaceStore.getState()
+        for (const project of workspace.codeProjects) {
+          if (project.sessionId === id) {
+            workspace.updateCodeProject(project.id, { sessionId: undefined })
+          }
+        }
         set({
           sessions: state.sessions.filter((s) => s.id !== id),
           activeSessionId: state.activeSessionId === id ? (state.sessions.find(s => s.id !== id)?.id ?? null) : state.activeSessionId,
