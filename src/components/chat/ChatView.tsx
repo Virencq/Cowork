@@ -167,8 +167,11 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
   }, [])
 
   const session = sessions.find((s) => s.id === activeSessionId)
-  const sessionMessages = useAppStore((state) => state.sessionMessages)
-  const messages = activeSessionId ? sessionMessages[activeSessionId] || EMPTY_MESSAGES : EMPTY_MESSAGES
+  // Subscribe only to the visible conversation. Subscribing to the entire map made
+  // this view rerender whenever any background/other session loaded its history.
+  const messages = useAppStore((state) =>
+    activeSessionId ? state.sessionMessages[activeSessionId] || EMPTY_MESSAGES : EMPTY_MESSAGES,
+  )
   const isEmpty = messages.length === 0
   const isReadOnlySession = !!session?.readOnly
 
