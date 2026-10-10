@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import {
   Archive, CalendarClock, ChevronRight, FolderKanban, FileCode2, Menu, Plus,
@@ -69,6 +70,7 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
   const updateSessionTitle = useAppStore((s) => s.updateSessionTitle)
   const deleteSession = useAppStore((s) => s.deleteSession)
   const [menuId, setMenuId] = useState<string | null>(null)
+  const [menuPosition, setMenuPosition] = useState({ left: 0, top: 0 })
   const [searchOpen, setSearchOpen] = useState(false)
   const [filterPinned, setFilterPinned] = useState(false)
   const [taskQuery, setTaskQuery] = useState('')
@@ -87,6 +89,22 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
   // even when it is older than the 20 most-recent task rows.
   const pinnedTasks = allTasks.filter(s => pinned.has(s.id))
   const visibleTasks = filterPinned ? pinnedTasks : tasks
+
+  useEffect(() => {
+    if (!menuId) return
+    const dismiss = (event: PointerEvent) => {
+      if (!(event.target as HTMLElement).closest('[data-chat-menu]')) setMenuId(null)
+    }
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuId(null)
+    }
+    document.addEventListener('pointerdown', dismiss)
+    document.addEventListener('keydown', escape)
+    return () => {
+      document.removeEventListener('pointerdown', dismiss)
+      document.removeEventListener('keydown', escape)
+    }
+  }, [menuId])
 
   const beginRename = (id: string, title: string) => { setRenaming(id); setRenameValue(title); setMenuId(null) }
   const commitRename = (id: string) => {
@@ -266,9 +284,20 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
                       <span className="truncate">{s.title || 'Untitled task'}</span>
                     </span>
                   </button>
-                  <button onClick={e=>{e.stopPropagation();setMenuId(menuId===s.id?null:s.id)}} className="absolute right-1 top-1.5 h-7 w-7 rounded-md opacity-0 group-hover:opacity-100 hover:bg-surface-hover grid place-items-center"><MoreHorizontal size={14}/></button>
-                  {menuId===s.id && (
-                    <div className="absolute right-1 top-8 z-50 w-44 rounded-lg border border-border bg-surface p-1 shadow-lg">
+                  <button data-chat-menu onClick={e=>{
+                    e.stopPropagation()
+                    if (menuId === s.id) { setMenuId(null); return }
+                    const rect = e.currentTarget.getBoundingClientRect()
+                    const menuWidth = 176
+                    const menuHeight = 190
+                    setMenuPosition({
+                      left: Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8)),
+                      top: Math.max(8, Math.min(rect.bottom, window.innerHeight - menuHeight - 8)),
+                    })
+                    setMenuId(s.id)
+                  }} className="absolute right-1 top-1.5 h-7 w-7 rounded-md opacity-0 group-hover:opacity-100 hover:bg-surface-hover grid place-items-center"><MoreHorizontal size={14}/></button>
+                  {menuId===s.id && createPortal(
+                    <div data-chat-menu style={{ position: 'fixed', left: menuPosition.left, top: menuPosition.top, width: 176, maxHeight: 'min(280px, calc(100vh - 16px))', overflowY: 'auto' }} className="z-[1000] rounded-lg border border-border bg-surface p-1 shadow-xl">
                       <button onClick={()=>{
                         setPinned(p=>{
                           const n=new Set(p)
@@ -282,7 +311,8 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
                       <div className="my-1 border-t border-border"/>
                       <button onClick={()=>{setArchived(p=>new Set(p).add(s.id));setMenuId(null)}} className="menu-row"><Archive size={14}/>Archive</button>
                       <button onClick={()=>{deleteSession(s.id);setMenuId(null)}} className="menu-row text-[#b54d40]"><Trash2 size={14}/>Delete</button>
-                    </div>
+                    </div>,
+                    document.body,
                   )}
                 </>
               )}
