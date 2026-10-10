@@ -9,6 +9,7 @@ export interface WorkspacePromptContext {
   blocks: string[]
   mcpToolDefs: McpToolDef[]
   sseMcpTools: Array<{ serverName: string; toolName: string }>
+  allowedSseMcpToolNames: string[]
 }
 
 /**
@@ -91,5 +92,10 @@ export function buildWorkspacePromptContext(
     })
     .filter((tool): tool is McpToolDef => tool !== null)
 
-  return { blocks, mcpToolDefs, sseMcpTools }
+  return {
+    blocks,
+    mcpToolDefs,
+    sseMcpTools,
+    allowedSseMcpToolNames: sseMcpTools.map(({ serverName, toolName }) => remoteMcpToolName(serverName, toolName)),
+  }
 }
