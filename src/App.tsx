@@ -101,7 +101,7 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
   }
 
   return (
-    <aside style={{ width }} className="relative shrink-0 h-full border-l border-border bg-surface pt-11 overflow-auto">
+    <aside data-project-properties-panel style={{ width }} className="relative shrink-0 h-full border-l border-border bg-surface pt-11 overflow-auto">
       <ResizeHandle side="right" onDrag={(d) => onWidth(Math.max(280, Math.min(440, width + d)))} />
       <div className="h-14 px-5 flex items-center justify-between border-b border-border">
         <div>
@@ -298,7 +298,7 @@ function App() {
       onClick={(event) => {
         // Dismiss project properties from any click outside the panel,
         // including the chat, sidebar, and title bar. Keep panel controls usable.
-        if (rightOpen && !(event.target as HTMLElement).closest("aside")) {
+        if (rightOpen && !(event.target as HTMLElement).closest("[data-project-properties-panel]")) {
           setRightOpen(false)
         }
       }}
