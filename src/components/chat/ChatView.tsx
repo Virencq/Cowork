@@ -422,7 +422,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
       useAppStore.getState().incrementFileTreeVersion()
       usePetStore.getState().onResponded()
     },
-    [activeSessionId, session, t, startStreaming, finishStreaming, commitStreamingMessage, addMessage, updateSessionTitle, appendStreamingDelta, subscribeStream, isReadOnlySession],
+    [activeSessionId, session, t, startStreaming, finishStreaming, commitStreamingMessage, addMessage, updateSessionTitle, appendStreamingDelta, subscribeStream, isReadOnlySession, workspaceMode, workspaceDir, createModeSession],
   )
 
   const activeJCodeSessionId = activeSessionId
@@ -535,12 +535,12 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
         if (isDir) {
           // Do not recursively enumerate a dropped folder in the UI thread.
           // Send the folder reference and let JCode inspect it when needed.
-          if (!useAppStore.getState().activeSessionId) useAppStore.getState().createSession()
+          if (!(workspaceMode === 'code' ? useAppStore.getState().codeActiveSessionId : useAppStore.getState().activeSessionId)) createModeSession()
           await handleSubmit(`[Folder: ${name}](${path})`)
           return
         }
 
-        if (!useAppStore.getState().activeSessionId) useAppStore.getState().createSession()
+        if (!(workspaceMode === 'code' ? useAppStore.getState().codeActiveSessionId : useAppStore.getState().activeSessionId)) createModeSession()
         await handleSubmit(`[File: ${name}](${path})`)
         return
       }
@@ -555,7 +555,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
       if (nonZipFiles.length === 0) return
 
       const refs = nonZipFiles.map((file) => `[File: ${file.name}](os-file://${file.name})`).join('\n')
-      if (!useAppStore.getState().activeSessionId) useAppStore.getState().createSession()
+      if (!(workspaceMode === 'code' ? useAppStore.getState().codeActiveSessionId : useAppStore.getState().activeSessionId)) createModeSession()
       await handleSubmit(refs)
     } catch (error) {
       console.error('[ChatView] drop failed:', error)
@@ -563,7 +563,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
     } finally {
       setIsDragOver(false)
     }
-  }, [handleSubmit])
+  }, [handleSubmit, workspaceMode, createModeSession])
   const streamingMessages = useAppStore((state) => state.streamingMessage)
   const streamingMessage = activeSessionId ? streamingMessages[activeSessionId] : EMPTY_STREAMING
   const isStreaming = streamingMessage?.isStreaming ?? false
