@@ -24,7 +24,7 @@ export function CodeWorkspace() {
     const state = useAppStore.getState()
     const sessionId = activeCodeProject.sessionId
     const needsSession = !sessionId || state.codeActiveSessionId !== sessionId
-    const needsHistory = Boolean(sessionId) && (state.sessionMessages[sessionId!]?.length ?? 0) === 0
+    const needsHistory = Boolean(sessionId) && !Object.prototype.hasOwnProperty.call(state.sessionMessages, sessionId!)
     if (workspaceDir !== activeCodeProject.path || needsSession || needsHistory) {
       activateCodeProject(activeCodeProject)
     }
