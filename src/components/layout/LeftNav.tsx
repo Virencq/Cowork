@@ -272,13 +272,13 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
                 <div className="flex items-center gap-1 px-2 py-1">
                   <input autoFocus value={renameValue} onChange={e=>setRenameValue(e.target.value)}
                     onKeyDown={e=>{if(e.key==='Enter')commitRename(s.id);if(e.key==='Escape')setRenaming(null)}}
-                    className="min-w-0 flex-1 h-7 rounded-md border border-border px-2 text-[13px]"/>
+                    className="min-w-0 flex-1 h-7 rounded-md border border-border bg-surface-secondary px-2 text-[13px] text-text"/>
                   <button onClick={()=>commitRename(s.id)} className="h-7 w-7 grid place-items-center"><Check size={13}/></button>
                 </div>
               ) : (
                 <>
                   <button onClick={()=>{onPage('chat');if(codeMode){setCodeActiveSessionId(s.id);useAppStore.getState().markCodeSession(s.id);void useAppStore.getState().loadMessages(s.id)}else{setActiveSession(s.id)}setUnread(p=>{const n=new Set(p);n.delete(s.id);return n})}}
-                    className={`w-full text-left rounded-md px-2 py-1 text-[10px] truncate hover:bg-surface-hover ${activeSessionId===s.id?'bg-accent-subtle text-text':''}`}>
+                    className={`w-full text-left rounded-md px-2 py-1.5 text-[13px] leading-5 truncate text-text-secondary hover:bg-surface-hover hover:text-text ${activeSessionId===s.id?'bg-accent-subtle text-text':''}`}>
                     <span className="inline-flex items-center gap-1.5 max-w-full">
                       <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${unread.has(s.id)?'bg-[#3b82f6]':'border border-[#bcb6b0]'}`}/>
                       <span className="truncate">{s.title || 'Untitled task'}</span>
