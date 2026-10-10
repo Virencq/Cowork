@@ -1,5 +1,4 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { ChevronRight, FolderKanban, History, Lightbulb, Menu, Plus, Settings, X, Pencil, Columns2, ArrowLeft, ArrowRight } from 'lucide-react'
 import { ChatView } from './components/chat'
