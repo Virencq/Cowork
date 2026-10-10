@@ -28,12 +28,15 @@ describe('JCode prompt event lifecycle', () => {
   })
 
   it('subscribes before prompting and releases the listener after completion', async () => {
+    const order: string[] = []
     let handler: ((event: any) => void) | undefined
     listenMock.mockImplementation(async (_name: string, callback: (event: any) => void) => {
+      order.push('listen')
       handler = callback
       return unlistenMock
     })
     invokeMock.mockImplementation(async () => {
+      order.push('invoke')
       handler?.({
         payload: {
           sessionId: 'acp-session',
@@ -45,12 +48,12 @@ describe('JCode prompt event lifecycle', () => {
     const { prompt } = await import('../src/utils/jcodeClient')
     await expect(prompt('acp-session', 'hello')).resolves.toMatchObject({ text: '' })
 
-    expect(listenMock).toHaveBeenCalledBefore(invokeMock)
+    expect(order).toEqual(['listen', 'invoke'])
     expect(invokeMock).toHaveBeenCalledWith('jcode_prompt', {
       sessionId: 'acp-session',
       prompt: 'hello',
     })
-    expect(unlistenMock).toHaveBeenCalledOnce()
+    expect(unlistenMock).toHaveBeenCalledTimes(1)
   })
 
   it('resolves with an error when the ACP session closes before completion', async () => {
