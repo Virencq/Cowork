@@ -7,6 +7,7 @@ import { useAppStore } from '../../stores/appStore'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
 import { activateCodeProject } from '../../utils/codeProjectActions'
+import { projectPathsEqual } from '../../utils/projectPaths'
 import { ChatView } from '../chat/ChatView'
 
 export function CodeWorkspace() {
@@ -38,7 +39,7 @@ export function CodeWorkspace() {
     })
     if (typeof selected !== 'string') return
 
-    let project = useWorkspaceStore.getState().codeProjects.find((item) => item.path === selected)
+    let project = useWorkspaceStore.getState().codeProjects.find((item) => projectPathsEqual(item.path, selected))
     if (!project) {
       const name = selected.split(/[/\\\\]/).filter(Boolean).pop() || 'Code project'
       const projectId = addCodeProject({ name, path: selected })
