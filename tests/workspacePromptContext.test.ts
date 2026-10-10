@@ -61,6 +61,7 @@ describe('workspace prompt context', () => {
     expect(context.sseMcpTools).toEqual([
       { serverName: 'remote-tools', toolName: 'search_docs' },
     ])
+    expect(context.allowedSseMcpToolNames).toEqual(['mcp_sse_remote_tools_search_docs'])
     expect(context.blocks.join('\n')).toContain('mcp_sse_remote_tools_search_docs')
     expect(context.blocks.join('\n')).toContain('local-tools/read_file')
   })
