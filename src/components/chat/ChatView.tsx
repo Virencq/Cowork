@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useTranslation } from 'react-i18next'
 import { useAppStore, useAgentStore, useWebSearchStore, usePetStore } from '../../stores'
 import { useSkillStore } from '../../stores/skillStore'
+import { useMCPStore } from '../../stores/mcpStore'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
 import { invoke } from '@tauri-apps/api/core'
 import type { ImageAttachment } from './ChatInput'
@@ -248,7 +249,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
       const { blocks, mcpToolDefs, allowedSseMcpToolNames } = buildWorkspacePromptContext(
         workspaceMode,
         workspaceDir,
-        activeAgent,
+        activeAgent ?? null,
       )
       let enrichedContent = content
 
