@@ -76,6 +76,6 @@ describe('JCode prompt event lifecycle', () => {
       text: '',
       error: 'JCode ACP session closed before the prompt completed.',
     })
-    expect(unlistenMock).toHaveBeenCalledOnce()
+    expect(unlistenMock).toHaveBeenCalledTimes(1)
   })
 })
