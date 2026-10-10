@@ -621,7 +621,7 @@ function App() {
 
               {page === 'tasks' && <TasksPage />}
               {page === 'projects' && <ProjectsPage
-                onOpenChat={(sessionId) => { useWorkspaceStore.getState().setActiveProject(null); setActiveSession(sessionId); navigateToPage('chat'); void useAppStore.getState().loadMessages(sessionId) }}
+                onOpenChat={(sessionId) => { setActiveSession(sessionId); navigateToPage('chat'); void useAppStore.getState().loadMessages(sessionId) }}
                 onNewProjectChat={(projectId) => { useWorkspaceStore.getState().setActiveProject(projectId); setActiveSession(null); navigateToPage('chat') }}
                 onOpenProject={(project) => {
                 if (project.path) setWorkspaceDir(project.path)

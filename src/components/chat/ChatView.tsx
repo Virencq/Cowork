@@ -222,7 +222,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
         parts: [{ id: `${uid}-0`, type: 'text', text: content, sessionID: sid, messageID: uid }],
       })
 
-      if (session?.title === 'New Chat') {
+      if (!session || session.title === 'New Chat') {
         updateSessionTitle(sid, content.slice(0, 40) + (content.length > 40 ? '...' : ''))
       }
 
