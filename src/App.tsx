@@ -25,6 +25,7 @@ import { useSkillStore } from './stores/skillStore'
 import { useAgentStore } from './stores/agentStore'
 import { useWorkspaceStore } from './stores/workspaceStore'
 import { activateCodeProject } from './utils/codeProjectActions'
+import { projectPathsEqual } from './utils/projectPaths'
 import { initDatabase } from './utils/database'
 import { getAllSessions, createSession as dbCreateSession, saveMessage as dbSaveMessage } from './utils/database'
 import { status as jcodeStatus } from './utils/jcodeClient'
@@ -161,7 +162,7 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
   const createCodeProject = async () => {
     const selected = await openDialog({ directory: true, multiple: false, title: 'Add codebase folder' })
     if (typeof selected !== 'string') return
-    const existingProject = codeProjects.find((project) => project.path === selected)
+    const existingProject = codeProjects.find((project) => projectPathsEqual(project.path, selected))
     if (existingProject) {
       openCodeProject(existingProject)
       return
