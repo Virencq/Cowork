@@ -14,7 +14,7 @@ describe('English-only i18n configuration', () => {
 
   it('registers English as the only application locale', () => {
     expect(i18n.options.lng).toBe('en')
-    expect(i18n.options.fallbackLng).toBe('en')
+    expect(i18n.options.fallbackLng).toEqual(['en'])
     expect(i18n.options.supportedLngs).toContain('en')
     expect(i18n.options.supportedLngs).not.toContain('zh')
     expect(Object.keys(resources)).toEqual(['en'])
