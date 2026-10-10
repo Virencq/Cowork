@@ -56,6 +56,9 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
             "tray_show" => show_main_window(app),
             "tray_hide" => hide_main_window(app),
             "tray_quit" => {
+                if let Some(state) = app.try_state::<JCodeState>() {
+                    jcode_acp::shutdown_all(&state);
+                }
                 if let Some(state) = app.try_state::<AppLifecycleState>() {
                     state.exiting.store(true, Ordering::Relaxed);
                 }
