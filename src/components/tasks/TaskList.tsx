@@ -66,13 +66,13 @@ export function TaskList({ onCreateTask }: TaskListProps) {
 
         {searchOpen && (
           <div className="mt-4 relative max-w-md">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9b948d]"/>
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)]"/>
             <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Search scheduled tasks" className="w-full h-10 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-9 text-[14px] text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-tertiary)]"/>
           </div>
         )}
 
         <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-[14px] text-[var(--color-text)]"><Info size={16} className="text-[#706960]"/><span>Scheduled tasks only run while your computer is awake and online.</span></div>
+          <div className="flex items-center gap-3 text-[14px] text-[var(--color-text)]"><Info size={16} className="text-[var(--color-text-secondary)]"/><span>Scheduled tasks only run while your computer is awake and online.</span></div>
           <span className="text-[12px] text-[var(--color-text-secondary)]">Cowork checks the schedule while the app is running.</span>
         </div>
 
@@ -89,8 +89,8 @@ export function TaskList({ onCreateTask }: TaskListProps) {
                   <div className="flex items-center gap-2 text-[var(--color-text-secondary)]">
                     <span className="text-[12px]">{formatNextRun(task.nextRunAt)}</span>
                     <button onClick={() => setDetailTask(task)} className="p-2 hover:bg-[var(--color-surface-tertiary)] rounded-md" title="History"><Eye size={13}/></button>
-                    <button onClick={() => toggleTask(task.id)} className="p-1.5 hover:bg-[#f1eeeb] rounded-md" title={task.enabled ? 'Pause' : 'Resume'}>{task.enabled ? <Pause size={13}/> : <Play size={13}/>}</button>
-                    <button onClick={() => triggerRun(task.id)} className="p-1.5 hover:bg-[#f1eeeb] rounded-md" title="Run now"><Zap size={13}/></button>
+                    <button onClick={() => toggleTask(task.id)} className="p-2 hover:bg-[var(--color-surface-tertiary)] rounded-md" title={task.enabled ? 'Pause' : 'Resume'}>{task.enabled ? <Pause size={13}/> : <Play size={13}/>}</button>
+                    <button onClick={() => triggerRun(task.id)} className="p-2 hover:bg-[var(--color-surface-tertiary)] rounded-md" title="Run now"><Zap size={13}/></button>
                     <button onClick={() => removeTask(task.id)} className="p-2 hover:bg-[#492b2b] rounded-md text-[#e58a7d]" title="Delete"><Trash2 size={13}/></button>
                   </div>
                 </div>
