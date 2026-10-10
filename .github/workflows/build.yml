@@ -9,6 +9,11 @@ on:
 permissions:
   contents: read
 
+# Keep only the latest build for a branch when rapid commits supersede older runs.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   frontend:
     runs-on: ubuntu-latest
