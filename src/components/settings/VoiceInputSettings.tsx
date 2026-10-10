@@ -49,6 +49,7 @@ const formatBytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MiB`
 export function VoiceInputSettings() {
   const text = copy.en
   const [status, setStatus] = useState<VoiceInputStatus | null>(null)
+  const [statusCheckComplete, setStatusCheckComplete] = useState(false)
   const [progress, setProgress] = useState<DictationDownloadProgress | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -64,7 +65,7 @@ export function VoiceInputSettings() {
 
   useEffect(() => {
     if (!isTauriRuntime()) return
-    void refresh().catch((reason) => setError(String(reason)))
+    void refresh().catch((reason) => setError(String(reason))).finally(() => setStatusCheckComplete(true))
     let unlisten: (() => void) | undefined
     void listenDictationDownloadProgress(setProgress).then((dispose) => {
       unlisten = dispose
@@ -150,6 +151,22 @@ export function VoiceInputSettings() {
 
   if (!isTauriRuntime()) {
     return <div className="m-8 rounded-lg border border-border bg-surface-secondary p-4 text-sm text-text-secondary">{text.browser}</div>
+  }
+
+  if (!statusCheckComplete) {
+    return <div role="status" className="m-8 rounded-lg border border-border bg-surface-secondary p-4 text-sm text-text-secondary">Checking voice support…</div>
+  }
+
+  if (!status) {
+    return (
+      <div className="m-8 rounded-xl border border-border bg-surface p-5">
+        <h4 className="text-[15px] font-semibold text-text">Voice features are unavailable in this build</h4>
+        <p className="mt-2 text-sm leading-6 text-text-secondary">
+          The optional native speech engine is not enabled. Text chat continues to work normally; voice controls have been disabled to avoid failed commands.
+        </p>
+        {error && <div role="alert" className="mt-3 break-words rounded-lg border border-border bg-surface-secondary p-3 text-xs text-text-tertiary">{error}</div>}
+      </div>
+    )
   }
 
   return (
