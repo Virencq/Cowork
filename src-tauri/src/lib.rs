@@ -1,9 +1,11 @@
 mod agent_profiles;
 mod commands;
 mod credential_store;
+mod dictation;
 mod jcode_acp;
 mod mcp_manager;
 mod skill_installer;
+mod voice;
 mod skills_cli;
 
 use crate::jcode_acp::JCodeState;
@@ -89,6 +91,25 @@ pub fn run() {
             jcode_acp::jcode_runtime_info,
             jcode_acp::jcode_sync_mcp_config,
             jcode_acp::jcode_read_mcp_config,
+            dictation::get_dictation_status,
+            dictation::start_dictation,
+            dictation::stop_dictation,
+            dictation::cancel_dictation,
+            dictation::download_dictation_model,
+            dictation::cancel_dictation_model_download,
+            dictation::verify_dictation_model,
+            dictation::mark_dictation_test_passed,
+            dictation::delete_dictation_model,
+            dictation::dictation_level,
+            voice::get_voice_runtime_status,
+            voice::download_voice_asset,
+            voice::cancel_voice_asset_download,
+            voice::delete_voice_asset,
+            voice::speak_text,
+            voice::stop_speaking,
+            voice::start_realtime_voice,
+            voice::stop_realtime_voice,
+            voice::cancel_realtime_voice,
             agent_profiles::save_agent_profile_files,
             commands::list_directory,
             commands::read_text_file,
@@ -117,7 +138,9 @@ pub fn run() {
             mcp_get_status,
         ])
         .setup(|app| {
-            setup_tray(app).map_err(|e| e.to_string())?;
+            dictation::initialize(app).map_err(std::io::Error::other)?;
+            voice::initialize(app).map_err(std::io::Error::other)?;
+            setup_tray(app).map_err(|e| std::io::Error::other(e.to_string()))?;
             Ok(())
         })
         .on_window_event(|window, event| {
