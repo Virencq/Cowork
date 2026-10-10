@@ -167,13 +167,13 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
 
       <div className="px-1.5 pt-1 pb-1.5">
         <div className="grid grid-cols-2 h-7 rounded-md bg-surface-secondary p-0.5">
-          <button onClick={onCowork} className={`rounded-md text-[11px] font-semibold transition-colors ${!codeMode ? 'bg-surface text-text shadow-sm' : 'text-text-secondary hover:text-text'}`}>☷&nbsp; Cowork</button>
-          <button onClick={onCode} className={`rounded-md text-[11px] font-medium transition-colors ${codeMode ? 'bg-surface text-text shadow-sm' : 'text-text-secondary hover:text-text'}`}>‹/&gt;&nbsp; Code</button>
+          <button onClick={onCowork} className={`rounded-md text-[13px] font-semibold transition-colors ${!codeMode ? 'bg-surface text-text shadow-sm' : 'text-text-secondary hover:text-text'}`}>☷&nbsp; Cowork</button>
+          <button onClick={onCode} className={`rounded-md text-[13px] font-medium transition-colors ${codeMode ? 'bg-surface text-text shadow-sm' : 'text-text-secondary hover:text-text'}`}>‹/&gt;&nbsp; Code</button>
         </div>
       </div>
 
       <div className="px-1.5 pb-1.5">
-        <button onClick={codeMode ? () => void createCodeProject() : onNew} className="w-full h-8 rounded-md border border-border bg-surface-secondary hover:bg-surface-hover text-text text-[11px] font-medium flex items-center gap-1.5 px-2.5">
+        <button onClick={codeMode ? () => void createCodeProject() : onNew} className="w-full h-8 rounded-md border border-border bg-surface-secondary hover:bg-surface-hover text-text text-[13px] font-medium flex items-center gap-1.5 px-2.5">
           <Plus size={15}/> {codeMode ? 'Add codebase' : 'New'}
         </button>
       </div>
@@ -206,14 +206,14 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
                   <div className="flex items-center gap-1 px-1 py-1">
                     <input autoFocus value={renameProjectValue} onChange={(e) => setRenameProjectValue(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') commitProjectRename(project.id); if (e.key === 'Escape') setRenamingProjectId(null) }}
-                      className="min-w-0 flex-1 h-7 rounded-md border border-border px-2 text-[11px]" />
+                      className="min-w-0 flex-1 h-7 rounded-md border border-border px-2 text-[13px]" />
                     <button onClick={() => commitProjectRename(project.id)} className="h-7 w-7 grid place-items-center" title="Save name"><Check size={13}/></button>
                   </div>
                 ) : (
                   <>
                     <button onClick={() => openCodeProject(project)}
                       className={`w-full rounded-md px-2 py-2.5 pr-9 text-left hover:bg-surface-hover ${activeCodeProjectId === project.id ? 'bg-[#f0eeeb]' : ''}`}>
-                      <span className="flex items-center gap-2 text-[11px] font-medium text-[#514a43]">
+                      <span className="flex items-center gap-2 text-[13px] font-medium text-[#514a43]">
                         <FolderKanban size={13} className="shrink-0 text-[#8f857b]"/><span className="truncate">{project.name}</span>
                       </span>
                       <span className="mt-0.5 block truncate pl-5 text-[9px] text-[#a49b92]">{project.path}</span>
@@ -231,7 +231,7 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
               </div>
             ))}
             {codeProjects.length === 0 && (
-              <button onClick={() => void createCodeProject()} className="w-full rounded-md border border-dashed border-[#e3ddd6] px-3 py-3 text-left text-[11px] text-[#8f857b] hover:bg-[#f8f6f3]">+ Add a codebase folder</button>
+              <button onClick={() => void createCodeProject()} className="w-full rounded-md border border-dashed border-[#e3ddd6] px-3 py-3 text-left text-[13px] text-[#8f857b] hover:bg-[#f8f6f3]">+ Add a codebase folder</button>
             )}
           </div>
         </div>
@@ -260,7 +260,7 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
               value={taskQuery}
               onChange={e => setTaskQuery(e.target.value)}
               placeholder="Search tasks"
-              className="mb-1 w-full h-8 rounded-md border border-[#e2ded9] bg-white px-3 text-[11px] outline-none focus:border-[#d97745]/50"
+              className="mb-1 w-full h-8 rounded-md border border-[#e2ded9] bg-white px-3 text-[13px] outline-none focus:border-[#d97745]/50"
             />
           )}
         </div>
@@ -272,7 +272,7 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
                 <div className="flex items-center gap-1 px-2 py-1">
                   <input autoFocus value={renameValue} onChange={e=>setRenameValue(e.target.value)}
                     onKeyDown={e=>{if(e.key==='Enter')commitRename(s.id);if(e.key==='Escape')setRenaming(null)}}
-                    className="min-w-0 flex-1 h-7 rounded-md border border-border px-2 text-[11px]"/>
+                    className="min-w-0 flex-1 h-7 rounded-md border border-border px-2 text-[13px]"/>
                   <button onClick={()=>commitRename(s.id)} className="h-7 w-7 grid place-items-center"><Check size={13}/></button>
                 </div>
               ) : (
@@ -318,7 +318,7 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
               )}
             </div>
           ))}
-          {visibleTasks.length===0 && <div className="px-3 py-3 text-[11px] text-text-tertiary">{filterPinned ? 'No pinned tasks' : 'No tasks yet'}</div>}
+          {visibleTasks.length===0 && <div className="px-3 py-3 text-[13px] text-text-tertiary">{filterPinned ? 'No pinned tasks' : 'No tasks yet'}</div>}
         </div>
   
         </>
