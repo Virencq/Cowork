@@ -18,7 +18,7 @@ pub struct JCodeState(pub Arc<Mutex<HashMap<String, SessionProcess>>>);
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct PromptImage {
+pub struct PromptImage {
     data: String,
     mime_type: String,
 }
