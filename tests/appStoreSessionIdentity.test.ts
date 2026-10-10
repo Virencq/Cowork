@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useWorkspaceStore } from '../src/stores/workspaceStore'
 
 const getAllSessions = vi.fn()
 const updateSession = vi.fn(async () => undefined)
@@ -36,6 +37,14 @@ describe('app store session identity', () => {
       streamingMessage: {},
       codeActiveSessionId: null,
       codeSessionIds: [],
+    })
+    useWorkspaceStore.setState({
+      projects: [],
+      codeProjects: [],
+      activeCodeProjectId: null,
+      artifacts: [],
+      pinnedProjectIds: [],
+      pinnedArtifactIds: [],
     })
   })
 
@@ -91,6 +100,27 @@ describe('app store session identity', () => {
     expect(deleteDbSession).toHaveBeenCalledWith('ui-session')
     expect(deleteJCodeSession).toHaveBeenCalledWith('acp-session')
     expect(deleteJCodeSession).not.toHaveBeenCalledWith('ui-session')
+  })
+
+  it('unlinks a deleted Code conversation from its project', async () => {
+    const { useAppStore } = await import('../src/stores/appStore')
+    const projectId = useWorkspaceStore.getState().addCodeProject({
+      name: 'Project',
+      path: 'C:\\work\\project',
+      sessionId: 'code-session',
+    })
+    useAppStore.setState({
+      sessions: [{
+        id: 'code-session', title: 'Code chat', model: '', createdAt: 1, updatedAt: 1,
+      }],
+      activeSessionId: null,
+      codeActiveSessionId: 'code-session',
+      codeSessionIds: ['code-session'],
+    })
+
+    useAppStore.getState().deleteSession('code-session')
+
+    expect(useWorkspaceStore.getState().codeProjects.find((project) => project.id === projectId)?.sessionId).toBeUndefined()
   })
 
   it('creates Code sessions without changing the active Cowork conversation', async () => {
