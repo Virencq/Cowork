@@ -1,33 +1,32 @@
 import { useEffect, useState } from 'react'
-import { FolderOpen, FileCode2, X, Files, GitBranch, TerminalSquare, ArrowUpRight } from 'lucide-react'
+import { FolderOpen, FileCode2, X, Files, GitBranch, ArrowUpRight } from 'lucide-react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { FilePreviewPanel } from '../preview/FilePreviewPanel'
 import { FileTree } from './FileTree'
 import { useAppStore } from '../../stores/appStore'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
+import { activateCodeProject } from '../../utils/codeProjectActions'
 import { ChatView } from '../chat/ChatView'
 
 export function CodeWorkspace() {
   const workspaceDir = useAppStore((s) => s.codeWorkspaceDir)
-  const setWorkspaceDir = useAppStore((s) => s.setCodeWorkspaceDir)
   const codeProjects = useWorkspaceStore((s) => s.codeProjects)
   const activeCodeProjectId = useWorkspaceStore((s) => s.activeCodeProjectId)
   const activeCodeProject = codeProjects.find((project) => project.id === activeCodeProjectId) ?? null
   const addCodeProject = useWorkspaceStore((s) => s.addCodeProject)
-  const updateCodeProject = useWorkspaceStore((s) => s.updateCodeProject)
-  const setActiveCodeProject = useWorkspaceStore((s) => s.setActiveCodeProject)
   const preview = useFilePreviewStore((s) => s.preview)
   const closePreview = useFilePreviewStore((s) => s.closePreview)
   const [showFiles, setShowFiles] = useState(false)
 
   useEffect(() => {
     if (!activeCodeProject) return
-    if (workspaceDir !== activeCodeProject.path) setWorkspaceDir(activeCodeProject.path)
-    if (activeCodeProject.sessionId) {
-      useAppStore.getState().setCodeActiveSessionId(activeCodeProject.sessionId)
-      useAppStore.getState().markCodeSession(activeCodeProject.sessionId)
-      void useAppStore.getState().loadMessages(activeCodeProject.sessionId)
+    const state = useAppStore.getState()
+    const sessionId = activeCodeProject.sessionId
+    const needsSession = !sessionId || state.codeActiveSessionId !== sessionId
+    const needsHistory = Boolean(sessionId) && (state.sessionMessages[sessionId!]?.length ?? 0) === 0
+    if (workspaceDir !== activeCodeProject.path || needsSession || needsHistory) {
+      activateCodeProject(activeCodeProject)
     }
   }, [activeCodeProject?.id])
 
@@ -47,20 +46,8 @@ export function CodeWorkspace() {
     }
     if (!project) return
 
-    setActiveCodeProject(project.id)
-    setWorkspaceDir(project.path)
+    activateCodeProject(project)
     closePreview()
-
-    // Reuse the project's saved session ID even if session metadata is still
-    // loading; otherwise opening an existing project can accidentally fork a chat.
-    if (project.sessionId) {
-      useAppStore.getState().setCodeActiveSessionId(project.sessionId)
-      useAppStore.getState().markCodeSession(project.sessionId)
-      void useAppStore.getState().loadMessages(project.sessionId)
-    } else {
-      const sessionId = useAppStore.getState().createCodeSession()
-      updateCodeProject(project.id, { sessionId })
-    }
   }
 
   const workspaceName = activeCodeProject?.name ?? (workspaceDir
