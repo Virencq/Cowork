@@ -62,6 +62,7 @@ fn start_reader(
     session_key: String,
     stdout: std::process::ChildStdout,
     permission_requests: Arc<Mutex<HashMap<u64, Value>>>,
+    sessions: Arc<Mutex<HashMap<String, SessionProcess>>>,
 ) {
     thread::spawn(move || {
         let reader = BufReader::new(stdout);
@@ -80,6 +81,12 @@ fn start_reader(
             if value.get("method").and_then(Value::as_str).is_some() || value.get("result").is_some() || value.get("error").is_some() {
                 let _ = app.emit("jcode://event", JCodeEvent { session_id: session_key.clone(), event: value });
             }
+        }
+        // Remove and reap a process that exited unexpectedly so later prompts
+        // cannot keep targeting a dead ACP session in the registry.
+        let exited = sessions.lock().ok().and_then(|mut sessions| sessions.remove(&session_key));
+        if let Some(mut session) = exited {
+            let _ = session.child.wait();
         }
         let _ = app.emit("jcode://event", JCodeEvent {
             session_id: session_key,
@@ -120,7 +127,7 @@ pub fn jcode_start_session(app: AppHandle, state: State<'_, JCodeState>, workspa
         permission_requests: permission_requests.clone(),
     };
     state.0.lock().map_err(|e| e.to_string())?.insert(session_id.clone(), process);
-    start_reader(app, session_id.clone(), reader.into_inner(), permission_requests);
+    start_reader(app, session_id.clone(), reader.into_inner(), permission_requests, state.0.clone());
     Ok(session_id)
 }
 
