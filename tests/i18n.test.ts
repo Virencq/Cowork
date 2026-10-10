@@ -1,48 +1,32 @@
-import { describe, it, expect } from 'vitest'
-import en from '../src/i18n/locales/en'
-import zh from '../src/i18n/locales/zh'
+import { describe, expect, it } from 'vitest'
+import i18n from '../src/i18n'
 
-/** Recursively collect all leaf keys from a nested object */
-function flattenKeys(obj: Record<string, any>, prefix = ''): string[] {
-  const keys: string[] = []
-  for (const [k, v] of Object.entries(obj)) {
-    const path = prefix ? `${prefix}.${k}` : k
-    if (v && typeof v === 'object' && !Array.isArray(v)) {
-      keys.push(...flattenKeys(v, path))
-    } else {
-      keys.push(path)
-    }
+function flattenLeafValues(value: unknown): unknown[] {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return Object.values(value as Record<string, unknown>).flatMap(flattenLeafValues)
   }
-  return keys
+  return [value]
 }
 
-describe('i18n keys', () => {
-  it('en and zh have the same translation keys', () => {
-    const enKeys = flattenKeys(en)
-    const zhKeys = flattenKeys(zh)
+describe('English-only i18n configuration', () => {
+  const resources = i18n.options.resources as Record<string, { translation: Record<string, unknown> }>
+  const english = resources.en.translation
 
-    const missingInZh = enKeys.filter(k => !zhKeys.includes(k))
-    const missingInEn = zhKeys.filter(k => !enKeys.includes(k))
-
-    expect(missingInZh, `Keys missing in zh: [${missingInZh.join(', ')}]`).toEqual([])
-    expect(missingInEn, `Keys missing in en: [${missingInEn.join(', ')}]`).toEqual([])
+  it('registers English as the only application locale', () => {
+    expect(i18n.options.lng).toBe('en')
+    expect(i18n.options.fallbackLng).toBe('en')
+    expect(i18n.options.supportedLngs).toContain('en')
+    expect(i18n.options.supportedLngs).not.toContain('zh')
+    expect(Object.keys(resources)).toEqual(['en'])
   })
 
-  it('en translations are non-empty strings', () => {
-    const keys = flattenKeys(en)
-    for (const key of keys) {
-      const value = key.split('.').reduce((o: any, k: string) => o?.[k], en)
+  it('contains only non-empty English translation strings', () => {
+    const values = flattenLeafValues(english)
+    expect(values.length).toBeGreaterThan(0)
+    for (const value of values) {
       expect(typeof value).toBe('string')
-      expect(value.length).toBeGreaterThan(0)
+      expect((value as string).trim().length).toBeGreaterThan(0)
     }
-  })
-
-  it('zh translations are non-empty strings', () => {
-    const keys = flattenKeys(zh)
-    for (const key of keys) {
-      const value = key.split('.').reduce((o: any, k: string) => o?.[k], zh)
-      expect(typeof value).toBe('string')
-      expect(value.length).toBeGreaterThan(0)
-    }
+    expect(JSON.stringify(english)).not.toMatch(/[\u3400-\u9fff]/)
   })
 })
