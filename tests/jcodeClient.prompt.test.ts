@@ -1,0 +1,78 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const { listenMock, invokeMock, unlistenMock } = vi.hoisted(() => ({
+  listenMock: vi.fn(),
+  invokeMock: vi.fn(),
+  unlistenMock: vi.fn(),
+}))
+
+vi.mock('@tauri-apps/api/event', () => ({ listen: listenMock }))
+vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }))
+
+describe('JCode prompt event lifecycle', () => {
+  beforeEach(() => {
+    listenMock.mockReset()
+    invokeMock.mockReset()
+    unlistenMock.mockReset()
+  })
+
+  it('returns an error when the event listener cannot be installed', async () => {
+    listenMock.mockRejectedValueOnce(new Error('event bridge unavailable'))
+    const { prompt } = await import('../src/utils/jcodeClient')
+
+    await expect(prompt('acp-session', 'hello')).resolves.toMatchObject({
+      text: '',
+      error: 'event bridge unavailable',
+    })
+    expect(invokeMock).not.toHaveBeenCalled()
+  })
+
+  it('subscribes before prompting and releases the listener after completion', async () => {
+    let handler: ((event: any) => void) | undefined
+    listenMock.mockImplementation(async (_name: string, callback: (event: any) => void) => {
+      handler = callback
+      return unlistenMock
+    })
+    invokeMock.mockImplementation(async () => {
+      handler?.({
+        payload: {
+          sessionId: 'acp-session',
+          event: { result: { stopReason: 'end_turn' } },
+        },
+      })
+    })
+
+    const { prompt } = await import('../src/utils/jcodeClient')
+    await expect(prompt('acp-session', 'hello')).resolves.toMatchObject({ text: '' })
+
+    expect(listenMock).toHaveBeenCalledBefore(invokeMock)
+    expect(invokeMock).toHaveBeenCalledWith('jcode_prompt', {
+      sessionId: 'acp-session',
+      prompt: 'hello',
+    })
+    expect(unlistenMock).toHaveBeenCalledOnce()
+  })
+
+  it('resolves with an error when the ACP session closes before completion', async () => {
+    let handler: ((event: any) => void) | undefined
+    listenMock.mockImplementation(async (_name: string, callback: (event: any) => void) => {
+      handler = callback
+      return unlistenMock
+    })
+    invokeMock.mockImplementation(async () => {
+      handler?.({
+        payload: {
+          sessionId: 'acp-session',
+          event: { method: 'session/closed' },
+        },
+      })
+    })
+
+    const { prompt } = await import('../src/utils/jcodeClient')
+    await expect(prompt('acp-session', 'hello')).resolves.toMatchObject({
+      text: '',
+      error: 'JCode ACP session closed before the prompt completed.',
+    })
+    expect(unlistenMock).toHaveBeenCalledOnce()
+  })
+})
