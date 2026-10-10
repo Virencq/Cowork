@@ -12,17 +12,18 @@ import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 import 'remark-github-blockquote-alert/alert.css'
 import { Copy, Check, Download, X, Table as TableIcon, FileSpreadsheet, Code } from 'lucide-react'
+import { Hyperlink } from './Hyperlink'
+import { CitationTooltip } from './CitationTooltip'
+import { FileChip, parseFileLink } from './FileChip'
+import { highlightInWorker } from './shikiWorker'
+import { rehypeHeadingIds, remarkDisableConstructs, rehypeScalableSvg } from './plugins'
+
 // Specialized code renderers are loaded only when a matching code fence is present.
 const MermaidBlock = lazy(() => import('./MermaidBlock').then((m) => ({ default: m.MermaidBlock })))
 const HtmlPreviewBlock = lazy(() => import('./HtmlPreviewBlock').then((m) => ({ default: m.HtmlPreviewBlock })))
 const CodeRunBlock = lazy(() => import('./CodeRunBlock').then((m) => ({ default: m.CodeRunBlock })))
 const PlantUMLBlock = lazy(() => import('./PlantUMLBlock').then((m) => ({ default: m.PlantUMLBlock })))
 const CodeEditorBlock = lazy(() => import('./CodeEditorBlock').then((m) => ({ default: m.CodeEditorBlock })))
-import { Hyperlink } from './Hyperlink'
-import { CitationTooltip } from './CitationTooltip'
-import { FileChip, parseFileLink } from './FileChip'
-import { highlightInWorker } from './shikiWorker'
-import { rehypeHeadingIds, remarkDisableConstructs, rehypeScalableSvg } from './plugins'
 
 const MAX_COLLAPSED_HEIGHT = 400
 
