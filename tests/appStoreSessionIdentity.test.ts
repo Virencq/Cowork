@@ -206,4 +206,46 @@ describe('app store session identity', () => {
     expect(state.codeActiveSessionId).toBe('valid-code-session')
     expect(useWorkspaceStore.getState().codeProjects.find((project) => project.id === staleProjectId)?.sessionId).toBeUndefined()
   })
+
+  it('automatically associates a newly created Code session with the active project', async () => {
+    const { useAppStore } = await import('../src/stores/appStore')
+    const projectId = useWorkspaceStore.getState().addCodeProject({
+      name: 'Active project',
+      path: 'C:\\work\\active',
+    })
+
+    const sessionId = useAppStore.getState().createCodeSession()
+
+    expect(useWorkspaceStore.getState().codeProjects.find((project) => project.id === projectId)?.sessionId).toBe(sessionId)
+  })
+
+  it('clears project session links when all conversations are cleared', async () => {
+    const { useAppStore } = await import('../src/stores/appStore')
+    const coworkProjectId = useWorkspaceStore.getState().addProject({
+      name: 'Cowork project',
+      path: '/work/cowork',
+      sessionId: 'cowork-session',
+    })
+    const codeProjectId = useWorkspaceStore.getState().addCodeProject({
+      name: 'Code project',
+      path: 'C:\\work\\code',
+      sessionId: 'code-session',
+    })
+    useAppStore.setState({
+      sessions: [
+        { id: 'cowork-session', title: 'Cowork', model: '', createdAt: 1, updatedAt: 1 },
+        { id: 'code-session', title: 'Code', model: '', createdAt: 1, updatedAt: 1 },
+      ],
+      activeSessionId: 'cowork-session',
+      codeActiveSessionId: 'code-session',
+      codeSessionIds: ['code-session'],
+    })
+
+    useAppStore.getState().clearSessions()
+
+    expect(useAppStore.getState().codeSessionIds).toEqual([])
+    expect(useAppStore.getState().codeActiveSessionId).toBeNull()
+    expect(useWorkspaceStore.getState().projects.find((project) => project.id === coworkProjectId)?.sessionId).toBeUndefined()
+    expect(useWorkspaceStore.getState().codeProjects.find((project) => project.id === codeProjectId)?.sessionId).toBeUndefined()
+  })
 })
