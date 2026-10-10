@@ -185,7 +185,11 @@ export async function prompt(sessionId: string, text: string, options: JCodeProm
     if (settled) unlisten()
 
     // The completion listener must be installed before sending the ACP request.
-    await invoke('jcode_prompt', { sessionId, prompt: finalPrompt })
+    await invoke('jcode_prompt', {
+      sessionId,
+      prompt: finalPrompt,
+      ...(options.images?.length ? { images: options.images } : {}),
+    })
   } catch (error) {
     unlisten?.()
     return { text: '', error: error instanceof Error ? error.message : String(error) }
