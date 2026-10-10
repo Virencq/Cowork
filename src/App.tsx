@@ -202,9 +202,12 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
     if (activeCodeProjectId === project.id) {
       setActiveCodeProject(next?.id ?? null)
       setCodeWorkspaceDir(next?.path ?? null)
-      if (next?.sessionId && useAppStore.getState().sessions.some((session) => session.id === next.sessionId)) {
+      if (next?.sessionId) {
+        // The project record is authoritative; session metadata can still be
+        // loading from SQLite when the user deletes a project during startup.
         setCodeSession(next.sessionId)
         useAppStore.getState().markCodeSession(next.sessionId)
+        void useAppStore.getState().loadMessages(next.sessionId)
       } else if (next) {
         const sessionId = useAppStore.getState().createCodeSession()
         updateCodeProject(next.id, { sessionId })
