@@ -173,7 +173,28 @@ export const useAppStore = create<AppState>()(
             createdAt: r.created_at,
             updatedAt: r.updated_at,
           }))
-          set({ sessions })
+          const validSessionIds = new Set(sessions.map((session) => session.id))
+          const state = get()
+          const workspace = useWorkspaceStore.getState()
+          const staleCodeProjects = workspace.codeProjects.filter(
+            (project) => project.sessionId && !validSessionIds.has(project.sessionId),
+          )
+          for (const project of staleCodeProjects) {
+            workspace.updateCodeProject(project.id, { sessionId: undefined })
+          }
+          const projectCodeSessionIds = workspace.codeProjects.flatMap(
+            (project) => project.sessionId && validSessionIds.has(project.sessionId) ? [project.sessionId] : [],
+          )
+          const codeSessionIds = [...new Set([
+            ...state.codeSessionIds.filter((sessionId) => validSessionIds.has(sessionId)),
+            ...projectCodeSessionIds,
+          ])]
+          const activeProject = workspace.codeProjects.find((project) => project.id === workspace.activeCodeProjectId)
+          const preferredCodeSessionId = activeProject?.sessionId ?? state.codeActiveSessionId
+          const codeActiveSessionId = preferredCodeSessionId && validSessionIds.has(preferredCodeSessionId)
+            ? preferredCodeSessionId
+            : null
+          set({ sessions, codeSessionIds, codeActiveSessionId })
         } catch (err) {
           console.warn('[appStore] loadFromDb failed:', err)
         }
@@ -220,14 +241,20 @@ export const useAppStore = create<AppState>()(
         // A Code project must never keep pointing at a conversation that was
         // deleted independently from the project itself.
         const workspace = useWorkspaceStore.getState()
+        const projectSessionIds = workspace.codeProjects.flatMap((project) => project.sessionId ? [project.sessionId] : [])
+        const codeSessionIds = new Set([...state.codeSessionIds, ...projectSessionIds])
         for (const project of workspace.codeProjects) {
           if (project.sessionId === id) {
             workspace.updateCodeProject(project.id, { sessionId: undefined })
           }
         }
+        const remainingSessions = state.sessions.filter((session) => session.id !== id)
+        const nextCoworkSession = remainingSessions.find((session) => !codeSessionIds.has(session.id))
         set({
-          sessions: state.sessions.filter((s) => s.id !== id),
-          activeSessionId: state.activeSessionId === id ? (state.sessions.find(s => s.id !== id)?.id ?? null) : state.activeSessionId,
+          sessions: remainingSessions,
+          activeSessionId: state.activeSessionId === id
+            ? (nextCoworkSession?.id ?? null)
+            : state.activeSessionId,
           codeActiveSessionId: state.codeActiveSessionId === id ? null : state.codeActiveSessionId,
           codeSessionIds: state.codeSessionIds.filter((sessionId) => sessionId !== id),
           sessionMessages: Object.fromEntries(
@@ -300,9 +327,18 @@ export const useAppStore = create<AppState>()(
 
       clearSessions: () => {
         const sessions = get().sessions.map(({ id, piId }) => ({ id, piId }))
+        const workspace = useWorkspaceStore.getState()
+        for (const project of workspace.projects) {
+          if (project.sessionId) workspace.updateProject(project.id, { sessionId: undefined })
+        }
+        for (const project of workspace.codeProjects) {
+          if (project.sessionId) workspace.updateCodeProject(project.id, { sessionId: undefined })
+        }
         set({
           sessions: [],
           activeSessionId: null,
+          codeActiveSessionId: null,
+          codeSessionIds: [],
           sessionMessages: {},
           streamingMessage: {},
         })
