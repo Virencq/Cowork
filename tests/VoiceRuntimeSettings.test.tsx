@@ -48,7 +48,7 @@ describe('VoiceRuntimeSettings Kokoro voice selection', () => {
   it('selects a Chinese speaker and uses it for the preview', async () => {
     render(<VoiceRuntimeSettings />)
 
-    const xiaoyi = await screen.findByRole('radio', { name: /Xiaoyi/g })
+    const xiaoyi = await screen.findByRole('radio', { name: /Xiaoyi/ })
     fireEvent.click(xiaoyi)
     expect(useAppStore.getState().kokoroSpeakerId).toBe(48)
 
