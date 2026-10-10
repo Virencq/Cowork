@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const getAllSessions = vi.fn()
 const updateSession = vi.fn(async () => undefined)
 const deleteDbSession = vi.fn(async () => undefined)
-const deletePiSession = vi.fn(async () => undefined)
+const deleteJCodeSession = vi.fn(async () => undefined)
 
 vi.mock('../src/utils/database', () => ({
   getAllSessions,
@@ -16,8 +16,8 @@ vi.mock('../src/utils/database', () => ({
   saveMessage: vi.fn(async () => undefined),
 }))
 
-vi.mock('../src/utils/piClient', () => ({
-  deleteSession: deletePiSession,
+vi.mock('../src/utils/jcodeClient', () => ({
+  deleteSession: deleteJCodeSession,
 }))
 
 describe('app store session identity', () => {
@@ -26,7 +26,7 @@ describe('app store session identity', () => {
     getAllSessions.mockReset()
     updateSession.mockClear()
     deleteDbSession.mockClear()
-    deletePiSession.mockClear()
+    deleteJCodeSession.mockClear()
 
     const { useAppStore } = await import('../src/stores/appStore')
     useAppStore.setState({
@@ -37,12 +37,12 @@ describe('app store session identity', () => {
     })
   })
 
-  it('restores piId from SQLite when the app reloads', async () => {
+  it('restores the durable UI session identity from SQLite without reusing a stale ACP id', async () => {
     getAllSessions.mockResolvedValueOnce([{
       id: 'ui-session',
       title: 'Existing chat',
       model: 'deepseek-chat',
-      pi_id: 'pi-session',
+      pi_id: 'stale-acp-session',
       created_at: 1,
       updated_at: 2,
     }])
@@ -50,10 +50,18 @@ describe('app store session identity', () => {
 
     await useAppStore.getState().loadFromDb()
 
-    expect(useAppStore.getState().sessions[0].piId).toBe('pi-session')
+    expect(useAppStore.getState().sessions[0]).toMatchObject({
+      id: 'ui-session',
+      title: 'Existing chat',
+      model: 'deepseek-chat',
+      createdAt: 1,
+      updatedAt: 2,
+    })
+    // ACP session identifiers are process-scoped and must not be resumed after restart.
+    expect(useAppStore.getState().sessions[0].piId).toBeUndefined()
   })
 
-  it('updates the in-memory and SQLite pi session id together', async () => {
+  it('updates the in-memory and SQLite ACP session id together', async () => {
     const { useAppStore } = await import('../src/stores/appStore')
     useAppStore.setState({
       sessions: [{
@@ -61,25 +69,25 @@ describe('app store session identity', () => {
       }],
     })
 
-    useAppStore.getState().setSessionPiId('ui-session', 'pi-session')
+    useAppStore.getState().setSessionPiId('ui-session', 'acp-session')
 
-    expect(useAppStore.getState().sessions[0].piId).toBe('pi-session')
-    expect(updateSession).toHaveBeenCalledWith('ui-session', { pi_id: 'pi-session' })
+    expect(useAppStore.getState().sessions[0].piId).toBe('acp-session')
+    expect(updateSession).toHaveBeenCalledWith('ui-session', { pi_id: 'acp-session' })
   })
 
-  it('deletes the backend session by piId instead of the UI id', async () => {
+  it('closes an active ACP session by its runtime id, not the durable UI id', async () => {
     const { useAppStore } = await import('../src/stores/appStore')
     useAppStore.setState({
       sessions: [{
-        id: 'ui-session', piId: 'pi-session', title: 'Chat', model: '', createdAt: 1, updatedAt: 1,
+        id: 'ui-session', piId: 'acp-session', title: 'Chat', model: '', createdAt: 1, updatedAt: 1,
       }],
     })
 
     useAppStore.getState().deleteSession('ui-session')
-    await vi.waitFor(() => expect(deletePiSession).toHaveBeenCalled())
+    await vi.waitFor(() => expect(deleteJCodeSession).toHaveBeenCalled())
 
     expect(deleteDbSession).toHaveBeenCalledWith('ui-session')
-    expect(deletePiSession).toHaveBeenCalledWith('pi-session')
-    expect(deletePiSession).not.toHaveBeenCalledWith('ui-session')
+    expect(deleteJCodeSession).toHaveBeenCalledWith('acp-session')
+    expect(deleteJCodeSession).not.toHaveBeenCalledWith('ui-session')
   })
 })

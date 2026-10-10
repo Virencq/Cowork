@@ -691,7 +691,6 @@ export function ChatInput({
   const isHero = variant === 'hero'
   const voiceReady = !!dictation?.supported && !!dictation?.modelVerified && !!dictation?.testPassed
   const recordingTime = `${Math.floor(recordingSeconds / 60)}:${String(recordingSeconds % 60).padStart(2, '0')}`
-  const chinese = false
 
   return (
     <div
@@ -749,14 +748,14 @@ export function ChatInput({
             {dictation?.recording && (
               <div className="mx-3 mt-3 flex items-center gap-3 rounded-lg border border-red-500/15 bg-red-500/5 px-3 py-2.5 text-red-500">
                 <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-xs font-bold">{chinese ? '正在聆听' : 'Listening'} · {recordingTime}</span>
+                <span className="text-xs font-bold">Listening · {recordingTime}</span>
                 <div className="ml-auto flex h-7 items-center gap-1" aria-label="Microphone input level">
                   {Array.from({ length: 16 }, (_, index) => {
                     const level = levels[levels.length - 16 + index] ?? 0
                     return <span key={index} className="w-1 rounded-full bg-red-500/70" style={{ height: `${4 + level * 22}px` }} />
                   })}
                 </div>
-                <span className="text-[11px] text-text-tertiary">Esc {chinese ? '取消' : 'to cancel'}</span>
+                <span className="text-[11px] text-text-tertiary">Esc to cancel</span>
               </div>
             )}
 
@@ -766,20 +765,12 @@ export function ChatInput({
                   <span className="h-2.5 w-2.5 rounded-full bg-accent animate-pulse" />
                   <span className="text-xs font-bold">
                     {realtimeMode === 'conversation'
-                      ? chinese
-                        ? conversation.state === 'thinking'
-                          ? '正在思考'
-                          : conversation.state === 'speaking'
-                            ? '正在回答'
-                            : '实时通话 · 正在聆听'
-                        : conversation.state === 'thinking'
-                          ? 'Thinking'
-                          : conversation.state === 'speaking'
-                            ? 'Speaking'
-                            : 'Voice call · Listening'
-                      : chinese
-                        ? '实时字幕'
-                        : 'Live captions'}
+                      ? conversation.state === 'thinking'
+                        ? 'Thinking'
+                        : conversation.state === 'speaking'
+                          ? 'Speaking'
+                          : 'Voice call · Listening'
+                      : 'Live captions'}
                   </span>
                   <div className="ml-auto flex h-7 items-center gap-1" aria-label="Real-time microphone input level">
                     {Array.from({ length: 16 }, (_, index) => (
@@ -793,7 +784,7 @@ export function ChatInput({
                     ))}
                   </div>
                   <span className="text-[11px] text-text-tertiary">
-                    Esc {chinese ? '结束' : 'to stop'}
+                    Esc to stop
                   </span>
                 </div>
                 {realtimePartial && (
@@ -930,7 +921,7 @@ export function ChatInput({
                               variant={dictation?.recording ? 'danger' : 'secondary'}
                               size="icon"
                               aria-label={dictation?.recording ? 'Stop dictation' : voiceReady ? 'Start dictation' : 'Configure voice input'}
-                              title={dictation?.recording ? (chinese ? '停止并转写' : 'Stop and transcribe') : voiceReady ? (chinese ? '本地语音输入' : 'Local voice input') : (chinese ? '先配置语音输入' : 'Configure voice input first')}
+                              title={dictation?.recording ? 'Stop and transcribe' : voiceReady ? 'Local voice input' : 'Configure voice input first'}
                               isDisabled={dictationBusy || disabled || isStreaming || !!realtimeMode || realtimeBusy}
                               onClick={() => void toggleDictation()}
                               className={`w-9 h-9 rounded-lg ${!voiceReady && !dictation?.recording ? 'opacity-45' : ''}`}

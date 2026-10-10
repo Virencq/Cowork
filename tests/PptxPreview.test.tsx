@@ -4,7 +4,6 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { invoke } from '@tauri-apps/api/core'
 import JSZip from 'jszip'
-import { setServerConnection } from '../src/utils/piClient'
 import { PptxPreview } from '../src/components/preview/PptxPreview'
 import { useFilePreviewStore } from '../src/stores/filePreviewStore'
 
@@ -42,7 +41,6 @@ describe('PptxPreview', () => {
 
   beforeEach(() => {
     vi.mocked(invoke).mockReset()
-    setServerConnection('http://127.0.0.1:4096', 'test-token')
     useFilePreviewStore.getState().closePreview()
   })
 
@@ -67,7 +65,7 @@ describe('PptxPreview', () => {
     expect(frame.getAttribute('srcdoc')).toContain('Rendered deck')
 
     const calledUrl = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
-    expect(calledUrl).toBe('http://127.0.0.1:4096/preview/pptx?path=' + encodeURIComponent('C:/ws/decks/a.pptx'))
+    expect(calledUrl).toBe('/preview/pptx?path=' + encodeURIComponent('C:/ws/decks/a.pptx'))
     await waitFor(() => expect(onLoaded).toHaveBeenCalled())
   })
 

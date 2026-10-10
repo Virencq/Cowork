@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, CheckCircle, Download, Mic, Square, Trash2, X } from 'lucide-react'
-import i18n from '../../i18n'
 import { VoiceRuntimeSettings } from './VoiceRuntimeSettings'
 import {
   cancelDictation,
@@ -43,34 +42,12 @@ const copy = {
     transcript: 'Test transcript',
     empty: 'No speech was recognized. Try speaking for a little longer.',
   },
-  zh: {
-    title: '本地语音输入',
-    description: '语音只在本机录制和转写，不会上传，也不会保存音频文件。',
-    browser: '语音输入仅在安装后的桌面应用中可用。',
-    compatible: '设备兼容',
-    unsupported: '设备不兼容',
-    model: '多语言语音模型',
-    download: '下载模型',
-    downloading: '正在下载',
-    cancel: '取消',
-    verify: '校验 / 修复',
-    remove: '删除模型',
-    test: '麦克风测试',
-    testHint: '录制一句短语，转写结果只显示在当前设置页。',
-    startTest: '开始测试',
-    stopTest: '停止并转写',
-    testing: '正在转写…',
-    ready: '语音输入已就绪',
-    notReady: '下载并校验模型、完成麦克风测试后，聊天输入框才会启用语音按钮。',
-    transcript: '测试结果',
-    empty: '没有识别到语音，请说得更久一些再试。',
-  },
 }
 
 const formatBytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MiB`
 
 export function VoiceInputSettings() {
-  const text = i18n.resolvedLanguage?.startsWith('zh') ? copy.zh : copy.en
+  const text = copy.en
   const [status, setStatus] = useState<VoiceInputStatus | null>(null)
   const [progress, setProgress] = useState<DictationDownloadProgress | null>(null)
   const [busy, setBusy] = useState<string | null>(null)

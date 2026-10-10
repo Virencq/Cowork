@@ -6,6 +6,14 @@ import { ReasoningLevelSelector } from '../src/components/chat/ReasoningLevelSel
 import i18n from '../src/i18n'
 import { useAppStore } from '../src/stores/appStore'
 
+const { mockFetchModelCapabilities } = vi.hoisted(() => ({
+  mockFetchModelCapabilities: vi.fn(),
+}))
+
+vi.mock('../src/utils/jcodeClient', () => ({
+  fetchModelCapabilities: mockFetchModelCapabilities,
+}))
+
 describe('ReasoningLevelSelector', () => {
   beforeEach(async () => {
     await i18n.changeLanguage('en')
@@ -18,15 +26,15 @@ describe('ReasoningLevelSelector', () => {
         },
       },
     })
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+    mockFetchModelCapabilities.mockReset().mockResolvedValue({
       reasoning: true,
       supportedThinkingLevels: ['off', 'high', 'max'],
       recommendedThinkingLevel: 'high',
-    }), { status: 200, headers: { 'Content-Type': 'application/json' } })))
+    })
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    vi.clearAllMocks()
   })
 
   it('shows only levels supported by the selected model and persists the choice', async () => {
@@ -58,11 +66,11 @@ describe('ReasoningLevelSelector', () => {
   })
 
   it('disables the control for a non-reasoning model', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+    mockFetchModelCapabilities.mockResolvedValue({
       reasoning: false,
       supportedThinkingLevels: ['off'],
       recommendedThinkingLevel: 'off',
-    }), { status: 200, headers: { 'Content-Type': 'application/json' } })))
+    })
 
     render(
       <ReasoningLevelSelector

@@ -10,7 +10,6 @@ import {
   Volume2,
   X,
 } from 'lucide-react'
-import i18n from '../../i18n'
 import {
   getKokoroVoiceLabel,
   getKokoroVoice,
@@ -51,7 +50,7 @@ const text = {
     american: 'American',
     british: 'British',
     other: 'Other accents',
-    allVoices: 'All 53 · 全部 53',
+    allVoices: 'All 53',
     allGenders: 'All voices',
     searchVoice: 'Search name or ID',
     experimental: 'Experimental for Chinese',
@@ -69,39 +68,6 @@ const text = {
     ready: 'Real-time captions are ready',
     notReady: 'Install both streaming recognition and VAD to enable real-time voice.',
   },
-  zh: {
-    title: '实时语音',
-    description: '可选的本地模型提供流式中间字幕、语音活动检测和中英文语音播放。',
-    streaming: '流式中间字幕',
-    streamingHint: 'Zipformer 会在说话过程中持续输出可修订的识别结果。',
-    vad: '语音活动检测',
-    vadHint: 'Silero 用于判断开始说话、结束说话和连续对话轮次。',
-    tts: '文字转语音',
-    ttsHint: 'Kokoro 在本地朗读助手的中文和英文回答。',
-    voice: '音色库',
-    voiceHint: '内置 53 个声线身份。中文音色效果最稳定，其他声线朗读中文时可能带口音。',
-    recommended: '推荐中文',
-    american: '美式',
-    british: '英式',
-    other: '其他口音',
-    allVoices: '全部 53 · All 53',
-    allGenders: '全部声线',
-    searchVoice: '搜索名称或 ID',
-    experimental: '中文实验效果',
-    female: '女声',
-    male: '男声',
-    download: '下载',
-    remove: '删除',
-    cancel: '取消',
-    test: '测试语音',
-    stop: '停止',
-    installed: '已安装',
-    optional: '未安装',
-    downloading: '正在下载',
-    installing: '正在安装',
-    ready: '实时字幕已经就绪',
-    notReady: '安装流式识别和 VAD 后即可使用实时语音。',
-  },
 }
 
 const formatBytes = (bytes: number) => {
@@ -110,19 +76,12 @@ const formatBytes = (bytes: number) => {
 }
 
 const REGION_LABELS = {
-  en: {
-    american: 'American', british: 'British', spanish: 'Spanish', french: 'French',
-    hindi: 'Hindi', italian: 'Italian', japanese: 'Japanese', portuguese: 'Portuguese', chinese: 'Chinese',
-  },
-  zh: {
-    american: '美式', british: '英式', spanish: '西班牙', french: '法国',
-    hindi: '印度', italian: '意大利', japanese: '日本', portuguese: '葡萄牙', chinese: '中文',
-  },
+  american: 'American', british: 'British', spanish: 'Spanish', french: 'French',
+  hindi: 'Hindi', italian: 'Italian', japanese: 'Japanese', portuguese: 'Portuguese', chinese: 'Chinese',
 } as const
 
 export function VoiceRuntimeSettings() {
-  const chinese = i18n.resolvedLanguage?.startsWith('zh') ?? false
-  const copy = chinese ? text.zh : text.en
+  const copy = text.en
   const githubMirror = useAppStore((state) => state.githubMirror)
   const kokoroSpeakerId = useAppStore((state) => state.kokoroSpeakerId)
   const setKokoroSpeakerId = useAppStore((state) => state.setKokoroSpeakerId)
@@ -184,11 +143,11 @@ export function VoiceRuntimeSettings() {
         (voiceTab === 'british' && voice.region === 'british') ||
         (voiceTab === 'other' && !['chinese', 'american', 'british'].includes(voice.region))
       const matchesGender = voiceGender === 'all' || voice.gender === voiceGender
-      const label = getKokoroVoiceLabel(voice, chinese).toLowerCase()
+      const label = getKokoroVoiceLabel(voice, false).toLowerCase()
       const matchesQuery = !query || label.includes(query) || voice.modelName.includes(query) || String(voice.id) === query
       return inTab && matchesGender && matchesQuery
     })
-  }, [chinese, voiceGender, voiceQuery, voiceTab])
+  }, [voiceGender, voiceQuery, voiceTab])
 
   const install = async (kind: VoiceAssetKind) => {
     setBusy(kind)
@@ -223,7 +182,7 @@ export function VoiceRuntimeSettings() {
         await stopSpeaking()
       } else {
         const sample = selectedVoice.textLanguage === 'zh'
-          ? '你好，我是 S-Loop。数字 123 应该读作一百二十三。'
+          ? 'Hello, this is S-Loop. The number 123 should be read as one hundred twenty-three.'
           : 'Hello, this is S-Loop. The number 123 is ready for playback.'
         await speakText(sample, 1, kokoroSpeakerId)
       }
@@ -354,8 +313,8 @@ export function VoiceRuntimeSettings() {
                         {visibleVoices.map((voice) => {
                           const selected = voice.id === kokoroSpeakerId
                           const gender = voice.gender === 'female' ? copy.female : copy.male
-                          const voiceLabel = getKokoroVoiceLabel(voice, chinese)
-                          const region = REGION_LABELS[chinese ? 'zh' : 'en'][voice.region]
+                          const voiceLabel = getKokoroVoiceLabel(voice, false)
+                          const region = REGION_LABELS[voice.region]
                           return (
                             <button
                               key={voice.id}
@@ -454,7 +413,7 @@ export function VoiceRuntimeSettings() {
                           ? copy.installing
                           : playback?.state === 'speaking'
                             ? copy.stop
-                            : `${copy.test} · ${getKokoroVoiceLabel(selectedVoice, chinese)}`}
+                            : `${copy.test} · ${getKokoroVoiceLabel(selectedVoice, false)}`}
                       </button>
                     )}
                     {asset?.installed && (
