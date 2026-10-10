@@ -12,10 +12,17 @@ export function useTaskScheduler() {
   const loading = useTaskStore((s) => s.loading)
 
   useEffect(() => {
-    void refresh()
-    void tick()
+    // Scheduler refresh/tick can touch SQLite and ACP. Delay it until the
+    // initial workspace has had a chance to render and accept input.
+    const startup = window.setTimeout(() => {
+      void refresh()
+      void tick()
+    }, 1200)
     const id = window.setInterval(() => { void tick() }, 30_000)
-    return () => window.clearInterval(id)
+    return () => {
+      window.clearTimeout(startup)
+      window.clearInterval(id)
+    }
   }, [refresh, tick])
 
   return { loading }
