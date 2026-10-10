@@ -293,7 +293,16 @@ function App() {
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-bg text-text">
+    <div
+      className="h-screen w-screen overflow-hidden bg-bg text-text"
+      onClick={(event) => {
+        // Dismiss project properties from any click outside the panel,
+        // including the chat, sidebar, and title bar. Keep panel controls usable.
+        if (rightOpen && !(event.target as HTMLElement).closest("aside")) {
+          setRightOpen(false)
+        }
+      }}
+    >
       <CoworkTitleBar
         codeMode={codeMode}
         onCode={() => { setHasVisitedCode(true); setCodeMode(true); setPage('chat') }}
