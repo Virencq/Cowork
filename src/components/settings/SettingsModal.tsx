@@ -1,17 +1,14 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
-import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../../stores'
-import { X, Cpu, Eye, EyeOff, Server, Sparkles, RefreshCw, Search, CheckCircle, Check, Sun, Moon, AlertTriangle, Globe, Plus, Trash2, Mic, Upload } from 'lucide-react'
-import type { ProviderConfig, ProviderInfo } from '../../types'
+import { X, Cpu, Server, Sparkles, CheckCircle, Sun, Moon, Globe, Upload } from 'lucide-react'
 import { MCPSettings } from '../mcp'
 import { SkillSettings } from '../skills'
 import { WebSearchSettings } from '../websearch'
 import { ScrollShadow } from "@heroui/react"
 import i18n from '../../i18n'
 import { COLOR_SCHEMES } from '../../themes'
-import { VoiceInputSettings } from './VoiceInputSettings'
 import { ImportLibraryButton } from '../workspace/WorkspaceLibraryPage'
 import { useMCPStore } from '../../stores/mcpStore'
 import { useSkillStore } from '../../stores/skillStore'
@@ -21,59 +18,6 @@ interface SettingsModalProps {
   onClose: () => void
   initialTab?: string
   open?: boolean
-}
-
-const BUILT_IN_PROVIDERS: ProviderInfo[] = [
-  { id: 'opencode', name: 'OpenCode (Anthropic)', env: 'OPENCODE_API_KEY', source: 'https://api.opencode.ai/v1' },
-  { id: 'opencode-go', name: 'OpenCode Go (OpenAI)', env: 'OPENCODE_GO_API_KEY', source: 'https://opencode.ai/zen/go/v1' },
-  { id: 'anthropic', name: 'Anthropic', env: 'ANTHROPIC_API_KEY', source: 'https://api.anthropic.com' },
-  { id: 'openai', name: 'OpenAI', env: 'OPENAI_API_KEY', source: 'https://api.openai.com/v1' },
-  { id: 'gemini', name: 'Google Gemini', env: 'GEMINI_API_KEY', source: 'https://generativelanguage.googleapis.com' },
-  { id: 'deepseek', name: 'DeepSeek', env: 'DEEPSEEK_API_KEY', source: 'https://api.deepseek.com' },
-  { id: 'groq', name: 'Groq', env: 'GROQ_API_KEY', source: 'https://api.groq.com/openai/v1' },
-  { id: 'openrouter', name: 'OpenRouter', env: 'OPENROUTER_API_KEY', source: 'https://openrouter.ai/api/v1' },
-  { id: 'mistral', name: 'Mistral', env: 'MISTRAL_API_KEY', source: 'https://api.mistral.ai/v1' },
-  { id: 'xai', name: 'xAI (Grok)', env: 'XAI_API_KEY', source: 'https://api.x.ai/v1' },
-  { id: 'github-copilot', name: 'GitHub Copilot', env: 'GITHUB_TOKEN', source: 'https://api.githubcopilot.com' },
-  { id: 'huggingface', name: 'HuggingFace', env: 'HUGGINGFACE_API_KEY', source: 'https://api-inference.huggingface.co' },
-  { id: 'fireworks', name: 'Fireworks AI', env: 'FIREWORKS_API_KEY', source: 'https://api.fireworks.ai/inference/v1' },
-  { id: 'together', name: 'Together AI', env: 'TOGETHER_API_KEY', source: 'https://api.together.xyz/v1' },
-  { id: 'cerebras', name: 'Cerebras', env: 'CEREBRAS_API_KEY', source: 'https://api.cerebras.ai/v1' },
-  { id: 'zai', name: 'Z AI', env: 'ZAI_API_KEY', source: 'https://api.z.ai/v1' },
-  { id: 'perplexity', name: 'Perplexity', env: 'PERPLEXITY_API_KEY', source: 'https://api.perplexity.ai' },
-  { id: 'minimax', name: 'MiniMax', env: 'MINIMAX_API_KEY', source: 'https://api.minimax.chat/v1' },
-  { id: 'moonshotai', name: 'Moonshot AI', env: 'MOONSHOT_API_KEY', source: 'https://api.moonshot.cn/v1' },
-  { id: 'nvidia', name: 'NVIDIA AI', env: 'NVIDIA_API_KEY', source: 'https://integrate.api.nvidia.com/v1' },
-  { id: 'hyperbolic', name: 'Hyperbolic', env: 'HYPERBOLIC_API_KEY', source: 'https://api.hyperbolic.xyz/v1' },
-  { id: 'jina', name: 'Jina AI', env: 'JINA_API_KEY', source: 'https://api.jina.ai/v1' },
-  { id: 'voyageai', name: 'Voyage AI', env: 'VOYAGEAI_API_KEY', source: 'https://api.voyageai.com/v1' },
-  { id: 'kimi-coding', name: 'Kimi (Moonshot)', env: 'KIMI_API_KEY', source: 'https://api.moonshot.cn/v1' },
-  { id: 'ollama', name: 'Ollama (Local)', env: 'OLLAMA_API_KEY', source: 'http://localhost:11434/v1' },
-  { id: 'lmstudio', name: 'LM Studio (Local)', env: 'LMSTUDIO_API_KEY', source: 'http://localhost:1234/v1' },
-  { id: 'custom', name: 'Custom Provider', env: '', source: '' },
-]
-
-// Friendly names for pi-catalog providers that have no curated entry above.
-const PROVIDER_NAME_OVERRIDES: Record<string, string> = {
-  google: 'Google Gemini',
-  'google-vertex': 'Google Vertex AI',
-  'amazon-bedrock': 'Amazon Bedrock',
-  'azure-openai-responses': 'Azure OpenAI',
-  'openai-codex': 'OpenAI Codex',
-  'cloudflare-ai-gateway': 'Cloudflare AI Gateway',
-  'cloudflare-workers-ai': 'Cloudflare Workers AI',
-  'vercel-ai-gateway': 'Vercel AI Gateway',
-  'ant-ling': 'Ant Group (Ling)',
-  'minimax-cn': 'MiniMax (CN)',
-  'moonshotai-cn': 'Moonshot AI (CN)',
-  'qwen-token-plan': 'Qwen (Coding Plan)',
-  'qwen-token-plan-cn': 'Qwen (CN Coding Plan)',
-  xiaomi: 'Xiaomi AI',
-  'zai-coding-cn': 'Z AI Coding (CN)',
-}
-
-function prettifyProviderId(id: string): string {
-  return id.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 }
 
 function JCodeRuntimeSettings() {
@@ -162,142 +106,8 @@ function JCodeRuntimeSettings() {
 }
 
 export function SettingsModal({ onClose, initialTab = 'provider', open = true }: SettingsModalProps) {
-  const {
-    activeProvider,
-    setActiveProvider,
-    providerConfigs,
-    setProviderConfig,
-    providerList,
-    setProviderList,
-    customProviders,
-    addCustomProvider,
-    updateCustomProvider,
-    removeCustomProvider,
-    theme,
-    setTheme,
-    colorScheme,
-    setColorScheme,
-    locale,
-    setLocale,
-  } = useAppStore()
-
-
-  const [showKey, setShowKey] = useState(false)
+  const { theme, setTheme, colorScheme, setColorScheme, locale, setLocale } = useAppStore()
   const [activeTab, setActiveTab] = useState(initialTab)
-  const [expandedProvider, setExpandedProvider] = useState<string | null>(null)
-  const [localConfigs, setLocalConfigs] = useState<Record<string, ProviderConfig>>({})
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [modelSearchQuery, setModelSearchQuery] = useState('')
-  const [missingModelWarning, setMissingModelWarning] = useState(false)
-  const [providerModels, setProviderModels] = useState<Record<string, string[]>>({})
-
-  // Custom provider local state
-  const [customName, setCustomName] = useState('')
-  const [customAPI, setCustomAPI] = useState('openai-completions')
-
-  // Set provider list (built-ins merged with custom registry)
-  useEffect(() => {
-    setProviderList(BUILT_IN_PROVIDERS)
-  }, [setProviderList, customProviders])
-
-  // Overlay the pi SDK's live provider catalog so the picker stays in sync
-  // with the bundled SDK (new providers appear without frontend changes).
-  useEffect(() => {
-    let cancelled = false
-    Pi.fetchProviders().then((catalog) => {
-      if (cancelled || !Array.isArray(catalog) || catalog.length === 0) return
-      const dynamic: ProviderInfo[] = catalog.map((entry) => ({
-        id: entry.id,
-        name: PROVIDER_NAME_OVERRIDES[entry.id] ?? prettifyProviderId(entry.id),
-        env: `${entry.id.toUpperCase().replace(/-/g, '_')}_API_KEY`,
-        source: entry.baseUrl || '',
-        api: entry.api || undefined,
-      }))
-      const curatedIds = new Set(BUILT_IN_PROVIDERS.map((b) => b.id))
-      setProviderList([...BUILT_IN_PROVIDERS, ...dynamic.filter((d) => !curatedIds.has(d.id))])
-    }).catch(() => { /* keep curated list on failure */ })
-    return () => { cancelled = true }
-  }, [setProviderList])
-
-  // Sync local configs from store on open
-  useEffect(() => {
-    setLocalConfigs({ ...providerConfigs })
-    const ep = activeProvider || null
-    setExpandedProvider(ep && providerList.some(p => p.id === ep) ? ep : null)
-    setModelSearchQuery('')
-  }, [activeProvider, providerConfigs])
-
-  // Auto-fill default base URL when expanding a provider
-  useEffect(() => {
-    if (!expandedProvider) return
-    const info = providerList.find(p => p.id === expandedProvider)
-    const cfg = localConfigs[expandedProvider]
-    if (info?.source && (!cfg || !cfg.baseUrl)) {
-      handleConfigChange(expandedProvider, 'baseUrl', info.source)
-    }
-    if (info?.isCustom) {
-      setCustomName(info.name || '')
-      setCustomAPI(info.api || 'openai-completions')
-    } else {
-      setCustomName('')
-      setCustomAPI('openai-completions')
-    }
-  }, [expandedProvider])
-
-  const handleConfigChange = (id: string, field: string, value: string | boolean) => {
-    setLocalConfigs((prev) => ({
-      ...prev,
-      [id]: { ...(prev[id] || { apiKey: '', model: '', baseUrl: '', supportsVision: false }), [field]: value },
-    }))
-  }
-
-  const handleSave = async () => {
-    for (const [id, cfg] of Object.entries(localConfigs)) {
-      setProviderConfig(id, cfg)
-    }
-    if (provider?.isCustom && expandedProvider) {
-      updateCustomProvider(expandedProvider, { name: customName, api: customAPI, source: localConfigs[expandedProvider]?.baseUrl || provider.source })
-    }
-    setActiveProvider(expandedProvider || activeProvider)
-
-    setSaving(true)
-    // Simulate save delay for UX
-    await new Promise(r => setTimeout(r, 300))
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-
-    const hasMissingModel = Object.entries(localConfigs).some(
-      ([_, cfg]) => cfg.apiKey && !cfg.model,
-    )
-    if (hasMissingModel) {
-      setMissingModelWarning(true)
-      setTimeout(() => setMissingModelWarning(false), 5000)
-    }
-  }
-
-  const filteredProviders = useMemo(() => {
-    if (!searchQuery) return providerList
-    const q = searchQuery.toLowerCase()
-    return providerList.filter(p => p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q))
-  }, [providerList, searchQuery])
-
-  const provider = providerList.find((p) => p.id === expandedProvider)
-  const cfg = expandedProvider ? localConfigs[expandedProvider] || { apiKey: '', model: '', baseUrl: '', supportsVision: false } : null
-
-  const modelsForProvider = expandedProvider ? (providerModels[expandedProvider] || []) : []
-
-  const filteredModels = useMemo(() => {
-    if (!modelSearchQuery) return modelsForProvider
-    const q = modelSearchQuery.toLowerCase()
-    return modelsForProvider.filter(m => m.toLowerCase().includes(q))
-  }, [modelsForProvider, modelSearchQuery])
-
-  const [showModelDropdown, setShowModelDropdown] = useState(false)
-
-  const envVar = provider?.env || ''
 
   // The modal is rendered through a portal, so hiding its parent in App.tsx
   // does not hide this overlay. Keep hooks warm but remove the portal when closed.
