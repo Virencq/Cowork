@@ -74,11 +74,13 @@ export function ChatInput({
   const addMenuRef = useRef<HTMLDivElement>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [dictation, setDictation] = useState<VoiceInputStatus | null>(null)
+  const [dictationRuntimeAvailable, setDictationRuntimeAvailable] = useState<boolean | null>(null)
   const [dictationBusy, setDictationBusy] = useState(false)
   const [dictationError, setDictationError] = useState<string | null>(null)
   const [levels, setLevels] = useState<number[]>([])
   const [recordingSeconds, setRecordingSeconds] = useState(0)
   const [voiceRuntime, setVoiceRuntime] = useState<VoiceRuntimeStatus | null>(null)
+  const [voiceRuntimeAvailable, setVoiceRuntimeAvailable] = useState<boolean | null>(null)
   const [jcodeRuntime, setJcodeRuntime] = useState<{ model?: string | null; effort?: string | null } | null>(null)
   const [realtimeMode, setRealtimeMode] = useState<'dictation' | 'conversation' | null>(null)
   const [realtimePartial, setRealtimePartial] = useState('')
@@ -322,9 +324,18 @@ export function ChatInput({
       const supplied = (event as CustomEvent<VoiceInputStatus> | undefined)?.detail
       if (supplied) {
         setDictation(supplied)
+        setDictationRuntimeAvailable(true)
         return
       }
-      void getDictationStatus().then(setDictation).catch(() => setDictation(null))
+      void getDictationStatus()
+        .then((status) => {
+          setDictation(status)
+          setDictationRuntimeAvailable(true)
+        })
+        .catch(() => {
+          setDictation(null)
+          setDictationRuntimeAvailable(false)
+        })
     }
     refresh()
     window.addEventListener('s-loop:voice-input-changed', refresh)
@@ -359,7 +370,15 @@ export function ChatInput({
 
   useEffect(() => {
     if (!isTauriRuntime()) return
-    void getVoiceRuntimeStatus().then(setVoiceRuntime).catch(() => setVoiceRuntime(null))
+    void getVoiceRuntimeStatus()
+      .then((status) => {
+        setVoiceRuntime(status)
+        setVoiceRuntimeAvailable(true)
+      })
+      .catch(() => {
+        setVoiceRuntime(null)
+        setVoiceRuntimeAvailable(false)
+      })
     const disposeConversation = listenVoiceConversation(setConversationSnapshot)
     let disposeRealtime: (() => void) | undefined
     let disposePlayback: (() => void) | undefined
@@ -704,6 +723,11 @@ export function ChatInput({
           {dictationError}
         </div>
       )}
+      {isTauriRuntime() && dictationRuntimeAvailable === false && voiceRuntimeAvailable === false && (
+        <div role="status" className="mb-2 rounded-lg border border-border bg-surface-secondary px-3 py-2 text-xs text-text-tertiary">
+          Voice features are unavailable in this build. Text chat remains available.
+        </div>
+      )}
       <form onSubmit={handleSubmit}>
         <Card
           variant={isHero ? 'glass' : 'default'}
@@ -921,8 +945,8 @@ export function ChatInput({
                               variant={dictation?.recording ? 'danger' : 'secondary'}
                               size="icon"
                               aria-label={dictation?.recording ? 'Stop dictation' : voiceReady ? 'Start dictation' : 'Configure voice input'}
-                              title={dictation?.recording ? 'Stop and transcribe' : voiceReady ? 'Local voice input' : 'Configure voice input first'}
-                              isDisabled={dictationBusy || disabled || isStreaming || !!realtimeMode || realtimeBusy}
+                              title={dictationRuntimeAvailable === false ? 'Voice input unavailable in this build' : dictation?.recording ? 'Stop and transcribe' : voiceReady ? 'Local voice input' : 'Configure voice input first'}
+                              isDisabled={dictationBusy || disabled || isStreaming || !!realtimeMode || realtimeBusy || dictationRuntimeAvailable === false}
                               onClick={() => void toggleDictation()}
                               className={`w-9 h-9 rounded-lg ${!voiceReady && !dictation?.recording ? 'opacity-45' : ''}`}
                             >
@@ -933,8 +957,8 @@ export function ChatInput({
                               variant={realtimeMode === 'dictation' ? 'danger' : 'secondary'}
                               size="icon"
                               aria-label={realtimeMode === 'dictation' ? 'Stop live captions' : 'Start live captions'}
-                              title={realtimeMode === 'dictation' ? 'Stop live captions' : 'Live partial captions'}
-                              isDisabled={disabled || isStreaming || dictationBusy || !!dictation?.recording || realtimeBusy || conversation.active}
+                              title={voiceRuntimeAvailable === false ? 'Real-time voice unavailable in this build' : realtimeMode === 'dictation' ? 'Stop live captions' : 'Live partial captions'}
+                              isDisabled={disabled || isStreaming || dictationBusy || !!dictation?.recording || realtimeBusy || conversation.active || voiceRuntimeAvailable === false}
                               onClick={() => void toggleRealtimeDictation()}
                               className={`w-9 h-9 rounded-lg ${!realtimeReady && realtimeMode !== 'dictation' ? 'opacity-45' : ''}`}
                             >
@@ -945,8 +969,8 @@ export function ChatInput({
                               variant={conversation.active ? 'danger' : 'secondary'}
                               size="icon"
                               aria-label={conversation.active ? 'Stop voice conversation' : 'Start voice conversation'}
-                              title="Voice conversation"
-                              isDisabled={disabled || !!dictation?.recording || dictationBusy || (isStreaming && !conversation.active) || (realtimeMode === 'dictation')}
+                              title={voiceRuntimeAvailable === false ? "Voice conversation unavailable in this build" : "Voice conversation"}
+                              isDisabled={disabled || !!dictation?.recording || dictationBusy || (isStreaming && !conversation.active) || (realtimeMode === 'dictation') || voiceRuntimeAvailable === false}
                               onClick={() => void toggleConversation()}
                               className={`w-9 h-9 rounded-lg ${!conversationReady && !conversation.active ? 'opacity-45' : ''}`}
                             >
