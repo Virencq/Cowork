@@ -50,7 +50,7 @@ const text = {
     american: 'American',
     british: 'British',
     other: 'Other accents',
-    allVoices: 'All 53 · 全部 53',
+    allVoices: 'All 53',
     allGenders: 'All voices',
     searchVoice: 'Search name or ID',
     experimental: 'Experimental for Chinese',
