@@ -551,6 +551,9 @@ function App() {
       await useAppStore.getState().loadFromDb()
       const state = useAppStore.getState()
       if (state.activeSessionId) await state.loadMessages(state.activeSessionId)
+      // Code sessions are independent of Cowork selection and must hydrate after
+      // SQLite is initialized, even if CodeWorkspace mounted before startup finished.
+      if (state.codeActiveSessionId) await state.loadMessages(state.codeActiveSessionId)
     }).catch(console.warn)
   }, [])
 
