@@ -9,13 +9,23 @@ export function activateCodeProject(project: CodeProject): string {
   const app = useAppStore.getState()
   const workspace = useWorkspaceStore.getState()
 
-  workspace.setActiveCodeProject(project.id)
-  app.setCodeWorkspaceDir(project.path)
+  if (workspace.activeCodeProjectId !== project.id) {
+    workspace.setActiveCodeProject(project.id)
+  }
+  if (app.codeWorkspaceDir !== project.path) {
+    app.setCodeWorkspaceDir(project.path)
+  }
 
   if (project.sessionId) {
-    app.setCodeActiveSessionId(project.sessionId)
-    app.markCodeSession(project.sessionId)
-    void app.loadMessages(project.sessionId)
+    if (app.codeActiveSessionId !== project.sessionId) {
+      app.setCodeActiveSessionId(project.sessionId)
+    }
+    if (!app.codeSessionIds.includes(project.sessionId)) {
+      app.markCodeSession(project.sessionId)
+    }
+    if (!Object.prototype.hasOwnProperty.call(app.sessionMessages, project.sessionId)) {
+      void app.loadMessages(project.sessionId)
+    }
     return project.sessionId
   }
 
