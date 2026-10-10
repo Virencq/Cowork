@@ -24,6 +24,7 @@ fn configure_sanitized_environment(cmd: &mut Command, env: &HashMap<String, Stri
     cmd.env_clear();
 
     #[cfg(windows)]
+    // PATHEXT and COMSPEC are required by common Windows shell-based launchers.
     const SAFE_ENV: &[&str] = &[
         "PATH", "PATHEXT", "COMSPEC", "SYSTEMROOT", "WINDIR", "SYSTEMDRIVE",
         "TEMP", "TMP", "USERPROFILE", "APPDATA", "LOCALAPPDATA",
