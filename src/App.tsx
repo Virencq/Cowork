@@ -101,7 +101,7 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
   }
 
   return (
-    <aside data-project-properties-panel style={{ width, backgroundColor: '#1b1b1b', borderColor: '#303030' }} className="relative shrink-0 h-full border-l pt-11 overflow-auto text-[#e8e6e3]">
+    <aside data-project-properties-panel style={{ width, backgroundColor: '#1f1f1f', borderColor: '#333333' }} className="fixed right-0 top-11 bottom-0 z-[80] border-l pt-0 overflow-auto text-[#f2f2f2] shadow-2xl">
       <ResizeHandle side="right" onDrag={(d) => onWidth(Math.max(280, Math.min(440, width + d)))} />
       <div className="h-14 px-4 flex items-center justify-between border-b border-[#303030]">
         <div>
