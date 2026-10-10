@@ -34,6 +34,9 @@ describe('app store session identity', () => {
       activeSessionId: null,
       sessionMessages: {},
       streamingMessage: {},
+      activeSessionId: null,
+      codeActiveSessionId: null,
+      codeSessionIds: [],
     })
   })
 
@@ -89,5 +92,40 @@ describe('app store session identity', () => {
     expect(deleteDbSession).toHaveBeenCalledWith('ui-session')
     expect(deleteJCodeSession).toHaveBeenCalledWith('acp-session')
     expect(deleteJCodeSession).not.toHaveBeenCalledWith('ui-session')
+  })
+
+  it('creates Code sessions without changing the active Cowork conversation', async () => {
+    const { useAppStore } = await import('../src/stores/appStore')
+    useAppStore.setState({
+      activeSessionId: 'cowork-session',
+      sessions: [{ id: 'cowork-session', title: 'Cowork', model: '', createdAt: 1, updatedAt: 1 }],
+    })
+
+    const codeSessionId = useAppStore.getState().createCodeSession()
+
+    expect(useAppStore.getState().activeSessionId).toBe('cowork-session')
+    expect(useAppStore.getState().codeActiveSessionId).toBe(codeSessionId)
+    expect(useAppStore.getState().codeSessionIds).toContain(codeSessionId)
+  })
+
+  it('removes deleted Code sessions from Code-only state without changing Cowork selection', async () => {
+    const { useAppStore } = await import('../src/stores/appStore')
+    useAppStore.setState({
+      sessions: [
+        { id: 'cowork-session', title: 'Cowork', model: '', createdAt: 1, updatedAt: 1 },
+        { id: 'code-session', title: 'Code', model: '', createdAt: 1, updatedAt: 1 },
+      ],
+      activeSessionId: 'cowork-session',
+      codeActiveSessionId: 'code-session',
+      codeSessionIds: ['code-session'],
+      sessionMessages: { 'cowork-session': [], 'code-session': [] },
+    })
+
+    useAppStore.getState().deleteSession('code-session')
+
+    expect(useAppStore.getState().activeSessionId).toBe('cowork-session')
+    expect(useAppStore.getState().codeActiveSessionId).toBeNull()
+    expect(useAppStore.getState().codeSessionIds).not.toContain('code-session')
+    expect(useAppStore.getState().sessionMessages).not.toHaveProperty('code-session')
   })
 })
