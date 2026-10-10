@@ -17,6 +17,13 @@ pub(crate) struct SessionProcess {
 pub struct JCodeState(pub Arc<Mutex<HashMap<String, SessionProcess>>>);
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PromptImage {
+    data: String,
+    mime_type: String,
+}
+
+#[derive(Debug, Deserialize)]
 struct RpcEnvelope { id: Option<Value>, result: Option<Value>, error: Option<Value> }
 
 fn send_rpc(stdin: &Arc<Mutex<ChildStdin>>, id: u64, method: &str, params: Value) -> Result<(), String> {
@@ -132,16 +139,37 @@ pub fn jcode_start_session(app: AppHandle, state: State<'_, JCodeState>, workspa
 }
 
 #[tauri::command]
-pub fn jcode_prompt(state: State<'_, JCodeState>, session_id: String, prompt: String) -> Result<(), String> {
+pub fn jcode_prompt(
+    state: State<'_, JCodeState>,
+    session_id: String,
+    prompt: String,
+    images: Option<Vec<PromptImage>>,
+) -> Result<(), String> {
     let sessions = state.0.lock().map_err(|e| e.to_string())?;
     let session = sessions.get(&session_id).ok_or_else(|| format!("JCode session not found: {session_id}"))?;
-    if prompt.trim().is_empty() {
+    if prompt.trim().is_empty() && images.as_ref().is_none_or(Vec::is_empty) {
         return Err("Prompt cannot be empty.".to_string());
     }
+
+    let mut content = vec![json!({"type":"text","text":prompt})];
+    for image in images.unwrap_or_default() {
+        if image.data.is_empty() {
+            continue;
+        }
+        if !image.mime_type.starts_with("image/") {
+            return Err(format!("Unsupported attachment MIME type: {}", image.mime_type));
+        }
+        content.push(json!({
+            "type": "image",
+            "data": image.data,
+            "mimeType": image.mime_type,
+        }));
+    }
+
     let request_id = session.next_request_id.fetch_add(1, Ordering::Relaxed);
     send_rpc(&session.stdin, request_id, "session/prompt", json!({
         "sessionId": session.session_id,
-        "prompt": [{"type":"text","text":prompt}]
+        "prompt": content
     }))?;
     // ACP is streamed: return immediately after the request is written.
     // The background reader forwards session/update chunks and the final
