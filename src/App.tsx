@@ -399,11 +399,11 @@ function App() {
       {page === 'chat' && !codeMode && !rightOpen && (
         <button onClick={() => setRightOpen(true)} className="fixed right-4 top-14 z-40 h-9 w-9 rounded-lg border border-border bg-surface shadow-sm grid place-items-center text-text-secondary"><ChevronRight size={16}/></button>
       )}
-      <div style={{ display: showSettings ? 'contents' : 'none' }} aria-hidden={!showSettings}>
+      {showSettings && (
         <Suspense fallback={null}>
-          <SettingsModal open={showSettings} initialTab="provider" onClose={() => setShowSettings(false)} />
+          <SettingsModal open initialTab="provider" onClose={() => setShowSettings(false)} />
         </Suspense>
-      </div>
+      )}
     </div>
   )
 }
