@@ -152,37 +152,39 @@ export async function fetchModelCapabilities(..._args: any[]): Promise<any> {
 export async function prompt(sessionId: string, text: string, options: JCodePromptOptions = {}) {
   const finalPrompt = options.systemPrompt ? options.systemPrompt + '\n\n' + text : text
 
-  let resolveListenerReady!: () => void
-  const listenerReady = new Promise<void>((resolve) => { resolveListenerReady = resolve })
   let unlisten: (() => void) | undefined
+  let settled = false
+  let resolveCompletion!: (result: { text: string; error?: string }) => void
+  const completion = new Promise<{ text: string; error?: string }>((resolve) => {
+    resolveCompletion = resolve
+  })
 
-  const completion = new Promise<{ text: string; error?: string }>(async (resolve) => {
+  const finish = (result: { text: string; error?: string }) => {
+    if (settled) return
+    settled = true
+    unlisten?.()
+    resolveCompletion(result)
+  }
+
+  try {
     unlisten = await listen<any>('jcode://event', (event) => {
       const payload = event.payload
       if (payload?.sessionId !== sessionId) return
       const rpc = payload?.event
 
       if (rpc?.error) {
-        unlisten?.()
-        resolve({ text: '', error: String(rpc.error?.message || rpc.error) })
-        return
-      }
-
-      if (rpc?.result?.stopReason) {
-        unlisten?.()
-        resolve({ text: '', error: undefined })
+        finish({ text: '', error: String(rpc.error?.message || rpc.error) })
+      } else if (rpc?.result?.stopReason) {
+        finish({ text: '' })
       } else if (rpc?.method === 'session/closed') {
-        unlisten?.()
-        resolve({ text: '', error: 'JCode ACP session closed before the prompt completed.' })
+        finish({ text: '', error: 'JCode ACP session closed before the prompt completed.' })
       }
     })
-    resolveListenerReady()
-  })
 
-  // Install the completion listener before sending the ACP request.
-  await listenerReady
+    // A completion event can arrive immediately after listener registration.
+    if (settled) unlisten()
 
-  try {
+    // The completion listener must be installed before sending the ACP request.
     await invoke('jcode_prompt', { sessionId, prompt: finalPrompt })
   } catch (error) {
     unlisten?.()
