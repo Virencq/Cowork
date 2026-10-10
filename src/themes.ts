@@ -604,5 +604,24 @@ export function getColorScheme(id: string): ColorScheme | undefined {
 
 export function getActiveTokens(schemeId: string, mode: 'light' | 'dark'): ThemeTokens {
   const scheme = getColorScheme(schemeId) || terracotta
-  return mode === 'dark' ? scheme.dark : scheme.light
+  if (mode === 'light') return scheme.light
+
+  // Keep each scheme's accent identity, but use one consistent charcoal
+  // surface system in dark mode for stronger contrast and visual cohesion.
+  return {
+    ...scheme.dark,
+    '--color-bg': '#141414',
+    '--color-surface': '#1f1f1f',
+    '--color-surface-secondary': '#252525',
+    '--color-surface-tertiary': '#333333',
+    '--color-surface-hover': '#333333',
+    '--color-surface-elevated': '#252525',
+    '--color-text': '#f2f2f2',
+    '--color-text-secondary': '#c4c4c4',
+    '--color-text-tertiary': '#969696',
+    '--color-text-quaternary': '#707070',
+    '--color-border': '#333333',
+    '--color-border-light': '#292929',
+    '--color-border-hover': '#454545',
+  }
 }
