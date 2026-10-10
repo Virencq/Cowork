@@ -24,6 +24,7 @@ import { useMCPStore } from './stores/mcpStore'
 import { useSkillStore } from './stores/skillStore'
 import { useAgentStore } from './stores/agentStore'
 import { useWorkspaceStore } from './stores/workspaceStore'
+import { activateCodeProject } from './utils/codeProjectActions'
 import { initDatabase } from './utils/database'
 import { getAllSessions, createSession as dbCreateSession, saveMessage as dbSaveMessage } from './utils/database'
 import { status as jcodeStatus } from './utils/jcodeClient'
@@ -112,8 +113,6 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
   const updateCodeProject = useWorkspaceStore((s) => s.updateCodeProject)
   const removeCodeProject = useWorkspaceStore((s) => s.removeCodeProject)
   const setActiveCodeProject = useWorkspaceStore((s) => s.setActiveCodeProject)
-  const setCodeWorkspaceDir = useAppStore((s) => s.setCodeWorkspaceDir)
-  const setCodeSession = useAppStore((s) => s.setCodeActiveSessionId)
   const [projectMenuId, setProjectMenuId] = useState<string | null>(null)
   const [renamingProjectId, setRenamingProjectId] = useState<string | null>(null)
   const [renameProjectValue, setRenameProjectValue] = useState('')
@@ -154,19 +153,8 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
   }
 
   const openCodeProject = (project: (typeof codeProjects)[number]) => {
-    setActiveCodeProject(project.id)
-    setCodeWorkspaceDir(project.path)
+    activateCodeProject(project)
     useFilePreviewStore.getState().closePreview()
-    // The project owns its persistent session ID. Do not create a new chat
-    // just because the session list has not finished loading from SQLite yet.
-    if (project.sessionId) {
-      setCodeSession(project.sessionId)
-      useAppStore.getState().markCodeSession(project.sessionId)
-      void useAppStore.getState().loadMessages(project.sessionId)
-    } else {
-      const sessionId = useAppStore.getState().createCodeSession()
-      updateCodeProject(project.id, { sessionId })
-    }
     onPage('chat')
     setProjectMenuId(null)
   }
@@ -181,9 +169,9 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
     }
     const name = selected.split(/[\\/]/).filter(Boolean).pop() || 'Code project'
     const projectId = addCodeProject({ name, path: selected })
-    const sessionId = useAppStore.getState().createCodeSession()
-    updateCodeProject(projectId, { sessionId })
-    setCodeWorkspaceDir(selected)
+    const project = useWorkspaceStore.getState().codeProjects.find((item) => item.id === projectId)
+    if (!project) return
+    activateCodeProject(project)
     useFilePreviewStore.getState().closePreview()
     onPage('chat')
   }
@@ -200,19 +188,12 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
     const next = codeProjects.find((item) => item.id !== project.id)
     removeCodeProject(project.id)
     if (activeCodeProjectId === project.id) {
-      setActiveCodeProject(next?.id ?? null)
-      setCodeWorkspaceDir(next?.path ?? null)
-      if (next?.sessionId) {
-        // The project record is authoritative; session metadata can still be
-        // loading from SQLite when the user deletes a project during startup.
-        setCodeSession(next.sessionId)
-        useAppStore.getState().markCodeSession(next.sessionId)
-        void useAppStore.getState().loadMessages(next.sessionId)
-      } else if (next) {
-        const sessionId = useAppStore.getState().createCodeSession()
-        updateCodeProject(next.id, { sessionId })
+      if (next) {
+        activateCodeProject(next)
       } else {
-        setCodeSession(null)
+        useWorkspaceStore.getState().setActiveCodeProject(null)
+        useAppStore.getState().setCodeWorkspaceDir(null)
+        useAppStore.getState().setCodeActiveSessionId(null)
       }
       useFilePreviewStore.getState().closePreview()
     }
