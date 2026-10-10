@@ -6,6 +6,87 @@ use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::{mpsc, Arc, Mutex, RwLock};
 use std::time::Duration;
 
+#[cfg(windows)]
+use std::os::windows::io::AsRawHandle;
+
+#[cfg(windows)]
+use windows_sys::Win32::Foundation::{CloseHandle, HANDLE};
+
+#[cfg(windows)]
+use windows_sys::Win32::System::JobObjects::{
+    AssignProcessToJobObject, CreateJobObjectW, SetInformationJobObject,
+    JobObjectExtendedLimitInformation, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+    JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+};
+
+/// Launch MCP servers with a small inherited environment to avoid leaking unrelated secrets.
+fn configure_sanitized_environment(cmd: &mut Command, env: &HashMap<String, String>) {
+    cmd.env_clear();
+
+    #[cfg(windows)]
+    // PATHEXT and COMSPEC are required by common Windows shell-based launchers.
+    const SAFE_ENV: &[&str] = &[
+        "PATH", "PATHEXT", "COMSPEC", "SYSTEMROOT", "WINDIR", "SYSTEMDRIVE",
+        "TEMP", "TMP", "USERPROFILE", "APPDATA", "LOCALAPPDATA",
+        "PROGRAMFILES", "PROGRAMFILES(X86)", "PROGRAMW6432",
+    ];
+
+    #[cfg(not(windows))]
+    const SAFE_ENV: &[&str] = &["PATH", "HOME", "TMPDIR", "XDG_RUNTIME_DIR"];
+
+    for key in SAFE_ENV {
+        if let Some(value) = std::env::var_os(key) {
+            cmd.env(key, value);
+        }
+    }
+
+    // Explicit MCP server variables take precedence over inherited defaults.
+    cmd.envs(env);
+}
+
+#[cfg(windows)]
+struct WindowsJob(usize);
+
+#[cfg(windows)]
+impl Drop for WindowsJob {
+    fn drop(&mut self) {
+        if self.0 != 0 {
+            // Closing a KILL_ON_JOB_CLOSE job terminates its process tree.
+            unsafe { CloseHandle(self.0 as HANDLE); }
+        }
+    }
+}
+
+#[cfg(windows)]
+fn attach_kill_on_close_job(child: &Child) -> Option<WindowsJob> {
+    unsafe {
+        let job = CreateJobObjectW(std::ptr::null(), std::ptr::null());
+        if job.is_null() {
+            eprintln!("[cowork:mcp] Could not create Windows process job; cleanup is best-effort");
+            return None;
+        }
+
+        let mut limits: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
+        limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+        let configured = SetInformationJobObject(
+            job,
+            JobObjectExtendedLimitInformation,
+            &limits as *const _ as *const core::ffi::c_void,
+            std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+        ) != 0;
+        let assigned = configured && AssignProcessToJobObject(job, child.as_raw_handle() as HANDLE) != 0;
+
+        if !assigned {
+            CloseHandle(job);
+            eprintln!("[cowork:mcp] Could not attach MCP child to Windows process job; cleanup is best-effort");
+            return None;
+        }
+
+        Some(WindowsJob(job as usize))
+    }
+}
+
+
 // ---- Data Types ----
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -40,6 +121,8 @@ fn push_diagnostic(diagnostics: &Arc<Mutex<Vec<String>>>, stream: &str, line: St
 struct MCPServerProcess {
     name: String,
     child: Child,
+    #[cfg(windows)]
+    _job: Option<WindowsJob>,
     response_rx: mpsc::Receiver<Result<String, String>>,
     writer: ChildStdin,
     tools: Vec<MCPTool>,
@@ -54,11 +137,9 @@ impl MCPServerProcess {
         env: &HashMap<String, String>,
     ) -> Result<Self, String> {
         let mut cmd = Command::new(command);
-        cmd.args(args)
-            // MCP environment variables are explicit user configuration and
-            // are applied after the inherited host environment is cleared.
-            .envs(env)
-            .stdin(Stdio::piped())
+        cmd.args(args);
+        configure_sanitized_environment(&mut cmd, env);
+        cmd.stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
 
@@ -72,6 +153,9 @@ impl MCPServerProcess {
             .spawn()
             .map_err(|e| format!("Failed to spawn MCP server '{}': {}", name, e))?;
 
+        #[cfg(windows)]
+        let job = attach_kill_on_close_job(&child);
+
         let stdin = child.stdin.take().ok_or("Failed to capture stdin")?;
         let stdout = child.stdout.take().ok_or("Failed to capture stdout")?;
         let stderr = child.stderr.take().ok_or("Failed to capture stderr")?;
@@ -83,6 +167,8 @@ impl MCPServerProcess {
         let mut process = Self {
             name: name.to_string(),
             child,
+            #[cfg(windows)]
+            _job: job,
             response_rx,
             writer,
             tools: Vec::new(),
