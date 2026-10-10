@@ -34,7 +34,6 @@ describe('app store session identity', () => {
       activeSessionId: null,
       sessionMessages: {},
       streamingMessage: {},
-      activeSessionId: null,
       codeActiveSessionId: null,
       codeSessionIds: [],
     })
