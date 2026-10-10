@@ -52,7 +52,7 @@ describe('VoiceRuntimeSettings Kokoro voice selection', () => {
     fireEvent.click(xiaoyi)
     expect(useAppStore.getState().kokoroSpeakerId).toBe(48)
 
-    fireEvent.click(screen.getByRole('button', { name: /晓伊/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Xiaoyi/ }))
 
     await waitFor(() => {
       expect(vi.mocked(invoke)).toHaveBeenCalledWith(
