@@ -598,41 +598,41 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
             </div>
 
             <div className="w-full max-w-[674px] -mt-1">
-              <div className="h-9 flex items-center gap-2 px-6 text-[12px] text-[#6e675f]">
+              <div className="h-9 flex items-center gap-2 px-6 text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
                 <FolderKanban size={14}/>
                 <span>Project or folder</span>
                 <ChevronDown size={13}/>
-                <span className="ml-auto text-[#a39d96]">ⓘ</span>
+                <span className="ml-auto" style={{ color: 'var(--color-text-tertiary)' }}>ⓘ</span>
               </div>
             </div>
 
             <div className="w-full max-w-[674px] mt-12">
               <div className="flex items-end justify-between mb-3">
-                <span className="text-[12px] text-[#8b847d]">Active</span>
-                <button className="text-[12px] text-[#8b847d] hover:text-[#4d4741]">Clear active</button>
+                <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>Active</span>
+                <button className="text-[12px] hover:text-text" style={{ color: 'var(--color-text-secondary)' }}>Clear active</button>
               </div>
               {homeSessions.length > 0 ? (
                 <div className="px-1">
                   {homeSessions.slice(0, 1).map(session => (
                     <button key={session.id} onClick={() => { setModeActiveSession(session.id) }}
-                      className="w-full text-left flex items-center gap-3 py-1.5 hover:bg-[#faf8f6] rounded-md">
-                      <span className="text-[#8c857e]">☷</span>
+                      className="w-full text-left flex items-center gap-3 py-1.5 hover:bg-surface-hover rounded-md">
+                      <span style={{ color: 'var(--color-text-secondary)' }}>☷</span>
                       <span className="h-1.5 w-1.5 rounded-full bg-[#3b82f6]"/>
                       <div className="min-w-0">
-                        <div className="text-[12px] text-[#39342f] truncate">{session.title || 'Untitled task'}</div>
-                        <div className="text-[11px] text-[#99928a]">recently</div>
+                        <div className="text-[12px] truncate" style={{ color: 'var(--color-text)' }}>{session.title || 'Untitled task'}</div>
+                        <div className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>recently</div>
                       </div>
                     </button>
                   ))}
                 </div>
               ) : (
-                <div className="flex items-center gap-3 px-1 py-2 text-[#9b948d]">
+                <div className="flex items-center gap-3 px-1 py-2" style={{ color: 'var(--color-text-secondary)' }}>
                   <span className="text-[#8c857e]">☷</span>
                   <span className="text-[12px]">No active tasks</span>
                 </div>
               )}
 
-              <div className="mt-12 mb-2 text-[12px] text-[#8b847d]">Scheduled</div>
+              <div className="mt-12 mb-2 text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>Scheduled</div>
               <div className="h-24" />
             </div>
           </div>
@@ -682,10 +682,10 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
               >
                 <div className="w-full max-w-[674px]">
                   <div className="mb-8 text-center">
-                    <h2 className="font-serif text-[34px] leading-tight tracking-[-0.035em] text-[#171411]">
+                    <h2 className="font-serif text-[34px] leading-tight tracking-[-0.035em]" style={{ color: 'var(--color-text)' }}>
                       What can I help you with?
                     </h2>
-                    <p className="mt-2 text-[13px] text-[#8f8880]">
+                    <p className="mt-2 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>
                       Start a task and JCode will work through it with you.
                     </p>
                   </div>
@@ -696,7 +696,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
                     variant="hero"
                     placeholder="What would you like me to do?"
                   />
-                  <div className="mt-2 h-9 flex items-center gap-2 px-4 text-[12px] text-[#6e675f]">
+                  <div className="mt-2 h-9 flex items-center gap-2 px-4 text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
                     <FolderKanban size={14}/>
                     <span>Project or folder</span>
                     <ChevronDown size={13}/>
