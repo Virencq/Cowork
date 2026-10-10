@@ -29,7 +29,7 @@ export function activateCodeProject(project: CodeProject): string {
     return project.sessionId
   }
 
-  const sessionId = app.createCodeSession()
-  workspace.updateCodeProject(project.id, { sessionId })
-  return sessionId
+  // createCodeSession links itself to the active project, keeping all
+  // session creation paths consistent.
+  return app.createCodeSession()
 }
