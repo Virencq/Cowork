@@ -71,27 +71,34 @@ function CoworkTitleBar({ onToggleSidebar, onToggleRightPanel, onBack, onForward
   )
 }
 
-function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
+function RightPanel({ width, onWidth, onClose, onAddScheduled, codeMode }: {
   width: number
   onWidth: (n: number) => void
   onClose: () => void
   onAddScheduled: () => void
+  codeMode: boolean
 }) {
-  const workspaceDir = useAppStore((s) => s.workspaceDir)
+  const workspaceDir = useAppStore((s) => codeMode ? s.codeWorkspaceDir : s.workspaceDir)
   const projects = useWorkspaceStore((s) => s.projects)
+  const codeProjects = useWorkspaceStore((s) => s.codeProjects)
+  const activeCodeProjectId = useWorkspaceStore((s) => s.activeCodeProjectId)
   const updateProject = useWorkspaceStore((s) => s.updateProject)
-  const project = projects.find((p) => p.path && workspaceDir && projectPathsEqual(p.path, workspaceDir))
+  const updateCodeProject = useWorkspaceStore((s) => s.updateCodeProject)
+  const project = codeMode
+    ? codeProjects.find((p) => p.id === activeCodeProjectId)
+    : projects.find((p) => p.path && workspaceDir && projectPathsEqual(p.path, workspaceDir))
   const [editingInstructions, setEditingInstructions] = useState(false)
   const [draftInstructions, setDraftInstructions] = useState(project?.instructions || '')
 
   useEffect(() => {
     setDraftInstructions(project?.instructions || '')
     setEditingInstructions(false)
-  }, [project?.id, project?.instructions])
+  }, [codeMode, project?.id, project?.instructions])
 
   const saveInstructions = () => {
     if (project) {
-      updateProject(project.id, { instructions: draftInstructions.trim() })
+      if (codeMode) updateCodeProject(project.id, { instructions: draftInstructions.trim() })
+      else updateProject(project.id, { instructions: draftInstructions.trim() })
     }
     setEditingInstructions(false)
   }
@@ -160,7 +167,8 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
             onClick={async () => {
               const selected = await openDialog({ directory: true, multiple: false, title: 'Add project context folder' })
               if (typeof selected === 'string') {
-                useAppStore.getState().setWorkspaceDir(selected)
+                if (codeMode) useAppStore.getState().setCodeWorkspaceDir(selected)
+                else useAppStore.getState().setWorkspaceDir(selected)
               }
             }}
             className="h-7 w-7 rounded-md hover:bg-[#303030] grid place-items-center text-[#b8b8b8]"
@@ -396,7 +404,7 @@ function App() {
                 navigateToPage('chat')
               }} />}
             </div>
-            {page === 'chat' && !codeMode && activeSessionId && activeSessionMessageCount > 0 && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} onAddScheduled={() => navigateToPage('tasks')} />}
+            {page === 'chat' && rightOpen && ((codeMode && !!useWorkspaceStore.getState().activeCodeProjectId) || (!codeMode && !!activeSessionId && activeSessionMessageCount > 0)) && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} onAddScheduled={() => navigateToPage('tasks')} codeMode={codeMode} />}
           </div>
           </Suspense>
         </main>
