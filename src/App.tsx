@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
@@ -8,15 +8,15 @@ import {
   PanelRight, Clock3, MoreHorizontal, Pin, Pencil, Trash2, MailOpen, FolderPlus, Check, Columns2, ArrowLeft, ArrowRight
 } from 'lucide-react'
 import { ChatView } from './components/chat'
-import { SettingsModal } from './components/settings'
-import { TasksPage } from './components/tasks'
-import { GoalPage } from './components/goal/GoalPage'
-import { ExtensionsPage } from './components/extensions/ExtensionsPage'
-import { WorkspaceLibraryPage } from './components/workspace/WorkspaceLibraryPage'
-import { ProjectsPage } from './components/workspace/ProjectsPage'
-import { ArtifactsPage } from './components/workspace/ArtifactsPage'
-import { CodeWorkspace } from './components/workspace/CodeWorkspace'
-import { FilePreviewPanel } from './components/preview/FilePreviewPanel'
+
+// Keep the primary chat eager, but load secondary workspaces on demand.
+const SettingsModal = lazy(() => import('./components/settings').then((m) => ({ default: m.SettingsModal })))
+const TasksPage = lazy(() => import('./components/tasks').then((m) => ({ default: m.TasksPage })))
+const ExtensionsPage = lazy(() => import('./components/extensions/ExtensionsPage').then((m) => ({ default: m.ExtensionsPage })))
+const WorkspaceLibraryPage = lazy(() => import('./components/workspace/WorkspaceLibraryPage').then((m) => ({ default: m.WorkspaceLibraryPage })))
+const ProjectsPage = lazy(() => import('./components/workspace/ProjectsPage').then((m) => ({ default: m.ProjectsPage })))
+const ArtifactsPage = lazy(() => import('./components/workspace/ArtifactsPage').then((m) => ({ default: m.ArtifactsPage })))
+const CodeWorkspace = lazy(() => import('./components/workspace/CodeWorkspace').then((m) => ({ default: m.CodeWorkspace })))
 import { useAppStore } from './stores'
 import { useFilePreviewStore } from './stores/filePreviewStore'
 import { useTaskScheduler, useTelegramChatSync } from './hooks'
@@ -484,7 +484,6 @@ function App() {
   const setActiveSession = useAppStore((s) => s.setActiveSession)
   const setWorkspaceDir = useAppStore((s) => s.setWorkspaceDir)
   const workspaceDir = useAppStore((s) => s.workspaceDir)
-  const preview = useFilePreviewStore((s) => s.preview)
   const activeSessionId = useAppStore((s) => s.activeSessionId)
   const activeSessionMessageCount = useAppStore((s) => activeSessionId ? (s.sessionMessages[activeSessionId]?.length ?? 0) : 0)
   const [page, setPage] = useState<Page>('chat')
@@ -592,6 +591,7 @@ function App() {
       <div className="h-full flex">
         <LeftNav width={sidebarOpen ? leftWidth : 0} onWidth={setLeftWidth} page={page} onPage={navigateToPage} onNew={newTask} onSettings={() => setShowSettings(true)} codeMode={codeMode} onCode={() => { setHasVisitedCode(true); setCodeMode(true); setPage('chat') }} onCowork={() => { setCodeMode(false); setPage('chat') }} />
         <main className="relative min-w-0 flex-1 pt-11 flex flex-col bg-bg">
+          <Suspense fallback={<div className="min-h-0 flex-1 grid place-items-center text-[12px] text-text-tertiary">Loading workspace…</div>}>
           <div className="min-h-0 flex-1 flex">
             <div className="min-w-0 flex-1 flex flex-col">
               {page === 'chat' && (
@@ -668,13 +668,16 @@ function App() {
             </div>
             {page === 'chat' && !codeMode && activeSessionId && activeSessionMessageCount > 0 && rightOpen && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} onAddScheduled={() => navigateToPage('tasks')} />}
           </div>
+          </Suspense>
         </main>
       </div>
       {page === 'chat' && !codeMode && !rightOpen && (
         <button onClick={() => setRightOpen(true)} className="fixed right-4 top-14 z-40 h-9 w-9 rounded-lg border border-border bg-surface shadow-sm grid place-items-center text-text-secondary"><ChevronRight size={16}/></button>
       )}
       <div style={{ display: showSettings ? 'contents' : 'none' }} aria-hidden={!showSettings}>
-        <SettingsModal open={showSettings} initialTab="provider" onClose={() => setShowSettings(false)} />
+        <Suspense fallback={null}>
+          <SettingsModal open={showSettings} initialTab="provider" onClose={() => setShowSettings(false)} />
+        </Suspense>
       </div>
     </div>
   )
