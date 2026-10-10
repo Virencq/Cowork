@@ -25,8 +25,9 @@ fn configure_sanitized_environment(cmd: &mut Command, env: &HashMap<String, Stri
 
     #[cfg(windows)]
     const SAFE_ENV: &[&str] = &[
-        "PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP",
-        "USERPROFILE", "APPDATA", "LOCALAPPDATA",
+        "PATH", "PATHEXT", "COMSPEC", "SYSTEMROOT", "WINDIR", "SYSTEMDRIVE",
+        "TEMP", "TMP", "USERPROFILE", "APPDATA", "LOCALAPPDATA",
+        "PROGRAMFILES", "PROGRAMFILES(X86)", "PROGRAMW6432",
     ];
 
     #[cfg(not(windows))]
