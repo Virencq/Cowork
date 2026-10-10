@@ -329,7 +329,7 @@ function App() {
           <div className="min-h-0 flex-1 flex">
             <div className="min-w-0 flex-1 flex flex-col">
               {page === 'chat' && (
-                <div className={codeMode ? 'hidden' : 'min-w-0 flex-1 flex flex-col'}>
+                <div className={codeMode ? 'hidden' : 'min-w-0 min-h-0 flex-1 flex flex-col'}>
                   <ChatView />
                 </div>
               )}

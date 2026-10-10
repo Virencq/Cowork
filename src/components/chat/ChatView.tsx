@@ -573,13 +573,13 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
   return (
     <div
       ref={containerRef}
-      className={`flex-1 flex h-full w-full overflow-hidden relative ${embedded ? "bg-white" : ""}`}
+      className={`flex-1 min-h-0 min-w-0 flex h-full w-full overflow-hidden relative ${embedded ? "bg-white" : ""}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       {/* Main chat area */}
-      <div className="flex-1 flex flex-col bg-transparent h-full overflow-hidden relative min-w-0">
+      <div className="flex-1 min-h-0 min-w-0 flex flex-col bg-transparent h-full overflow-hidden relative">
         {!embedded && <div className="absolute top-4 right-4 z-40">
           <button
             onClick={handleToggleLeftPanel}
