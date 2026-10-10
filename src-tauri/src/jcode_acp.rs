@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::{collections::HashMap, io::{BufRead, BufReader, Write}, path::PathBuf, process::{Child, ChildStdin, Command, Stdio}, sync::{mpsc::{self, Sender}, Arc, Mutex}, sync::atomic::{AtomicU64, Ordering}, thread};
+use std::{collections::HashMap, io::{BufRead, BufReader, Write}, path::PathBuf, process::{Child, ChildStdin, Command, Stdio}, sync::{Arc, Mutex}, sync::atomic::{AtomicU64, Ordering}, thread};
 use tauri::{AppHandle, Emitter, State};
 
 #[derive(Debug, Serialize, Clone)]
@@ -12,7 +12,6 @@ pub(crate) struct SessionProcess {
     stdin: Arc<Mutex<ChildStdin>>,
     session_id: String,
     next_request_id: AtomicU64,
-    pending: Arc<Mutex<HashMap<u64, Sender<Result<Value, String>>>>>,
     permission_requests: Arc<Mutex<HashMap<u64, Value>>>,
 }
 pub struct JCodeState(pub Arc<Mutex<HashMap<String, SessionProcess>>>);
@@ -62,7 +61,6 @@ fn start_reader(
     app: AppHandle,
     session_key: String,
     stdout: std::process::ChildStdout,
-    pending: Arc<Mutex<HashMap<u64, Sender<Result<Value, String>>>>>,
     permission_requests: Arc<Mutex<HashMap<u64, Value>>>,
 ) {
     thread::spawn(move || {
@@ -113,18 +111,16 @@ pub fn jcode_start_session(app: AppHandle, state: State<'_, JCodeState>, workspa
     let result = read_until_response(&mut reader, 2)?;
     let session_id = result.get("sessionId").and_then(Value::as_str).ok_or_else(|| format!("JCode ACP did not return sessionId: {result}"))?.to_string();
 
-    let pending = Arc::new(Mutex::new(HashMap::new()));
     let permission_requests = Arc::new(Mutex::new(HashMap::new()));
     let process = SessionProcess {
         child,
         stdin: stdin.clone(),
         session_id: session_id.clone(),
         next_request_id: AtomicU64::new(100),
-        pending: pending.clone(),
         permission_requests: permission_requests.clone(),
     };
     state.0.lock().map_err(|e| e.to_string())?.insert(session_id.clone(), process);
-    start_reader(app, session_id.clone(), reader.into_inner(), pending, permission_requests);
+    start_reader(app, session_id.clone(), reader.into_inner(), permission_requests);
     Ok(session_id)
 }
 
