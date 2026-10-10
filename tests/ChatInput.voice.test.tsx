@@ -46,4 +46,17 @@ describe('ChatInput local dictation', () => {
     })
     expect(onSubmit).not.toHaveBeenCalled()
   })
+  it('disables voice controls when the optional native voice runtime is unavailable', async () => {
+    vi.mocked(invoke).mockRejectedValue(new Error('Command not found'))
+
+    render(<ChatInput onSubmit={vi.fn()} />)
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Voice features are unavailable in this build. Text chat remains available.',
+    )
+    expect(screen.getByRole('button', { name: 'Configure voice input' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Start live captions' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Start voice conversation' })).toBeDisabled()
+  })
+
 })
