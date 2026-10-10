@@ -187,6 +187,21 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
       if ((!content || !content.trim()) && (!images || images.length === 0)) return
       if (!sid) {
         sid = createModeSession()
+        // A project conversation is associated when its first message is sent,
+        // not when the user merely opens a blank composer.
+        if (workspaceMode === 'cowork') {
+          const workspaceState = useWorkspaceStore.getState()
+          const projectId = workspaceState.activeProjectId
+          const project = projectId ? workspaceState.projects.find((item) => item.id === projectId) : undefined
+          if (project) {
+            const sessionIds = Array.from(new Set([
+              ...(project.sessionIds || []),
+              ...(project.sessionId ? [project.sessionId] : []),
+              sid,
+            ]))
+            workspaceState.updateProject(project.id, { sessionIds, sessionId: project.sessionId || sid })
+          }
+        }
       }
       setError(null)
       setContextStatus(null)

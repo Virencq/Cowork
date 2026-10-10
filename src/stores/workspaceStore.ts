@@ -6,6 +6,7 @@ export interface CoworkProject {
   name: string
   path?: string
   sessionId?: string
+  sessionIds?: string[]
   instructions?: string
   createdAt: number
   updatedAt: number
@@ -34,11 +35,13 @@ export interface CoworkArtifact {
 
 interface WorkspaceLibraryState {
   projects: CoworkProject[]
+  activeProjectId: string | null
   codeProjects: CodeProject[]
   activeCodeProjectId: string | null
   artifacts: CoworkArtifact[]
   pinnedProjectIds: string[]
   pinnedArtifactIds: string[]
+  setActiveProject: (id: string | null) => void
   addProject: (project: Omit<CoworkProject, 'id' | 'createdAt' | 'updatedAt'>) => void
   addCodeProject: (project: Omit<CodeProject, 'id' | 'createdAt' | 'updatedAt'>) => string
   updateCodeProject: (id: string, updates: Partial<Omit<CodeProject, 'id' | 'createdAt'>>) => void
@@ -64,11 +67,13 @@ export const useWorkspaceStore = create<WorkspaceLibraryState>()(
   persist(
     (set) => ({
       projects: [],
+      activeProjectId: null,
       codeProjects: [],
       activeCodeProjectId: null,
       artifacts: [],
       pinnedProjectIds: [],
       pinnedArtifactIds: [],
+      setActiveProject: (id) => set({ activeProjectId: id }),
       addProject: (project) => set((s) => {
         const now = Date.now()
         return { projects: [...s.projects, { ...project, id: id(), createdAt: now, updatedAt: now }] }
@@ -142,6 +147,7 @@ export const useWorkspaceStore = create<WorkspaceLibraryState>()(
       name: 'cowork-workspace-library',
       partialize: (state) => ({
         projects: state.projects,
+        activeProjectId: state.activeProjectId,
         codeProjects: state.codeProjects,
         activeCodeProjectId: state.activeCodeProjectId,
         artifacts: state.artifacts,

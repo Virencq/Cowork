@@ -4,8 +4,12 @@ import { open } from '@tauri-apps/plugin-dialog'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useAppStore } from '../../stores'
 
-export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id: string; name: string; path?: string }) => void }) {
+export function ProjectsPage({ onOpenProject, onOpenChat, onNewProjectChat }: { onOpenProject?: (project: { id: string; name: string; path?: string }) => void; onOpenChat?: (sessionId: string) => void; onNewProjectChat?: (projectId: string) => void }) {
   const projects = useWorkspaceStore(s => s.projects)
+  const sessions = useAppStore(s => s.sessions)
+  const sessionMessages = useAppStore(s => s.sessionMessages)
+  const setActiveSession = useAppStore(s => s.setActiveSession)
+  const setActiveProject = useWorkspaceStore(s => s.setActiveProject)
   const addProject = useWorkspaceStore(s => s.addProject)
   const removeProject = useWorkspaceStore(s => s.removeProject)
   const toggleProjectPin = useWorkspaceStore(s => s.toggleProjectPin)
@@ -50,7 +54,7 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
         {visible.length ? (
           <div className="grid grid-cols-2 gap-6">
             {visible.map(project => (
-              <div key={project.id} className="group relative h-[78px] rounded-xl border px-4 py-3 hover:shadow-sm transition" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }}>
+              <div key={project.id} className="group relative min-h-[100px] rounded-xl border px-4 py-3 hover:shadow-sm transition" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }}>
                 <button
                   onClick={() => {
                     if (onOpenProject) onOpenProject(project)
@@ -88,6 +92,26 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                 >
                   <Trash2 size={14}/>
                 </button>
+                {(() => {
+                  const ids = project.sessionIds || (project.sessionId ? [project.sessionId] : [])
+                  const projectChats = ids.map(id => sessions.find(session => session.id === id)).filter((session): session is NonNullable<typeof session> => !!session)
+                  return (
+                    <div className="relative z-10 mt-3 space-y-1">
+                      {projectChats.slice().reverse().slice(0, 4).map(chat => (
+                        <button key={chat.id}
+                          onClick={(e) => { e.stopPropagation(); setActiveProject(project.id); setActiveSession(chat.id); onOpenChat?.(chat.id) }}
+                          className="relative z-20 flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-[11px] hover:bg-surface-hover">
+                          <span className="truncate">{chat.title || 'Untitled chat'}</span>
+                          <span className="shrink-0 opacity-60">{(sessionMessages[chat.id]?.length || 0) > 0 ? 'Open' : 'Empty'}</span>
+                        </button>
+                      ))}
+                      <button onClick={(e) => { e.stopPropagation(); setActiveProject(project.id); onNewProjectChat?.(project.id) }}
+                        className="relative z-20 inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-semibold hover:bg-surface-hover">
+                        <Plus size={12}/> New project chat
+                      </button>
+                    </div>
+                  )
+                })()}
                 <div className="absolute right-4 bottom-3 flex items-center gap-1 text-[11px] pointer-events-none" style={{ color: 'var(--color-text-secondary)' }}><FolderOpen size={13}/><span className="max-w-[160px] truncate">{project.name}</span></div>
               </div>
             ))}

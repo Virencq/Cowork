@@ -577,6 +577,7 @@ function App() {
     if (currentId && (state.sessionMessages[currentId]?.length ?? 0) === 0) {
       state.deleteSession(currentId)
     }
+    useWorkspaceStore.getState().setActiveProject(null)
     setActiveSession(null)
     navigateToPage('chat')
   }
@@ -619,13 +620,17 @@ function App() {
               )}
 
               {page === 'tasks' && <TasksPage />}
-              {page === 'projects' && <ProjectsPage onOpenProject={(project) => {
+              {page === 'projects' && <ProjectsPage
+                onOpenChat={(sessionId) => { useWorkspaceStore.getState().setActiveProject(null); setActiveSession(sessionId); navigateToPage('chat'); void useAppStore.getState().loadMessages(sessionId) }}
+                onNewProjectChat={(projectId) => { useWorkspaceStore.getState().setActiveProject(projectId); setActiveSession(null); navigateToPage('chat') }}
+                onOpenProject={(project) => {
                 if (project.path) setWorkspaceDir(project.path)
                 // Reopen this project's existing chat instead of creating a new
                 // session on every click. Associate a session on first open only.
                 const workspaceState = useWorkspaceStore.getState()
                 const storedProject = workspaceState.projects.find((item) => item.id === project.id)
-                const storedSessionId = storedProject?.sessionId
+                const storedSessionIds = storedProject?.sessionIds || (storedProject?.sessionId ? [storedProject.sessionId] : [])
+                const storedSessionId = [...storedSessionIds].reverse().find((id) => useAppStore.getState().sessions.some((session) => session.id === id))
                 const appState = useAppStore.getState()
                 const sessions = appState.sessions
                 const linkedSessionIds = new Set(
@@ -655,12 +660,19 @@ function App() {
                   sessionId = namedMatch?.id ?? activeWithHistory?.id ?? mostRecentWithHistory?.id
                 }
 
-                if (!sessionId) {
-                  sessionId = createSession()
+                workspaceState.setActiveProject(project.id)
+                if (sessionId) {
+                  const sessionIds = Array.from(new Set([
+                    ...(storedProject?.sessionIds || []),
+                    ...(storedProject?.sessionId ? [storedProject.sessionId] : []),
+                    sessionId,
+                  ]))
+                  workspaceState.updateProject(project.id, { sessionId, sessionIds })
+                  setActiveSession(sessionId)
+                  void useAppStore.getState().loadMessages(sessionId)
+                } else {
+                  setActiveSession(null)
                 }
-                workspaceState.updateProject(project.id, { sessionId })
-                setActiveSession(sessionId)
-                void useAppStore.getState().loadMessages(sessionId)
                 navigateToPage('chat')
               }} />}
               {page === 'ideas' && <div className="flex-1 grid place-items-center"><div className="text-center max-w-md"><Lightbulb className="mx-auto mb-4 text-[#b0a79e]" size={30}/><h2 className="text-xl font-semibold">Ideas</h2><p className="mt-2 text-sm text-[#8c847c]">Capture ideas here and turn them into tasks when ready.</p></div></div>}
