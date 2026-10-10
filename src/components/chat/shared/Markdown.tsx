@@ -1,4 +1,4 @@
-import React, { useMemo, memo, useState, useCallback, useEffect, type ReactNode } from 'react'
+import React, { lazy, Suspense, useMemo, memo, useState, useCallback, useEffect, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import type { PluggableList } from 'unified'
@@ -12,16 +12,16 @@ import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 import 'remark-github-blockquote-alert/alert.css'
 import { Copy, Check, Download, X, Table as TableIcon, FileSpreadsheet, Code } from 'lucide-react'
-import { MermaidBlock } from './MermaidBlock'
-import { HtmlPreviewBlock } from './HtmlPreviewBlock'
-import { CodeRunBlock } from './CodeRunBlock'
-import { PlantUMLBlock } from './PlantUMLBlock'
-import { CodeEditorBlock } from './CodeEditorBlock'
+// Specialized code renderers are loaded only when a matching code fence is present.
+const MermaidBlock = lazy(() => import('./MermaidBlock').then((m) => ({ default: m.MermaidBlock })))
+const HtmlPreviewBlock = lazy(() => import('./HtmlPreviewBlock').then((m) => ({ default: m.HtmlPreviewBlock })))
+const CodeRunBlock = lazy(() => import('./CodeRunBlock').then((m) => ({ default: m.CodeRunBlock })))
+const PlantUMLBlock = lazy(() => import('./PlantUMLBlock').then((m) => ({ default: m.PlantUMLBlock })))
+const CodeEditorBlock = lazy(() => import('./CodeEditorBlock').then((m) => ({ default: m.CodeEditorBlock })))
 import { Hyperlink } from './Hyperlink'
 import { CitationTooltip } from './CitationTooltip'
 import { FileChip, parseFileLink } from './FileChip'
 import { highlightInWorker } from './shikiWorker'
-import * as XLSX from 'xlsx'
 import { rehypeHeadingIds, remarkDisableConstructs, rehypeScalableSvg } from './plugins'
 
 const MAX_COLLAPSED_HEIGHT = 400
@@ -132,6 +132,23 @@ interface CodeBlockProps {
 }
 
 function CodeBlock({ className, children }: CodeBlockProps) {
+  const language = className?.replace('language-', '') || ''
+  const code = String(children).replace(/\n$/, '')
+  const loading = <div className="my-3 rounded-lg border border-[var(--color-border)] px-4 py-3 text-[12px] text-[var(--color-text-tertiary)]">Loading block…</div>
+
+  if (language === 'mermaid') return <Suspense fallback={loading}><MermaidBlock code={code} /></Suspense>
+  if (language === 'html') return <Suspense fallback={loading}><HtmlPreviewBlock code={code} /></Suspense>
+  if (language === 'plantuml' || language === 'puml' || language === 'dot' || language === 'graphviz') {
+    return <Suspense fallback={loading}><PlantUMLBlock code={code} /></Suspense>
+  }
+  if (language === 'javascript' || language === 'typescript' || language === 'js' || language === 'ts' || language === 'python' || language === 'py') {
+    return <Suspense fallback={loading}><CodeRunBlock code={code} language={language} /></Suspense>
+  }
+
+  return <StandardCodeBlock className={className}>{children}</StandardCodeBlock>
+}
+
+function StandardCodeBlock({ className, children }: CodeBlockProps) {
   const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
   const [highlightedHtml, setHighlightedHtml] = useState<string | null>(null)
@@ -140,15 +157,6 @@ function CodeBlock({ className, children }: CodeBlockProps) {
 
   const language = className?.replace('language-', '') || ''
   const code = String(children).replace(/\n$/, '')
-
-  if (language === 'mermaid') return <MermaidBlock code={code} />
-  if (language === 'html') return <HtmlPreviewBlock code={code} />
-  if (language === 'plantuml' || language === 'puml' || language === 'dot' || language === 'graphviz') {
-    return <PlantUMLBlock code={code} />
-  }
-  if (language === 'javascript' || language === 'typescript' || language === 'js' || language === 'ts' || language === 'python' || language === 'py') {
-    return <CodeRunBlock code={code} language={language} />
-  }
 
   useEffect(() => {
     let cancelled = false
@@ -207,7 +215,9 @@ function CodeBlock({ className, children }: CodeBlockProps) {
         style={!expanded ? { maxHeight: MAX_COLLAPSED_HEIGHT } : undefined}
       >
         {editing ? (
-          <CodeEditorBlock code={code} language={language} />
+          <Suspense fallback={<div className="px-4 py-3 text-[12px] text-[var(--color-text-tertiary)]">Loading editor…</div>}>
+            <CodeEditorBlock code={code} language={language} />
+          </Suspense>
         ) : highlightedHtml ? (
           <div
             className="px-4 py-3 text-[13px] leading-relaxed [&_.shiki]:!bg-transparent"
@@ -263,7 +273,7 @@ function TableWrapper({ children, node }: { children: ReactNode; node?: any }) {
     }
   }, [extractMarkdown])
 
-  const handleExportExcel = useCallback(() => {
+  const handleExportExcel = useCallback(async () => {
     const rows: string[][] = []
     const processRow = (tr: any) => {
       const cells = (tr.children || [])
@@ -281,6 +291,7 @@ function TableWrapper({ children, node }: { children: ReactNode; node?: any }) {
       }
     }
     if (rows.length > 0) {
+      const XLSX = await import('xlsx')
       const ws = XLSX.utils.aoa_to_sheet(rows)
       const wb = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(wb, ws, 'Sheet1')
@@ -302,7 +313,7 @@ function TableWrapper({ children, node }: { children: ReactNode; node?: any }) {
           {copied ? <Check size={14} /> : <TableIcon size={14} />}
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); handleExportExcel() }}
+          onClick={(e) => { e.stopPropagation(); void handleExportExcel() }}
           className="p-1.5 rounded-md bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:text-[var(--color-text)] shadow-sm transition-all"
           title="Export Excel"
         >
