@@ -219,6 +219,8 @@ export const useAppStore = create<AppState>()(
         set({
           sessions: state.sessions.filter((s) => s.id !== id),
           activeSessionId: state.activeSessionId === id ? (state.sessions.find(s => s.id !== id)?.id ?? null) : state.activeSessionId,
+          codeActiveSessionId: state.codeActiveSessionId === id ? null : state.codeActiveSessionId,
+          codeSessionIds: state.codeSessionIds.filter((sessionId) => sessionId !== id),
           sessionMessages: Object.fromEntries(
             Object.entries(state.sessionMessages).filter(([k]) => k !== id)
           ),
@@ -634,6 +636,9 @@ export const useAppStore = create<AppState>()(
         companion: state.companion,
         leftPanelMode: state.leftPanelMode,
         workspaceDir: state.workspaceDir,
+        codeWorkspaceDir: state.codeWorkspaceDir,
+        codeActiveSessionId: state.codeActiveSessionId,
+        codeSessionIds: state.codeSessionIds,
         githubMirror: state.githubMirror,
         npmRegistryMirror: state.npmRegistryMirror,
         kokoroSpeakerId: state.kokoroSpeakerId,
