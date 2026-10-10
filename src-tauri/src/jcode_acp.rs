@@ -225,6 +225,26 @@ pub fn jcode_close_session(state: State<'_, JCodeState>, session_id: String) -> 
     Ok(())
 }
 
+/// Close all child ACP processes when the desktop application exits.
+pub fn shutdown_all(state: &JCodeState) {
+    let sessions = match state.0.lock() {
+        Ok(mut sessions) => std::mem::take(&mut *sessions),
+        Err(_) => return,
+    };
+
+    for (_, mut session) in sessions {
+        let request_id = session.next_request_id.fetch_add(1, Ordering::Relaxed);
+        let _ = send_rpc(
+            &session.stdin,
+            request_id,
+            "session/close",
+            json!({"sessionId": session.session_id}),
+        );
+        let _ = session.child.kill();
+        let _ = session.child.wait();
+    }
+}
+
 #[tauri::command]
 pub fn jcode_status() -> Result<Value, String> {
     match find_jcode() {
