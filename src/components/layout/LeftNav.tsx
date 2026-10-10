@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import {
   Archive, CalendarClock, ChevronRight, FolderKanban, FileCode2, Menu, Plus,
@@ -13,25 +13,35 @@ import { projectPathsEqual } from '../../utils/projectPaths'
 import type { Page } from '../../types/navigation'
 
 export function ResizeHandle({ side, onDrag }: { side: 'left' | 'right'; onDrag: (delta: number) => void }) {
-  const start = (e: React.PointerEvent) => {
+  const previousX = useRef<number | null>(null)
+  const activePointer = useRef<number | null>(null)
+
+  const start = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault()
+    e.stopPropagation()
+    activePointer.current = e.pointerId
+    previousX.current = e.clientX
     e.currentTarget.setPointerCapture(e.pointerId)
-    let previousX = e.clientX
-    const move = (ev: PointerEvent) => {
-      const delta = ev.clientX - previousX
-      previousX = ev.clientX
-      onDrag(side === 'left' ? delta : -delta)
-    }
-    const end = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', end)
-      window.removeEventListener('pointercancel', end)
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', end)
-    window.addEventListener('pointercancel', end)
   }
-  return <div onPointerDown={start} className={`absolute top-0 bottom-0 w-1 cursor-col-resize hover:bg-[#d97745]/25 z-30 ${side === 'left' ? 'right-0' : 'left-0'}`} />
+  const move = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (activePointer.current !== e.pointerId || previousX.current === null) return
+    const delta = e.clientX - previousX.current
+    previousX.current = e.clientX
+    if (delta !== 0) onDrag(side === 'left' ? delta : -delta)
+  }
+  const end = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (activePointer.current !== e.pointerId) return
+    activePointer.current = null
+    previousX.current = null
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+  }
+  return <div
+    onPointerDown={start}
+    onPointerMove={move}
+    onPointerUp={end}
+    onPointerCancel={end}
+    className={`absolute top-0 bottom-0 w-1 cursor-col-resize touch-none hover:bg-[#d97745]/25 z-30 ${side === 'left' ? 'right-0' : 'left-0'}`}
+  />
 }
 
 export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, onCode, onCowork }: {
