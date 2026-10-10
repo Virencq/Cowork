@@ -50,48 +50,48 @@ export function TaskList({ onCreateTask }: TaskListProps) {
   ]
 
   return (
-    <div className="h-full overflow-auto bg-white pt-11">
-      <div className="mx-auto max-w-[980px] px-10 py-9">
+    <div className="h-full overflow-auto bg-[var(--color-bg)] pt-11 text-[var(--color-text)]">
+      <div className="mx-auto max-w-[1100px] px-10 py-9">
         <div className="flex items-start justify-between gap-6">
           <div>
-            <h1 className="font-serif text-[30px] tracking-[-0.03em] text-[#171411]">Scheduled tasks</h1>
-            <p className="mt-1 text-[13px] text-[#8a837c]">Run tasks on a schedule or whenever you need them. Type <span className="font-mono text-[12px] text-[#625b54]">/schedule</span> in any existing task to set one up.</p>
+            <h1 className="font-serif text-[32px] tracking-[-0.03em] text-[var(--color-text)]">Scheduled tasks</h1>
+            <p className="mt-2 max-w-3xl text-[15px] leading-6 text-[var(--color-text-secondary)]">Run tasks on a schedule or whenever you need them. Type <span className="font-mono text-[13px] text-[var(--color-text)]">/schedule</span> in any existing task to set one up.</p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setSearchOpen(v => !v)} className="h-9 w-9 grid place-items-center rounded-lg hover:bg-[#f3f1ee]" title="Search"><Search size={18}/></button>
-            <button onClick={() => setSortNewest(v => !v)} className="h-9 rounded-lg border border-[#dfd9d3] px-3 text-[12px] text-[#5f5851] inline-flex items-center gap-2">Sort by {sortNewest ? 'Next run' : 'Name'} <ChevronDown size={14}/></button>
-            <button onClick={onCreateTask} className="h-9 rounded-lg bg-[#171717] px-4 text-[13px] font-semibold text-white inline-flex items-center gap-2"><Plus size={15}/> New task <ChevronDown size={14}/></button>
+            <button onClick={() => setSearchOpen(v => !v)} className="h-10 w-10 grid place-items-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text)]" title="Search"><Search size={18}/></button>
+            <button onClick={() => setSortNewest(v => !v)} className="h-10 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-[14px] text-[var(--color-text)] inline-flex items-center gap-2">Sort by {sortNewest ? 'Next run' : 'Name'} <ChevronDown size={14}/></button>
+            <button onClick={onCreateTask} className="h-10 rounded-lg bg-[var(--color-surface-tertiary)] px-4 text-[14px] font-semibold text-[var(--color-text)] inline-flex items-center gap-2 hover:bg-[var(--color-surface-hover)]"><Plus size={15}/> New task <ChevronDown size={14}/></button>
           </div>
         </div>
 
         {searchOpen && (
           <div className="mt-4 relative max-w-md">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9b948d]"/>
-            <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Search scheduled tasks" className="w-full h-9 rounded-lg border border-[#ded8d2] px-9 text-[12px] outline-none"/>
+            <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Search scheduled tasks" className="w-full h-10 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-9 text-[14px] text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-tertiary)]"/>
           </div>
         )}
 
-        <div className="mt-6 rounded-xl border border-[#e1ddd8] bg-white px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 text-[13px] text-[#332e29]"><Info size={16} className="text-[#706960]"/><span>Scheduled tasks only run while your computer is awake and online.</span></div>
-          <span className="text-[11px] text-[#777069]">Cowork checks the schedule while the app is running.</span>
+        <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-[14px] text-[var(--color-text)]"><Info size={16} className="text-[#706960]"/><span>Scheduled tasks only run while your computer is awake and online.</span></div>
+          <span className="text-[12px] text-[var(--color-text-secondary)]">Cowork checks the schedule while the app is running.</span>
         </div>
 
         {filtered.length > 0 && (
           <div className="mt-5 grid grid-cols-2 gap-5">
             {filtered.map(task => (
-              <div key={task.id} className={`rounded-xl border border-[#e2ddd7] bg-white p-4 ${!task.enabled ? 'opacity-70' : ''}`}>
-                <div className="text-[14px] font-semibold text-[#201b17]">{task.name}</div>
-                <div className="mt-2 text-[12px] leading-5 text-[#675f58] line-clamp-2">{task.prompt}</div>
-                <div className="mt-5 flex items-center justify-between gap-2">
-                  <span className={`rounded-md px-2 py-1 text-[10px] font-medium ${task.enabled ? 'bg-[#d9f0d5] text-[#3f703b]' : 'bg-[#eeeae6] text-[#716a63]'}`}>
+              <div key={task.id} className={`rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 ${!task.enabled ? 'opacity-70' : ''}`}>
+                <div className="text-[16px] font-semibold text-[var(--color-text)]">{task.name}</div>
+                <div className="mt-2 text-[14px] leading-6 text-[var(--color-text-secondary)] line-clamp-3">{task.prompt}</div>
+                <div className="mt-5 flex items-center justify-between gap-3 flex-wrap">
+                  <span className={`rounded-md px-2.5 py-1.5 text-[12px] font-medium ${task.enabled ? 'bg-[#24412d] text-[#b5e6bf]' : 'bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)]'}`}>
                     {task.enabled ? task.schedule.display : 'Paused'}
                   </span>
-                  <div className="flex items-center gap-1 text-[#837b73]">
-                    <span className="text-[10px]">{formatNextRun(task.nextRunAt)}</span>
-                    <button onClick={() => setDetailTask(task)} className="p-1.5 hover:bg-[#f1eeeb] rounded-md" title="History"><Eye size={13}/></button>
+                  <div className="flex items-center gap-2 text-[var(--color-text-secondary)]">
+                    <span className="text-[12px]">{formatNextRun(task.nextRunAt)}</span>
+                    <button onClick={() => setDetailTask(task)} className="p-2 hover:bg-[var(--color-surface-tertiary)] rounded-md" title="History"><Eye size={13}/></button>
                     <button onClick={() => toggleTask(task.id)} className="p-1.5 hover:bg-[#f1eeeb] rounded-md" title={task.enabled ? 'Pause' : 'Resume'}>{task.enabled ? <Pause size={13}/> : <Play size={13}/>}</button>
                     <button onClick={() => triggerRun(task.id)} className="p-1.5 hover:bg-[#f1eeeb] rounded-md" title="Run now"><Zap size={13}/></button>
-                    <button onClick={() => removeTask(task.id)} className="p-1.5 hover:bg-[#f8e9e6] rounded-md text-[#a35a4c]" title="Delete"><Trash2 size={13}/></button>
+                    <button onClick={() => removeTask(task.id)} className="p-2 hover:bg-[#492b2b] rounded-md text-[#e58a7d]" title="Delete"><Trash2 size={13}/></button>
                   </div>
                 </div>
               </div>
@@ -100,25 +100,25 @@ export function TaskList({ onCreateTask }: TaskListProps) {
         )}
 
         {filtered.length === 0 && (
-          <div className="mt-10 rounded-xl border border-[#e5dfd9] py-20 text-center">
-            <Calendar size={34} className="mx-auto text-[#c7c0b9]"/>
-            <h2 className="mt-4 text-[18px] font-semibold text-[#28231f]">No scheduled tasks</h2>
-            <p className="mt-1 text-[12px] text-[#8d857d]">Create a recurring task and let JCode run it on schedule.</p>
-            <button onClick={onCreateTask} className="mt-6 rounded-lg bg-[#171717] px-4 py-2.5 text-[12px] font-semibold text-white"><Plus size={14} className="inline mr-2"/>Create your first task</button>
+          <div className="mt-10 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-20 text-center">
+            <Calendar size={34} className="mx-auto text-[var(--color-text-secondary)]"/>
+            <h2 className="mt-4 text-[20px] font-semibold text-[var(--color-text)]">No scheduled tasks</h2>
+            <p className="mt-2 text-[14px] text-[var(--color-text-secondary)]">Create a recurring task and let JCode run it on schedule.</p>
+            <button onClick={onCreateTask} className="mt-6 rounded-lg bg-[var(--color-surface-tertiary)] px-4 py-3 text-[14px] font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]"><Plus size={14} className="inline mr-2"/>Create your first task</button>
           </div>
         )}
 
-        <div className="mt-10 border-t border-[#eee9e4] pt-8">
+        <div className="mt-10 border-t border-[var(--color-border)] pt-8">
           <div className="grid grid-cols-2 gap-x-12 gap-y-7">
             {templates.map(t => {
               const Icon = t.icon
               return (
                 <button key={t.name} onClick={onCreateTask} className="text-left flex items-start gap-4 group">
-                  <span className="h-10 w-10 shrink-0 rounded-xl bg-[#f2f0ed] grid place-items-center text-[#6f6861] group-hover:bg-[#ece9e5]"><Icon size={18}/></span>
+                  <span className="h-11 w-11 shrink-0 rounded-xl bg-[var(--color-surface-tertiary)] grid place-items-center text-[var(--color-text)] group-hover:bg-[var(--color-surface-hover)]"><Icon size={18}/></span>
                   <span>
-                    <span className="block text-[14px] font-semibold text-[#24201c]">{t.name}</span>
-                    <span className="block mt-1 text-[12px] leading-5 text-[#706861]">{t.desc}</span>
-                    <span className="block mt-1.5 text-[11px] text-[#827a72]">◷ {t.when}</span>
+                    <span className="block text-[16px] font-semibold text-[var(--color-text)]">{t.name}</span>
+                    <span className="block mt-1 text-[14px] leading-6 text-[var(--color-text-secondary)]">{t.desc}</span>
+                    <span className="block mt-1.5 text-[12px] text-[var(--color-text-tertiary)]">◷ {t.when}</span>
                   </span>
                 </button>
               )
