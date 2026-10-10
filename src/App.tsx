@@ -548,6 +548,16 @@ function App() {
         } catch {}
       }
       await useAppStore.getState().loadFromDb()
+      // If the persisted active project pointed to a session that no longer
+      // exists in SQLite, reconcile it by creating one fresh session for that
+      // project after the database is ready.
+      const workspaceState = useWorkspaceStore.getState()
+      const activeCodeProject = workspaceState.codeProjects.find(
+        (project) => project.id === workspaceState.activeCodeProjectId,
+      )
+      if (activeCodeProject && !activeCodeProject.sessionId) {
+        activateCodeProject(activeCodeProject)
+      }
       const state = useAppStore.getState()
       if (state.activeSessionId) await state.loadMessages(state.activeSessionId)
       // Code sessions are independent of Cowork selection and must hydrate after
