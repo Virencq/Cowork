@@ -332,7 +332,7 @@ function App() {
         <main className="relative min-w-0 flex-1 pt-11 flex flex-col bg-bg">
           <Suspense fallback={<div className="min-h-0 flex-1 grid place-items-center text-[12px] text-text-tertiary">Loading workspace…</div>}>
           <div className="min-h-0 flex-1 flex">
-            <div className="min-w-0 flex-1 flex flex-col">
+            <div className={`min-w-0 flex-1 flex flex-col transition-[margin] duration-150 ${page === 'chat' && rightOpen && ((codeMode && !!activeCodeProjectId) || (!codeMode && !!activeSessionId && activeSessionMessageCount > 0)) ? 'mr-[360px]' : ''}`}>
               {page === 'chat' && (
                 <div className={codeMode ? 'hidden' : 'min-w-0 min-h-0 flex-1 flex flex-col'}>
                   <ChatView />
