@@ -222,8 +222,8 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
                       className="absolute right-1 top-1.5 h-7 w-7 rounded-md opacity-0 group-hover:opacity-100 hover:bg-surface-hover grid place-items-center" title="Project options"><MoreHorizontal size={14}/></button>
                     {projectMenuId === project.id && (
                       <div className="absolute right-1 top-9 z-50 w-40 rounded-xl border border-border bg-surface p-1.5 shadow-lg">
-                        <button onClick={() => { setRenamingProjectId(project.id); setRenameProjectValue(project.name); setProjectMenuId(null) }} className="menu-row"><Pencil size={14}/>Rename project</button>
-                        <button onClick={() => deleteCodeProject(project)} className="menu-row text-[#b54d40]"><Trash2 size={14}/>Delete project</button>
+                        <button onClick={() => { setRenamingProjectId(project.id); setRenameProjectValue(project.name); setProjectMenuId(null) }} className="menu-row !h-7 !min-h-7 !gap-2 !rounded-md !px-2 !py-1 !text-[12px] !leading-4 !text-[#e8e6e3] hover:!bg-[#3a3a3a]"><Pencil size={14}/>Rename project</button>
+                        <button onClick={() => deleteCodeProject(project)} className="menu-row !h-7 !min-h-7 !gap-2 !rounded-md !px-2 !py-1 !text-[12px] !leading-4 !text-[#f87171] hover:!bg-[#b91c1c] hover:!text-white"><Trash2 size={14}/>Delete project</button>
                       </div>
                     )}
                   </>
@@ -297,7 +297,7 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
                     setMenuId(s.id)
                   }} className="absolute right-1 top-1.5 h-7 w-7 rounded-md opacity-0 group-hover:opacity-100 hover:bg-surface-hover grid place-items-center"><MoreHorizontal size={14}/></button>
                   {menuId===s.id && createPortal(
-                    <div data-chat-menu style={{ position: 'fixed', left: menuPosition.left, top: menuPosition.top, width: 176, maxHeight: 'min(280px, calc(100vh - 16px))', overflowY: 'auto' }} className="z-[1000] rounded-lg border border-border bg-surface p-1 shadow-xl">
+                    <div data-chat-menu style={{ position: 'fixed', left: menuPosition.left, top: menuPosition.top, width: 176, maxHeight: 'min(280px, calc(100vh - 16px))', overflowY: 'auto', backgroundColor: '#252525', borderColor: '#3c3c3c' }} className="z-[1000] rounded-xl border p-1 shadow-xl text-[#e8e6e3]">
                       <button onClick={()=>{
                         setPinned(p=>{
                           const n=new Set(p)
@@ -305,11 +305,11 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
                           return n
                         })
                         setMenuId(null)
-                      }} className="menu-row"><Pin size={14}/>{pinned.has(s.id)?'Unpin':'Pin'}</button>
+                      }} className="menu-row !h-7 !min-h-7 !gap-2 !rounded-md !px-2 !py-1 !text-[12px] !leading-4 !text-[#e8e6e3] hover:!bg-[#3a3a3a]"><Pin size={14}/>{pinned.has(s.id)?'Unpin':'Pin'}</button>
                       <button onClick={()=>beginRename(s.id,s.title)} className="menu-row"><Pencil size={14}/>Rename</button>
-                      <button onClick={()=>{setUnread(p=>new Set(p).add(s.id));setMenuId(null)}} className="menu-row"><MailOpen size={14}/>Mark as unread</button>
-                      <div className="my-1 border-t border-border"/>
-                      <button onClick={()=>{setArchived(p=>new Set(p).add(s.id));setMenuId(null)}} className="menu-row"><Archive size={14}/>Archive</button>
+                      <button onClick={()=>{setUnread(p=>new Set(p).add(s.id));setMenuId(null)}} className="menu-row !h-7 !min-h-7 !gap-2 !rounded-md !px-2 !py-1 !text-[12px] !leading-4 !text-[#e8e6e3] hover:!bg-[#3a3a3a]"><MailOpen size={14}/>Mark as unread</button>
+                      <div className="my-1 border-t border-[#414141]"/>
+                      <button onClick={()=>{setArchived(p=>new Set(p).add(s.id));setMenuId(null)}} className="menu-row !h-7 !min-h-7 !gap-2 !rounded-md !px-2 !py-1 !text-[12px] !leading-4 !text-[#e8e6e3] hover:!bg-[#3a3a3a]"><Archive size={14}/>Archive</button>
                       <button onClick={()=>{deleteSession(s.id);setMenuId(null)}} className="menu-row text-[#b54d40]"><Trash2 size={14}/>Delete</button>
                     </div>,
                     document.body,
