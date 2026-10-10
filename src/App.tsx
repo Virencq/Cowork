@@ -101,27 +101,27 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
   }
 
   return (
-    <aside data-project-properties-panel style={{ width }} className="relative shrink-0 h-full border-l border-border bg-surface pt-11 overflow-auto">
+    <aside data-project-properties-panel style={{ width, backgroundColor: '#1b1b1b', borderColor: '#303030' }} className="relative shrink-0 h-full border-l pt-11 overflow-auto text-[#e8e6e3]">
       <ResizeHandle side="right" onDrag={(d) => onWidth(Math.max(280, Math.min(440, width + d)))} />
-      <div className="h-14 px-5 flex items-center justify-between border-b border-border">
+      <div className="h-14 px-4 flex items-center justify-between border-b border-[#303030]">
         <div>
-          <div className="text-[11px] uppercase tracking-[.12em] font-semibold text-text-tertiary">Project</div>
-          <div className="text-[14px] font-semibold text-text truncate max-w-[210px]">{project?.name || 'Workspace'}</div>
+          <div className="text-[12px] uppercase tracking-[.08em] font-semibold text-[#9b9b9b]">Project</div>
+          <div className="text-[15px] font-semibold text-[#f0f0f0] truncate max-w-[210px]">{project?.name || 'Workspace'}</div>
         </div>
-        <button onClick={onClose} className="h-8 w-8 rounded-md hover:bg-surface-hover grid place-items-center text-text-secondary" title="Close panel"><X size={16}/></button>
+        <button onClick={onClose} className="h-8 w-8 rounded-md hover:bg-[#303030] grid place-items-center text-[#b8b8b8]" title="Close panel"><X size={16}/></button>
       </div>
 
-      <section className="border-b border-border">
-        <div className="px-5 py-4 flex items-center justify-between">
+      <section className="border-b border-[#303030]">
+        <div className="px-4 py-3 flex items-center justify-between">
           <div>
-            <div className="text-[13px] font-semibold text-text">Instructions</div>
-            <div className="mt-1 text-[11px] text-text-tertiary">Instructions for this project</div>
+            <div className="text-[14px] font-semibold text-[#ededed]">Instructions</div>
+            <div className="mt-1 text-[12px] text-[#999999]">Instructions for this project</div>
           </div>
           <button onClick={() => { setDraftInstructions(project?.instructions || ''); setEditingInstructions(true) }} className="h-8 w-8 rounded-md hover:bg-surface-hover grid place-items-center text-text-secondary" title={project?.instructions ? 'Edit instructions' : 'Add instructions'}>
             {project?.instructions ? <Pencil size={15}/> : <Plus size={16}/>}
           </button>
         </div>
-        <div className="px-5 pb-5">
+        <div className="px-4 pb-4">
           {editingInstructions ? (
             <div>
               <textarea
@@ -129,15 +129,15 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
                 value={draftInstructions}
                 onChange={e => setDraftInstructions(e.target.value)}
                 placeholder="Tell JCode how to work in this project..."
-                className="w-full min-h-[130px] resize-y rounded-lg border border-border bg-surface-secondary p-3 text-[12px] leading-5 text-text outline-none focus:border-[#d97745]/60"
+                className="w-full min-h-[130px] resize-y rounded-lg border border-[#414141] bg-[#242424] p-3 text-[13px] leading-5 text-[#f0f0f0] outline-none focus:border-[#777777]"
               />
               <div className="mt-2 flex justify-end gap-2">
-                <button onClick={() => setEditingInstructions(false)} className="rounded-lg px-3 py-1.5 text-[11px] text-text-secondary hover:bg-surface-hover">Cancel</button>
-                <button onClick={saveInstructions} className="rounded-lg bg-accent px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-accent-light">Save</button>
+                <button onClick={() => setEditingInstructions(false)} className="rounded-lg px-3 py-1.5 text-[12px] text-[#b8b8b8] hover:bg-[#303030]">Cancel</button>
+                <button onClick={saveInstructions} className="rounded-lg bg-[#454545] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#555555]">Save</button>
               </div>
             </div>
           ) : (
-            <p className="text-[12px] leading-5 text-text-secondary whitespace-pre-wrap">
+            <p className="text-[13px] leading-[1.6] text-[#c7c7c7] whitespace-pre-wrap">
               {project?.instructions || 'Add instructions to guide JCode on goals, style, constraints, and project conventions.'}
             </p>
           )}
@@ -145,11 +145,11 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
       </section>
 
       <section className="border-b border-border">
-        <div className="px-5 py-4">
+        <div className="px-4 py-3">
           <div className="text-[13px] font-semibold text-text">Memory</div>
           <div className="mt-1 text-[11px] text-text-tertiary">Project memory</div>
         </div>
-        <div className="px-5 pb-5 text-[12px] leading-5 text-[#777068]">
+        <div className="px-4 pb-4 text-[13px] leading-5 text-[#b0b0b0]">
           JCode manages persistent memory for its sessions. Use /memory in chat to inspect or change memory behavior.
         </div>
       </section>
@@ -167,14 +167,14 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled }: {
                 useAppStore.getState().setWorkspaceDir(selected)
               }
             }}
-            className="h-7 w-7 rounded-md hover:bg-surface-hover grid place-items-center text-text-secondary"
+            className="h-7 w-7 rounded-md hover:bg-[#303030] grid place-items-center text-[#b8b8b8]"
             title="Add context folder"
           ><Plus size={15}/></button>
         </div>
         <div className="px-5 pb-5">
-          <div className="rounded-lg border border-border bg-surface-secondary px-3 py-2.5 flex items-center gap-2">
+          <div className="rounded-lg border border-[#383838] bg-[#242424] px-3 py-2.5 flex items-center gap-2">
             <FolderKanban size={15} className="text-text-tertiary"/>
-            <span className="text-[11px] truncate text-text-secondary">{project?.path || workspaceDir || 'No project folder selected'}</span>
+            <span className="text-[12px] truncate text-[#c7c7c7]">{project?.path || workspaceDir || 'No project folder selected'}</span>
           </div>
         </div>
       </section>
