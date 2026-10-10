@@ -31,26 +31,26 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
   }
 
   return (
-    <div className="h-full overflow-auto bg-white pt-11">
+    <div className="h-full overflow-auto bg-bg text-text pt-11">
       <div className="mx-auto max-w-[980px] px-10 py-9">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="font-serif text-[30px] tracking-[-0.03em] text-[#171411]">Projects</h1>
+          <h1 className="font-serif text-[30px] tracking-[-0.03em] text-text">Projects</h1>
           <div className="flex items-center gap-3">
-            <button onClick={() => setSearchOpen(v => !v)} className="h-9 w-9 grid place-items-center rounded-lg hover:bg-[#f3f1ee] text-[#554f49]" title="Search projects"><Search size={18}/></button>
-            <button onClick={() => setSort(v => v === 'updated' ? 'name' : 'updated')} className="h-9 w-9 grid place-items-center rounded-lg hover:bg-[#f3f1ee] text-[#554f49]" title="Sort projects"><ArrowUpDown size={17}/></button>
-            <button onClick={() => void createProject()} className="h-9 rounded-lg bg-[#171717] px-4 text-[13px] font-semibold text-white hover:bg-black inline-flex items-center gap-2"><Plus size={15}/> New project</button>
+            <button onClick={() => setSearchOpen(v => !v)} className="h-9 w-9 grid place-items-center rounded-lg hover:bg-surface-hover text-text-secondary" title="Search projects"><Search size={18}/></button>
+            <button onClick={() => setSort(v => v === 'updated' ? 'name' : 'updated')} className="h-9 w-9 grid place-items-center rounded-lg hover:bg-surface-hover text-text-secondary" title="Sort projects"><ArrowUpDown size={17}/></button>
+            <button onClick={() => void createProject()} className="h-9 rounded-lg bg-text px-4 text-[13px] font-semibold text-bg hover:opacity-90 inline-flex items-center gap-2"><Plus size={15}/> New project</button>
           </div>
         </div>
         {searchOpen && (
           <div className="mb-5 relative max-w-sm">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9b948d]"/>
-            <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Search projects" className="w-full h-9 rounded-lg border border-[#ded8d2] px-9 text-[12px] outline-none"/>
+            <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Search projects" className="w-full h-9 rounded-lg border border-border bg-surface text-text placeholder:text-text-tertiary px-9 text-[12px] outline-none"/>
           </div>
         )}
         {visible.length ? (
           <div className="grid grid-cols-2 gap-6">
             {visible.map(project => (
-              <div key={project.id} className="group relative h-[78px] rounded-xl border border-[#e2ded9] bg-white px-4 py-3 hover:border-[#cfc8c0] hover:shadow-sm transition">
+              <div key={project.id} className="group relative h-[78px] rounded-xl border border-border bg-surface px-4 py-3 hover:border-text-tertiary hover:bg-surface-secondary hover:shadow-sm transition">
                 <button
                   onClick={() => {
                     if (onOpenProject) onOpenProject(project)
@@ -61,11 +61,11 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                 />
                 <div className="relative z-10 pointer-events-none flex items-start justify-between">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-[14px] font-semibold text-[#191613]">
+                    <div className="flex items-center gap-2 text-[14px] font-semibold text-text">
                       <span className="truncate">{project.name}</span>
-                      {pinnedProjectIds.includes(project.id) && <Pin size={13} className="fill-current text-[#5e5852]"/>}
+                      {pinnedProjectIds.includes(project.id) && <Pin size={13} className="fill-current text-text-secondary"/>}
                     </div>
-                    <div className="mt-2 text-[11px] text-[#958e87]">{new Date(project.updatedAt).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</div>
+                    <div className="mt-2 text-[11px] text-text-tertiary">{new Date(project.updatedAt).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</div>
                   </div>
                 </div>
                 <button
@@ -73,7 +73,7 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                     e.stopPropagation()
                     toggleProjectPin(project.id)
                   }}
-                  className="absolute right-3 top-3 h-7 w-7 grid place-items-center rounded-md hover:bg-[#f2efec] text-[#7b746d]"
+                  className="absolute right-3 top-3 h-7 w-7 grid place-items-center rounded-md hover:bg-surface-hover text-text-secondary"
                   title={pinnedProjectIds.includes(project.id) ? 'Unpin project' : 'Pin project'}
                 >
                   <Pin size={15} className={pinnedProjectIds.includes(project.id) ? 'fill-current' : ''}/>
@@ -83,20 +83,20 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                     e.stopPropagation()
                     if (window.confirm('Remove project "' + project.name + '" from Cowork?')) removeProject(project.id)
                   }}
-                  className="absolute right-12 top-3 h-7 w-7 grid place-items-center rounded-md opacity-0 group-hover:opacity-100 hover:bg-[#f2efec] text-[#9b5b52]"
+                  className="absolute right-12 top-3 h-7 w-7 grid place-items-center rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-red-400"
                   title="Remove project"
                 >
                   <Trash2 size={14}/>
                 </button>
-                <div className="absolute right-4 bottom-3 flex items-center gap-1 text-[11px] text-[#6f6861] pointer-events-none"><FolderOpen size={13}/><span className="max-w-[160px] truncate">{project.name}</span></div>
+                <div className="absolute right-4 bottom-3 flex items-center gap-1 text-[11px] text-text-secondary pointer-events-none"><FolderOpen size={13}/><span className="max-w-[160px] truncate">{project.name}</span></div>
               </div>
             ))}
           </div>
         ) : (
           <div className="py-28 text-center">
-            <FolderKanban size={32} className="mx-auto text-[#c5beb7]"/>
-            <h2 className="mt-4 text-[18px] font-semibold text-[#28231f]">No projects yet</h2>
-            <p className="mt-1 text-[12px] text-[#8d857d]">Create a project by choosing a local folder.</p>
+            <FolderKanban size={32} className="mx-auto text-text-tertiary"/>
+            <h2 className="mt-4 text-[18px] font-semibold text-text">No projects yet</h2>
+            <p className="mt-1 text-[12px] text-text-secondary">Create a project by choosing a local folder.</p>
           </div>
         )}
       </div>
