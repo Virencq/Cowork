@@ -230,7 +230,21 @@ export const useAppStore = create<AppState>()(
         const id = generateId()
         const now = Date.now()
         const session: Session = enrichSession({ id, title: 'New Chat', model: '', createdAt: now, updatedAt: now })
-        set((state) => ({ sessions: [...state.sessions, session], codeActiveSessionId: id, codeSessionIds: state.codeSessionIds.includes(id) ? state.codeSessionIds : [...state.codeSessionIds, id], sessionMessages: { ...state.sessionMessages, [id]: [] } }))
+        set((state) => ({
+          sessions: [...state.sessions, session],
+          codeActiveSessionId: id,
+          codeSessionIds: state.codeSessionIds.includes(id) ? state.codeSessionIds : [...state.codeSessionIds, id],
+          sessionMessages: { ...state.sessionMessages, [id]: [] },
+        }))
+        // Keep the active project's durable session link synchronized even when
+        // ChatView has to create a session itself (e.g. after clearing history).
+        const workspace = useWorkspaceStore.getState()
+        const activeProject = workspace.codeProjects.find(
+          (project) => project.id === workspace.activeCodeProjectId,
+        )
+        if (activeProject && !activeProject.sessionId) {
+          workspace.updateCodeProject(activeProject.id, { sessionId: id })
+        }
         db.createSession(id, 'New Chat').catch(console.warn)
         return id
       },
