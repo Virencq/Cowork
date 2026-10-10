@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import {
   Archive, CalendarClock, ChevronRight, FolderKanban, FileCode2, Menu, Plus,
@@ -13,25 +13,35 @@ import { projectPathsEqual } from '../../utils/projectPaths'
 import type { Page } from '../../types/navigation'
 
 export function ResizeHandle({ side, onDrag }: { side: 'left' | 'right'; onDrag: (delta: number) => void }) {
-  const start = (e: React.PointerEvent) => {
+  const previousX = useRef<number | null>(null)
+  const activePointer = useRef<number | null>(null)
+
+  const start = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault()
+    e.stopPropagation()
+    activePointer.current = e.pointerId
+    previousX.current = e.clientX
     e.currentTarget.setPointerCapture(e.pointerId)
-    let previousX = e.clientX
-    const move = (ev: PointerEvent) => {
-      const delta = ev.clientX - previousX
-      previousX = ev.clientX
-      onDrag(side === 'left' ? delta : -delta)
-    }
-    const end = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', end)
-      window.removeEventListener('pointercancel', end)
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', end)
-    window.addEventListener('pointercancel', end)
   }
-  return <div onPointerDown={start} className={`absolute top-0 bottom-0 w-1 cursor-col-resize hover:bg-[#d97745]/25 z-30 ${side === 'left' ? 'right-0' : 'left-0'}`} />
+  const move = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (activePointer.current !== e.pointerId || previousX.current === null) return
+    const delta = e.clientX - previousX.current
+    previousX.current = e.clientX
+    if (delta !== 0) onDrag(side === 'left' ? delta : -delta)
+  }
+  const end = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (activePointer.current !== e.pointerId) return
+    activePointer.current = null
+    previousX.current = null
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+  }
+  return <div
+    onPointerDown={start}
+    onPointerMove={move}
+    onPointerUp={end}
+    onPointerCancel={end}
+    className={`absolute top-0 bottom-0 w-1 cursor-col-resize touch-none hover:bg-[#d97745]/25 z-30 ${side === 'left' ? 'right-0' : 'left-0'}`}
+  />
 }
 
 export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, onCode, onCowork }: {
@@ -135,23 +145,23 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
 
   return (
     <aside style={{ width }} className="relative shrink-0 h-full border-r border-border bg-surface pt-11 flex flex-col text-text">
-      <ResizeHandle side="left" onDrag={(d) => onWidth(Math.max(208, Math.min(340, width + d)))} />
+      <ResizeHandle side="left" onDrag={(d) => onWidth(Math.max(176, Math.min(300, width + d)))} />
 
-      <div className="px-2 pt-1.5 pb-2">
-        <div className="grid grid-cols-2 h-8 rounded-md bg-surface-secondary p-0.5">
-          <button onClick={onCowork} className={`rounded-md text-[12px] font-semibold transition-colors ${!codeMode ? 'bg-surface text-text shadow-sm' : 'text-text-secondary hover:text-text'}`}>☷&nbsp; Cowork</button>
-          <button onClick={onCode} className={`rounded-md text-[12px] font-medium transition-colors ${codeMode ? 'bg-surface text-text shadow-sm' : 'text-text-secondary hover:text-text'}`}>‹/&gt;&nbsp; Code</button>
+      <div className="px-1.5 pt-1 pb-1.5">
+        <div className="grid grid-cols-2 h-7 rounded-md bg-surface-secondary p-0.5">
+          <button onClick={onCowork} className={`rounded-md text-[11px] font-semibold transition-colors ${!codeMode ? 'bg-surface text-text shadow-sm' : 'text-text-secondary hover:text-text'}`}>☷&nbsp; Cowork</button>
+          <button onClick={onCode} className={`rounded-md text-[11px] font-medium transition-colors ${codeMode ? 'bg-surface text-text shadow-sm' : 'text-text-secondary hover:text-text'}`}>‹/&gt;&nbsp; Code</button>
         </div>
       </div>
 
-      <div className="px-2 pb-2">
-        <button onClick={codeMode ? () => void createCodeProject() : onNew} className="w-full h-9 rounded-md border border-border bg-surface-secondary hover:bg-surface-hover text-text text-[12px] font-medium flex items-center gap-2 px-3">
+      <div className="px-1.5 pb-1.5">
+        <button onClick={codeMode ? () => void createCodeProject() : onNew} className="w-full h-8 rounded-md border border-border bg-surface-secondary hover:bg-surface-hover text-text text-[11px] font-medium flex items-center gap-1.5 px-2.5">
           <Plus size={15}/> {codeMode ? 'Add codebase' : 'New'}
         </button>
       </div>
 
       {!codeMode ? (
-        <nav className="px-2 space-y-0.5">
+        <nav className="px-1.5 space-y-0">
           <button onClick={() => onPage('projects')} className={`home-nav-row ${page === 'projects' ? 'bg-[#f0eeeb] text-[#302c28]' : ''}`}>
             <span className="inline-flex items-center gap-2"><FolderKanban size={14}/>Projects</span>
           </button>
@@ -166,7 +176,7 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
           </button>
         </nav>
       ) : (
-        <div className="mt-2 px-2">
+        <div className="mt-1.5 px-1.5">
           <div className="mb-2 flex items-center justify-between px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-text-tertiary">
             <span>Code projects</span>
             <button onClick={() => void createCodeProject()} title="Add codebase folder" className="h-6 w-6 grid place-items-center rounded hover:bg-surface-hover text-text-secondary"><Plus size={14}/></button>
@@ -218,7 +228,7 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
           </button>
         </div>
   
-        <div className="mt-1.5 px-2">
+        <div className="mt-1 px-1.5">
           <div className="flex items-center justify-between">
             <button onClick={() => onPage('tasks')} className="home-nav-row flex-1 !px-0"><span>Tasks</span><ChevronRight size={14}/></button>
             <div className="flex items-center gap-1 text-[#8f8983]">
@@ -237,7 +247,7 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
           )}
         </div>
   
-        <div className="px-1.5 mt-1 overflow-auto min-h-0 pb-28">
+        <div className="px-1 mt-0.5 overflow-auto min-h-0 pb-28">
           {visibleTasks.map(s => (
             <div key={s.id} className="relative group">
               {renaming === s.id ? (
@@ -250,7 +260,7 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
               ) : (
                 <>
                   <button onClick={()=>{onPage('chat');if(codeMode){setCodeActiveSessionId(s.id);useAppStore.getState().markCodeSession(s.id);void useAppStore.getState().loadMessages(s.id)}else{setActiveSession(s.id)}setUnread(p=>{const n=new Set(p);n.delete(s.id);return n})}}
-                    className={`w-full text-left rounded-md px-2 py-1.5 text-[11px] truncate hover:bg-surface-hover ${activeSessionId===s.id?'bg-accent-subtle text-text':''}`}>
+                    className={`w-full text-left rounded-md px-2 py-1 text-[10px] truncate hover:bg-surface-hover ${activeSessionId===s.id?'bg-accent-subtle text-text':''}`}>
                     <span className="inline-flex items-center gap-1.5 max-w-full">
                       <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${unread.has(s.id)?'bg-[#3b82f6]':'border border-[#bcb6b0]'}`}/>
                       <span className="truncate">{s.title || 'Untitled task'}</span>
@@ -283,8 +293,8 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
   
         </>
       )}
-      <div className="mt-auto border-t border-border px-2 py-1.5">
-        <button onClick={onSettings} className="w-full flex items-center justify-between rounded-md px-1 py-2 text-left text-[11px] text-[#7d766f] hover:bg-surface-hover hover:text-[#302c28]" title="Open Settings">
+      <div className="mt-auto border-t border-border px-1.5 py-1">
+        <button onClick={onSettings} className="w-full flex items-center justify-between rounded-md px-1 py-1.5 text-left text-[10px] text-[#7d766f] hover:bg-surface-hover hover:text-[#302c28]" title="Open Settings">
           <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full bg-surface-tertiary grid place-items-center text-[9px]">✦</span>Workspace</span>
           <Settings size={13}/>
         </button>

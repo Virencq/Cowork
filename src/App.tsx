@@ -203,7 +203,7 @@ function App() {
   const activeSessionMessageCount = useAppStore((s) => activeSessionId ? (s.sessionMessages[activeSessionId]?.length ?? 0) : 0)
   const [page, setPage] = useState<Page>('chat')
   const [showSettings, setShowSettings] = useState(false)
-  const [leftWidth, setLeftWidth] = useState(() => Number(localStorage.getItem('cowork-left-width')) || 228)
+  const [leftWidth, setLeftWidth] = useState(() => Number(localStorage.getItem('cowork-left-width')) || 200)
   const [rightWidth, setRightWidth] = useState(() => Number(localStorage.getItem('cowork-right-width')) || 330)
   const [rightOpen, setRightOpen] = useState(() => localStorage.getItem('cowork-right-open') !== 'false')
   const [sidebarOpen, setSidebarOpen] = useState(() => localStorage.getItem('cowork-sidebar-open') !== 'false')
