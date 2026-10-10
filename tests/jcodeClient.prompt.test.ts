@@ -56,6 +56,32 @@ describe('JCode prompt event lifecycle', () => {
     expect(unlistenMock).toHaveBeenCalledTimes(1)
   })
 
+  it('forwards image attachments to the ACP bridge', async () => {
+    let handler: ((event: any) => void) | undefined
+    listenMock.mockImplementation(async (_name: string, callback: (event: any) => void) => {
+      handler = callback
+      return unlistenMock
+    })
+    invokeMock.mockImplementation(async () => {
+      handler?.({
+        payload: {
+          sessionId: 'acp-session',
+          event: { result: { stopReason: 'end_turn' } },
+        },
+      })
+    })
+
+    const { prompt } = await import('../src/utils/jcodeClient')
+    const images = [{ data: 'ZmFrZQ==', mimeType: 'image/png' }]
+    await prompt('acp-session', 'Describe this image', { images })
+
+    expect(invokeMock).toHaveBeenCalledWith('jcode_prompt', {
+      sessionId: 'acp-session',
+      prompt: 'Describe this image',
+      images,
+    })
+  })
+
   it('resolves with an error when the ACP session closes before completion', async () => {
     let handler: ((event: any) => void) | undefined
     listenMock.mockImplementation(async (_name: string, callback: (event: any) => void) => {
