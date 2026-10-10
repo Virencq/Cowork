@@ -5,6 +5,7 @@ import { useAppStore, useAgentStore, useWebSearchStore, usePetStore } from '../.
 import { useSkillStore } from '../../stores/skillStore'
 import { useMCPStore } from '../../stores/mcpStore'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
+import { projectPathsEqual } from '../../utils/projectPaths'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
 import { invoke } from '@tauri-apps/api/core'
 import type { ImageAttachment } from './ChatInput'
@@ -269,7 +270,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
       // Project instructions are persistent context, not just UI metadata.
       // Inject them into every JCode task launched from the matching workspace.
       const project = workspaceMode === 'code'
-        ? useWorkspaceStore.getState().codeProjects.find((p) => p.path && workspaceDir && p.path === workspaceDir)
+        ? useWorkspaceStore.getState().codeProjects.find((p) => p.path && workspaceDir && projectPathsEqual(p.path, workspaceDir))
         : useWorkspaceStore.getState().projects.find((p) => p.path && workspaceDir && p.path === workspaceDir)
       if (project?.instructions?.trim()) {
         blocks.push('## Project Instructions\\n' + project.instructions.trim())
