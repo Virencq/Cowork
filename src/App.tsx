@@ -317,7 +317,16 @@ function App() {
         <LeftNav width={sidebarOpen ? leftWidth : 0} onWidth={setLeftWidth} page={page} onPage={navigateToPage} onNew={newTask} onSettings={() => setShowSettings(true)} codeMode={codeMode} onCode={() => { setHasVisitedCode(true); setCodeMode(true); setPage('chat') }} onCowork={() => { setCodeMode(false); setPage('chat') }} />
         <main className="relative min-w-0 flex-1 pt-11 flex flex-col bg-bg">
           <Suspense fallback={<div className="min-h-0 flex-1 grid place-items-center text-[12px] text-text-tertiary">Loading workspace…</div>}>
-          <div className="min-h-0 flex-1 flex">
+          <div
+            className="min-h-0 flex-1 flex"
+            onClick={(event) => {
+              // Clicking the chat dismisses project properties; interactions inside
+              // the properties panel must remain usable and must not dismiss it.
+              if (page === "chat" && !codeMode && rightOpen && !(event.target as HTMLElement).closest("aside")) {
+                setRightOpen(false)
+              }
+            }}
+          >
             <div className="min-w-0 flex-1 flex flex-col">
               {page === 'chat' && (
                 <div className={codeMode ? 'hidden' : 'min-w-0 flex-1 flex flex-col'}>
