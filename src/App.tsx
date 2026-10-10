@@ -261,18 +261,42 @@ function App() {
     }, 1800)
 
     initDatabase().then(async () => {
-      const storedState = localStorage.getItem(APP_STORAGE_KEY)
-      if (storedState) {
-        try {
-          const parsed = JSON.parse(storedState)
-          const { sessions, sessionMessages } = parsed?.state || {}
-          if (sessions?.length > 0 && (await getAllSessions()).length === 0) {
-            for (const s of sessions) await dbCreateSession(s.id, s.title || '', s.model || '', s.piId || undefined)
-            if (sessionMessages) for (const [sessionId, msgs] of Object.entries(sessionMessages)) {
-              if (Array.isArray(msgs)) for (const msg of msgs as any[]) await dbSaveMessage(msg.info?.id || msg.id, sessionId, msg.info?.role || 'assistant', msg.parts || [], msg.info || {})
+      // SQLite is authoritative once it contains sessions. Avoid parsing the
+      // potentially large legacy Zustand payload on every normal app launch.
+      const existingSessions = await getAllSessions()
+      if (existingSessions.length === 0) {
+        const storedState = localStorage.getItem(APP_STORAGE_KEY)
+        if (storedState) {
+          try {
+            const parsed = JSON.parse(storedState)
+            const { sessions, sessionMessages } = parsed?.state || {}
+            if (sessions?.length > 0) {
+              let migratedRecords = 0
+              const yieldToUi = async () => {
+                migratedRecords += 1
+                if (migratedRecords % 20 === 0) {
+                  await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
+                }
+              }
+
+              for (const s of sessions) {
+                await dbCreateSession(s.id, s.title || '', s.model || '', s.piId || undefined)
+                await yieldToUi()
+              }
+              if (sessionMessages) {
+                for (const [sessionId, msgs] of Object.entries(sessionMessages)) {
+                  if (!Array.isArray(msgs)) continue
+                  for (const msg of msgs as any[]) {
+                    await dbSaveMessage(msg.info?.id || msg.id, sessionId, msg.info?.role || 'assistant', msg.parts || [], msg.info || {})
+                    await yieldToUi()
+                  }
+                }
+              }
             }
+          } catch (error) {
+            console.warn('[startup] Legacy session migration failed:', error)
           }
-        } catch {}
+        }
       }
       await useAppStore.getState().loadFromDb()
       // If the persisted active project pointed to a session that no longer
