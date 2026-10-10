@@ -250,9 +250,16 @@ function App() {
 
   useEffect(() => {
     if (!inTauri) return
-    void jcodeStatus().catch(() => {})
-    useMCPStore.getState().refreshAllServers().catch(() => {})
-    useSkillStore.getState().refreshSkills().catch(() => {})
+
+    // Let the first interactive frame settle before starting optional native
+    // discovery. MCP, skills and JCode status are useful background work, but
+    // must not compete with the first chat paint and SQLite hydration.
+    const backgroundStartup = window.setTimeout(() => {
+      void jcodeStatus().catch(() => {})
+      void useMCPStore.getState().refreshAllServers().catch(() => {})
+      void useSkillStore.getState().refreshSkills().catch(() => {})
+    }, 1800)
+
     initDatabase().then(async () => {
       const storedState = localStorage.getItem(APP_STORAGE_KEY)
       if (storedState) {
@@ -284,6 +291,8 @@ function App() {
       // SQLite is initialized, even if CodeWorkspace mounted before startup finished.
       if (state.codeActiveSessionId) await state.loadMessages(state.codeActiveSessionId)
     }).catch(console.warn)
+
+    return () => window.clearTimeout(backgroundStartup)
   }, [])
 
   const newTask = () => {
