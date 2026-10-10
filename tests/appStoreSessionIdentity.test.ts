@@ -157,4 +157,53 @@ describe('app store session identity', () => {
     expect(useAppStore.getState().codeSessionIds).not.toContain('code-session')
     expect(useAppStore.getState().sessionMessages).not.toHaveProperty('code-session')
   })
+
+  it('does not select a Code conversation when deleting the active Cowork conversation', async () => {
+    const { useAppStore } = await import('../src/stores/appStore')
+    useAppStore.setState({
+      sessions: [
+        { id: 'cowork-active', title: 'Cowork active', model: '', createdAt: 1, updatedAt: 1 },
+        { id: 'code-session', title: 'Code', model: '', createdAt: 1, updatedAt: 1 },
+        { id: 'cowork-next', title: 'Cowork next', model: '', createdAt: 1, updatedAt: 1 },
+      ],
+      activeSessionId: 'cowork-active',
+      codeActiveSessionId: 'code-session',
+      codeSessionIds: ['code-session'],
+    })
+
+    useAppStore.getState().deleteSession('cowork-active')
+
+    expect(useAppStore.getState().activeSessionId).toBe('cowork-next')
+    expect(useAppStore.getState().codeActiveSessionId).toBe('code-session')
+  })
+
+  it('reconciles persisted Code sessions against SQLite and clears orphaned project links', async () => {
+    getAllSessions.mockResolvedValueOnce([
+      { id: 'cowork-session', title: 'Cowork', model: '', created_at: 1, updated_at: 1 },
+      { id: 'valid-code-session', title: 'Code', model: '', created_at: 2, updated_at: 2 },
+    ])
+    const validProjectId = useWorkspaceStore.getState().addCodeProject({
+      name: 'Valid project',
+      path: 'C:\\work\\valid',
+      sessionId: 'valid-code-session',
+    })
+    const staleProjectId = useWorkspaceStore.getState().addCodeProject({
+      name: 'Stale project',
+      path: 'C:\\work\\stale',
+      sessionId: 'missing-session',
+    })
+    const { useAppStore } = await import('../src/stores/appStore')
+    useAppStore.setState({
+      codeActiveSessionId: 'valid-code-session',
+      codeSessionIds: ['valid-code-session', 'missing-session'],
+    })
+    useWorkspaceStore.getState().setActiveCodeProject(validProjectId)
+
+    await useAppStore.getState().loadFromDb()
+
+    const state = useAppStore.getState()
+    expect(state.codeSessionIds).toEqual(['valid-code-session'])
+    expect(state.codeActiveSessionId).toBe('valid-code-session')
+    expect(useWorkspaceStore.getState().codeProjects.find((project) => project.id === staleProjectId)?.sessionId).toBeUndefined()
+  })
 })
