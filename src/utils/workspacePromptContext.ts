@@ -80,17 +80,15 @@ export function buildWorkspacePromptContext(
     }
   }
 
-  const mcpToolDefs = connectedMCPTools
-    .map(({ serverName, toolName }) => {
-      const status = mcpStore.serverStatuses[serverName]
-      const tool = status?.status === 'connected'
-        ? status.tools?.find((item) => item.name === toolName)
-        : undefined
-      return tool
-        ? { serverName, name: tool.name, description: tool.description, inputSchema: tool.inputSchema }
-        : null
-    })
-    .filter((tool): tool is McpToolDef => tool !== null)
+  const mcpToolDefs: McpToolDef[] = connectedMCPTools.flatMap(({ serverName, toolName }) => {
+    const status = mcpStore.serverStatuses[serverName]
+    const tool = status?.status === 'connected'
+      ? status.tools?.find((item) => item.name === toolName)
+      : undefined
+    return tool
+      ? [{ serverName, name: tool.name, description: tool.description, inputSchema: tool.inputSchema }]
+      : []
+  })
 
   return {
     blocks,
