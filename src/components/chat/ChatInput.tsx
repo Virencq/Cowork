@@ -2,8 +2,8 @@ import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react
 import { useTranslation } from 'react-i18next'
 import { Send, Square, X, File, Folder, Paperclip, FolderPlus, Mic, LoaderCircle, AudioLines, PhoneCall } from 'lucide-react'
 import { TextField, TextArea } from "@heroui/react"
-import { open as openFileDialog } from '@tauri-apps/plugin-dialog'
 import { Button, Card } from '../ui'
+import { useChatAttachments } from './useChatAttachments'
 import { runtimeInfo } from '../../utils/jcodeClient'
 import {
   cancelDictation,
@@ -35,14 +35,6 @@ import {
   type VoiceConversationSnapshot,
 } from '../../utils/voiceConversation'
 
-interface FileAttachment {
-  path: string
-  name: string
-  data?: string       // base64 for images
-  mimeType?: string   // MIME type for images
-  isDir?: boolean
-}
-
 export interface ImageAttachment {
   data: string
   mimeType: string
@@ -69,10 +61,20 @@ export function ChatInput({
 }: ChatInputProps) {
   const { t, i18n } = useTranslation()
   const [input, setInput] = useState('')
-  const [attachments, setAttachments] = useState<FileAttachment[]>([])
+  const {
+    attachments,
+    isDragOver,
+    removeAttachment,
+    clearAttachments,
+    pickFolder,
+    pickFiles,
+    handleDrop,
+    handleDragOver,
+    handleDragLeave,
+    handlePaste,
+  } = useChatAttachments({ disabled, isStreaming })
   const [showAddMenu, setShowAddMenu] = useState(false)
   const addMenuRef = useRef<HTMLDivElement>(null)
-  const [isDragOver, setIsDragOver] = useState(false)
   const [dictation, setDictation] = useState<VoiceInputStatus | null>(null)
   const [dictationRuntimeAvailable, setDictationRuntimeAvailable] = useState<boolean | null>(null)
   const [dictationBusy, setDictationBusy] = useState(false)
@@ -97,20 +99,6 @@ export function ChatInput({
   const playbackStartedAtRef = useRef(0)
   const acceptVoiceTurnAfterRef = useRef(0)
 
-  const removeAttachment = useCallback((index: number) => {
-    setAttachments((prev) => {
-      const removed = prev[index]
-      // Revoke object URLs for pasted images to avoid memory leaks
-      if (removed?.path?.startsWith('blob:')) {
-        URL.revokeObjectURL(removed.path)
-      }
-      return prev.filter((_, i) => i !== index)
-    })
-  }, [])
-
-  // File attachments are now added via drag-and-drop only
-  // (clicking files opens the preview panel instead)
-
   useEffect(() => {
     if (!showAddMenu) return
     const close = (event: MouseEvent) => {
@@ -126,98 +114,6 @@ export function ChatInput({
       document.removeEventListener('keydown', onKey)
     }
   }, [showAddMenu])
-
-  const pickFolder = useCallback(async () => {
-    if (!isTauriRuntime() || disabled || isStreaming) return
-    try {
-      const selected = await openFileDialog({
-        directory: true,
-        multiple: false,
-        title: 'Choose project folder',
-      })
-      if (typeof selected !== 'string' || !selected) return
-      const name = selected.split(/[\\/]/).filter(Boolean).pop() || selected
-      setAttachments((prev) => {
-        if (prev.some((attachment) => attachment.path === selected)) return prev
-        return [...prev, { path: selected, name, isDir: true }]
-      })
-    } catch (error) {
-      console.warn('[ChatInput] folder picker failed:', error)
-    }
-  }, [disabled, isStreaming])
-
-  const pickFiles = useCallback(async () => {
-    if (!isTauriRuntime() || disabled || isStreaming) return
-    try {
-      const selected = await openFileDialog({
-        multiple: true,
-        directory: false,
-        title: 'Attach files',
-      })
-      const paths = Array.isArray(selected) ? selected : selected ? [selected] : []
-      if (paths.length === 0) return
-      setAttachments((prev) => {
-        const existing = new Set(prev.map((a) => a.path))
-        return [
-          ...prev,
-          ...paths
-            .filter((path) => !existing.has(path))
-            .map((path) => ({
-              path,
-              name: path.split(/[\\/]/).filter(Boolean).pop() || path,
-            })),
-        ]
-      })
-    } catch (error) {
-      console.warn('[ChatInput] file picker failed:', error)
-    }
-  }, [disabled, isStreaming])
-
-  const handleDrop = useCallback(async (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragOver(false)
-
-    const newAttachments: FileAttachment[] = []
-
-    // Internal file drag (from FileTree) — path is in dataTransfer
-    const fileData = e.dataTransfer.getData('application/x-s-loop-file')
-    if (fileData) {
-      try {
-        const { path, name } = JSON.parse(fileData)
-        newAttachments.push({ path, name })
-      } catch {
-        // ignore malformed data
-      }
-    } else {
-      // OS file drop — only filename available, no real path
-      const files = Array.from(e.dataTransfer.files)
-      for (const file of files) {
-        // Skip .zip files — they're handled by SkillDropZone
-        if (file.name.endsWith('.zip') || file.type === 'application/zip' || file.type === 'application/x-zip-compressed') continue
-        newAttachments.push({ path: file.name, name: file.name })
-      }
-    }
-
-    if (newAttachments.length > 0) {
-      setAttachments((prev) => {
-        const existing = new Set(prev.map((a) => a.path))
-        const fresh = newAttachments.filter((a) => !existing.has(a.path))
-        return [...prev, ...fresh]
-      })
-    }
-  }, [])
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'copy'
-    setIsDragOver(true)
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    if (e.currentTarget.contains(e.relatedTarget as Node)) return
-    setIsDragOver(false)
-  }, [])
 
   const submitWithAttachments = useCallback(() => {
     if (dictation?.recording || dictationBusy || realtimeMode || realtimeBusy) return
@@ -238,17 +134,11 @@ export function ChatInput({
     const userText = input.trim()
     if (userText) parts.push(userText)
 
-    // Revoke all blob URLs before submitting
-    for (const att of attachments) {
-      if (att.path?.startsWith('blob:')) {
-        URL.revokeObjectURL(att.path)
-      }
-    }
+    clearAttachments()
 
     onSubmit(parts.join('\n'), images.length > 0 ? images : undefined)
     setInput('')
-    setAttachments([])
-  }, [input, attachments, onSubmit, dictation?.recording, dictationBusy, realtimeMode, realtimeBusy])
+  }, [input, attachments, onSubmit, clearAttachments, dictation?.recording, dictationBusy, realtimeMode, realtimeBusy])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -276,37 +166,6 @@ export function ChatInput({
 
   const handleCompositionEnd = useCallback(() => {
     composingRef.current = false
-  }, [])
-
-  // ── Paste support (images / screenshots from clipboard) ──
-  const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
-    const items = e.clipboardData?.items
-    if (!items) return
-
-    const newAttachments: FileAttachment[] = []
-
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i]
-      if (item.kind === 'file' && item.type.startsWith('image/')) {
-        const file = item.getAsFile()
-        if (file) {
-          const ext = item.type.split('/')[1] || 'png'
-          const name = file.name || `paste-${Date.now()}.${ext}`
-          const mimeType = item.type
-          // Create a local object URL for preview (will be revoked on submit)
-          const localUrl = URL.createObjectURL(file)
-          // Read blob to base64 for submission
-          const buffer = await file.arrayBuffer()
-          const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
-          newAttachments.push({ path: localUrl, name, data: base64, mimeType })
-        }
-      }
-    }
-
-    if (newAttachments.length > 0) {
-      e.preventDefault()
-      setAttachments((prev) => [...prev, ...newAttachments])
-    }
   }, [])
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
