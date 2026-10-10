@@ -1,15 +1,17 @@
-import { useEffect, useCallback } from 'react'
+import { lazy, Suspense, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, FileText, FileCode, FileImage, FileSpreadsheet, Loader2 } from 'lucide-react'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
-import { TextPreview } from './TextPreview'
-import { MarkdownPreview } from './MarkdownPreview'
-import { ImagePreview } from './ImagePreview'
-import { ExcelPreview } from './ExcelPreview'
-import { PdfPreview } from './PdfPreview'
-import { DocxPreview } from './DocxPreview'
-import { PptxPreview } from './PptxPreview'
-import { BinaryPreview } from './BinaryPreview'
+// Preview implementations are split into separate chunks so PDF, Office and
+// image parsers are downloaded only when the corresponding file type is opened.
+const TextPreview = lazy(() => import('./TextPreview').then((module) => ({ default: module.TextPreview })))
+const MarkdownPreview = lazy(() => import('./MarkdownPreview').then((module) => ({ default: module.MarkdownPreview })))
+const ImagePreview = lazy(() => import('./ImagePreview').then((module) => ({ default: module.ImagePreview })))
+const ExcelPreview = lazy(() => import('./ExcelPreview').then((module) => ({ default: module.ExcelPreview })))
+const PdfPreview = lazy(() => import('./PdfPreview').then((module) => ({ default: module.PdfPreview })))
+const DocxPreview = lazy(() => import('./DocxPreview').then((module) => ({ default: module.DocxPreview })))
+const PptxPreview = lazy(() => import('./PptxPreview').then((module) => ({ default: module.PptxPreview })))
+const BinaryPreview = lazy(() => import('./BinaryPreview').then((module) => ({ default: module.BinaryPreview })))
 import type { FileCategory } from '../../types/filePreview'
 
 function getCategoryIcon(category: FileCategory) {
@@ -124,7 +126,13 @@ export function FilePreviewPanel() {
             </div>
           </div>
         )}
-        <PreviewContent category={preview.category} filePath={preview.filePath} />
+        <Suspense fallback={
+          <div className="flex h-full items-center justify-center text-[12px] text-text-tertiary">
+            {t('filePreview.loading')}
+          </div>
+        }>
+          <PreviewContent category={preview.category} filePath={preview.filePath} />
+        </Suspense>
       </div>
     </div>
   )
