@@ -341,7 +341,7 @@ pub fn jcode_sync_mcp_config(servers: Value) -> Result<Value, String> {
     std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create JCode config directory: {e}"))?;
     let path = dir.join("mcp.json");
 
-    let mut mcp_servers = serde_json::Map::new();
+    let mut desired = serde_json::Map::new();
     if let Some(items) = servers.as_array() {
         for server in items {
             if server.get("type").and_then(Value::as_str).unwrap_or("stdio") != "stdio" {
@@ -356,48 +356,89 @@ pub fn jcode_sync_mcp_config(servers: Value) -> Result<Value, String> {
             entry.insert("command".into(), Value::String(command.to_string()));
             if let Some(args) = server.get("args") { entry.insert("args".into(), args.clone()); }
             if let Some(env) = server.get("env") { entry.insert("env".into(), env.clone()); }
-            mcp_servers.insert(name.to_string(), Value::Object(entry));
+            desired.insert(name.to_string(), Value::Object(entry));
         }
     }
 
-    // Keep track of only the servers managed by Cowork. This lets us remove a
-    // server when the user disables/deletes it without touching MCP entries
-    // configured independently in JCode.
     let managed_path = dir.join("cowork-mcp-managed.json");
-    let previously_managed: Vec<String> = std::fs::read_to_string(&managed_path)
-        .ok()
-        .and_then(|raw| serde_json::from_str::<Vec<String>>(&raw).ok())
+    // New manifests store the exact config Cowork last wrote. Older versions
+    // stored only names; those names cannot prove that a user has not edited
+    // an entry, so legacy entries are deliberately treated conservatively.
+    let previous_manifest: Value = match std::fs::read_to_string(&managed_path) {
+        Ok(raw) => serde_json::from_str(&raw)
+            .map_err(|e| format!("Invalid Cowork MCP ownership manifest at {}: {e}", managed_path.display()))?,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => json!({}),
+        Err(e) => return Err(format!("Failed to read {}: {e}", managed_path.display())),
+    };
+    let previous_values = previous_manifest.as_object();
+    let legacy_names: Vec<String> = previous_manifest.as_array()
+        .map(|items| items.iter().filter_map(Value::as_str).map(str::to_owned).collect())
         .unwrap_or_default();
 
+    // Fail closed: never replace a malformed existing file with an empty
+    // object. That would silently erase the user's JCode MCP configuration.
     let mut config = if path.exists() {
-        std::fs::read_to_string(&path)
-            .ok()
-            .and_then(|raw| serde_json::from_str::<Value>(&raw).ok())
-            .unwrap_or_else(|| json!({}))
+        let raw = std::fs::read_to_string(&path)
+            .map_err(|e| format!("Failed to read {}: {e}", path.display()))?;
+        serde_json::from_str::<Value>(&raw)
+            .map_err(|e| format!("Invalid JSON in {}; refusing to overwrite it: {e}", path.display()))?
     } else {
         json!({})
     };
-    if !config.is_object() { config = json!({}); }
+    if !config.is_object() {
+        return Err(format!("Invalid JCode MCP config at {}: root must be a JSON object; refusing to overwrite it.", path.display()));
+    }
 
-    let server_count = {
-        let root = config.as_object_mut().ok_or("Invalid JCode MCP config.")?;
-        let existing = root.entry("mcpServers").or_insert_with(|| json!({}));
-        let map = existing.as_object_mut().ok_or("JCode mcpServers must be an object.")?;
+    let root = config.as_object_mut().ok_or("Invalid JCode MCP config.")?;
+    if root.get("mcpServers").is_some_and(|v| !v.is_object()) {
+        return Err(format!("Invalid JCode MCP config at {}: mcpServers must be an object; refusing to overwrite it.", path.display()));
+    }
+    let existing = root.entry("mcpServers").or_insert_with(|| json!({}));
+    let map = existing.as_object_mut().ok_or("JCode mcpServers must be an object.")?;
 
-        for name in previously_managed {
-            map.remove(&name);
+    // Remove stale entries only when the on-disk value still exactly matches
+    // the snapshot Cowork recorded. If a user edited an entry after sync, it
+    // is no longer safe for Cowork to claim or delete it.
+    if let Some(previous) = previous_values {
+        for (name, last_written) in previous {
+            if !desired.contains_key(name) && map.get(name) == Some(last_written) {
+                map.remove(name);
+            }
         }
-        for (name, server) in &mcp_servers {
-            map.insert(name.clone(), server.clone());
-        }
-        map.len()
-    };
+    }
 
-    let managed_names: Vec<String> = mcp_servers.keys().cloned().collect();
+    // Never overwrite a same-name JCode entry unless the manifest proves it
+    // is the unchanged entry Cowork previously managed. This avoids losing
+    // independently configured MCP servers through name collisions.
+    for (name, new_value) in &desired {
+        if let Some(current) = map.get(name) {
+            let owned_and_unchanged = previous_values
+                .and_then(|previous| previous.get(name))
+                .is_some_and(|last_written| last_written == current);
+            if !owned_and_unchanged {
+                let legacy_claim = legacy_names.iter().any(|managed_name| managed_name == name);
+                let detail = if legacy_claim {
+                    "a legacy ownership record has no value snapshot"
+                } else {
+                    "the entry is not owned by Cowork"
+                };
+                return Err(format!(
+                    "MCP server name conflict for '{name}' in {} ({detail}). Rename the Cowork server or resolve the conflict manually; the existing JCode configuration was left unchanged.",
+                    path.display()
+                ));
+            }
+        }
+        map.insert(name.clone(), new_value.clone());
+    }
+
+    let server_count = map.len();
+    // Persist the ownership snapshot before the config. If the second write
+    // fails, the next run can safely reconcile by comparing exact values.
+    let manifest = Value::Object(desired.clone());
     std::fs::write(
         &managed_path,
-        serde_json::to_vec_pretty(&managed_names).map_err(|e| e.to_string())?,
-    ).map_err(|e| format!("Failed to write Cowork MCP state: {e}"))?;
+        serde_json::to_vec_pretty(&manifest).map_err(|e| e.to_string())?,
+    ).map_err(|e| format!("Failed to write Cowork MCP ownership manifest: {e}"))?;
 
     let content = serde_json::to_vec_pretty(&config).map_err(|e| e.to_string())?;
     std::fs::write(&path, content)
