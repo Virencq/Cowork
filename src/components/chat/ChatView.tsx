@@ -245,7 +245,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
         .filter((s): s is NonNullable<typeof s> => s !== undefined && s.enabled)
       const agentSkillsBlock = formatAgentSkillsBlock(enabledSkills)
 
-      const { blocks, mcpToolDefs, sseMcpTools } = buildWorkspacePromptContext(
+      const { blocks, mcpToolDefs, allowedSseMcpToolNames } = buildWorkspacePromptContext(
         workspaceMode,
         workspaceDir,
         activeAgent,
@@ -280,9 +280,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
         workspaceRoots: activeAgent?.workspaceRoots || [],
         webSearchConfig: useWebSearchStore.getState().getActiveConfig(),
         tools: mcpToolDefs,
-        allowedSseMcpToolNames: activeAgent
-          ? sseMcpTools.map(({ serverName, toolName }) => remoteMcpToolName(serverName, toolName))
-          : undefined,
+        allowedSseMcpToolNames: activeAgent ? allowedSseMcpToolNames : undefined,
         permissionMode: activeAgent?.permissionMode,
         permissionRules: activeAgent?.permissionRules,
         images,
