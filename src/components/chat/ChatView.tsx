@@ -3,9 +3,6 @@ import { useShallow } from 'zustand/react/shallow'
 import { useTranslation } from 'react-i18next'
 import { useAppStore, useAgentStore, useWebSearchStore, usePetStore } from '../../stores'
 import { useSkillStore } from '../../stores/skillStore'
-import { useMCPStore } from '../../stores/mcpStore'
-import { useWorkspaceStore } from '../../stores/workspaceStore'
-import { projectPathsEqual } from '../../utils/projectPaths'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
 import { invoke } from '@tauri-apps/api/core'
 import type { ImageAttachment } from './ChatInput'
@@ -23,12 +20,12 @@ import {
 import type { KiloMessage } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { assembleAgentSystemPrompt } from '../../utils/agentPrompt'
+import { buildWorkspacePromptContext } from '../../utils/workspacePromptContext'
 import {
   assembleAgentRuntimePrompt,
   formatAgentSkillsBlock,
   resolveAgentSkillNames,
 } from '../../utils/agentRuntime'
-import { isAgentMcpToolAllowed, remoteMcpToolName } from '../../utils/agentMcpRuntime'
 
 const EMPTY_MESSAGES: never[] = []
 const EMPTY_STREAMING = null
@@ -248,80 +245,12 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
         .filter((s): s is NonNullable<typeof s> => s !== undefined && s.enabled)
       const agentSkillsBlock = formatAgentSkillsBlock(enabledSkills)
 
-      const mcpStore = useMCPStore.getState()
-      const mcpServers = mcpStore.servers
-      const connectedMCPTools: { serverName: string; toolName: string }[] = []
-      for (const [name, status] of Object.entries(mcpStore.serverStatuses)) {
-        if (status.status === 'connected' && status.tools) {
-          // Skip SSE-type MCP servers — they're handled directly by pi-server via getAllSseMcpTools().
-          const server = mcpServers.find(s => s.name === name)
-          if (server && (server.type === 'sse' || server.type === 'http')) continue
-          for (const tool of status.tools) {
-            if (isAgentMcpToolAllowed(activeAgent, name, tool.name)) {
-              connectedMCPTools.push({ serverName: name, toolName: tool.name })
-            }
-          }
-        }
-      }
-
+      const { blocks, mcpToolDefs, sseMcpTools } = buildWorkspacePromptContext(
+        workspaceMode,
+        workspaceDir,
+        activeAgent,
+      )
       let enrichedContent = content
-      const blocks: string[] = []
-
-      // Project instructions are persistent context, not just UI metadata.
-      // Inject them into every JCode task launched from the matching workspace.
-      const project = workspaceMode === 'code'
-        ? useWorkspaceStore.getState().codeProjects.find((p) => p.path && workspaceDir && projectPathsEqual(p.path, workspaceDir))
-        : useWorkspaceStore.getState().projects.find((p) => p.path && workspaceDir && p.path === workspaceDir)
-      if (project?.instructions?.trim()) {
-        blocks.push('## Project Instructions\\n' + project.instructions.trim())
-      }
-
-      if (connectedMCPTools.length > 0) {
-        const listings = connectedMCPTools.map(({ serverName, toolName }) => {
-          const st = mcpStore.serverStatuses[serverName]
-          const tool = st?.status === 'connected' ? st.tools?.find(t => t.name === toolName) : undefined
-          return tool ? `- \`${serverName}/${tool.name}\`: ${tool.description || 'No description'}` : `- \`${serverName}/${toolName}\``
-        })
-        blocks.push('## Available MCP Tools\nThe following MCP tools are available for use:\n' + listings.join('\n'))
-      }
-
-      // SSE/HTTP MCP tools are handled directly by pi-server (injected into getTools()).
-      // List them here so the agent sees the correct tool names (prefixed with mcp_sse_).
-      const sseMcpTools: { serverName: string; toolName: string }[] = []
-      for (const [name, status] of Object.entries(mcpStore.serverStatuses)) {
-        if (status.status === 'connected' && status.tools) {
-          const server = mcpServers.find(s => s.name === name)
-          if (server && (server.type === 'sse' || server.type === 'http')) {
-            for (const tool of status.tools) {
-              if (isAgentMcpToolAllowed(activeAgent, name, tool.name)) {
-                sseMcpTools.push({ serverName: name, toolName: tool.name })
-              }
-            }
-          }
-        }
-      }
-      if (sseMcpTools.length > 0) {
-        const listings = sseMcpTools.map(({ serverName, toolName }) => {
-          const tool = mcpStore.serverStatuses[serverName]?.tools?.find(t => t.name === toolName)
-          const sseName = remoteMcpToolName(serverName, toolName)
-          return tool
-            ? `- \`${sseName}\` (from ${serverName}/${toolName}): ${tool.description || 'No description'}`
-            : `- \`${sseName}\` (from ${serverName}/${toolName})`
-        })
-        if (connectedMCPTools.length === 0) {
-          blocks.push('## Available MCP Tools\nThe following MCP tools are available for use:\n' + listings.join('\n'))
-        } else {
-          blocks.push('### SSE MCP Tools\nAdditional tools from remote MCP servers:\n' + listings.join('\n'))
-        }
-      }
-
-      const mcpToolDefs: JCode.McpToolDef[] = connectedMCPTools
-        .map(({ serverName, toolName }) => {
-          const st = mcpStore.serverStatuses[serverName]
-          const tool = st?.status === 'connected' ? st.tools?.find(t => t.name === toolName) : undefined
-          return tool ? { serverName, name: tool.name, description: tool.description, inputSchema: tool.inputSchema } : null
-        })
-        .filter(Boolean) as JCode.McpToolDef[]
 
       if (blocks.length > 0) {
         const header = activeAgent ? `[Agent: ${activeAgent.name}]` : '[Global Context]'
