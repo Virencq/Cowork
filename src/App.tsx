@@ -182,7 +182,7 @@ function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeMode, on
   }
 
   const deleteCodeProject = (project: (typeof codeProjects)[number]) => {
-    if (!window.confirm('Remove "' + project.name + '" from Code projects? The codebase folder and its files will not be deleted.')) return
+    if (!window.confirm('Delete "' + project.name + '" from Code projects and delete its chat history? The codebase folder and its files will remain untouched.')) return
     if (project.sessionId) useAppStore.getState().deleteSession(project.sessionId)
     const next = codeProjects.find((item) => item.id !== project.id)
     removeCodeProject(project.id)
