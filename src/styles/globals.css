@@ -41,8 +41,8 @@
   --radius-xl: 10px;
   --radius-2xl: 14px;
 
-  --font-sans: 'Inter Variable', 'Inter', 'Microsoft YaHei UI', 'PingFang SC', 'Segoe UI', system-ui, sans-serif;
-  --font-display: 'Inter Variable', 'Inter', 'Microsoft YaHei UI', 'PingFang SC', 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Inter', 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  --font-display: 'Inter', 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
   --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -67,7 +67,7 @@
   body {
     font-family: var(--font-sans);
     font-size: 14px;
-    line-height: 1.45;
+    line-height: 1.5;
     background-color: var(--color-bg);
     color: var(--color-text);
     -webkit-font-smoothing: antialiased;
@@ -573,3 +573,186 @@ textarea::placeholder { color: #817b73; opacity: 1; }
 .dark input::placeholder,
 .dark textarea::placeholder { color: #969088; }
 
+
+
+/* ── Professional UI polish: typography, density, contrast and surfaces ── */
+:root {
+  --ui-font-size: 14px;
+  --ui-font-size-small: 12px;
+  --ui-font-size-label: 12px;
+  --ui-font-size-heading: 15px;
+  --ui-control-height: 34px;
+  --ui-radius: 8px;
+  --ui-space-1: 4px;
+  --ui-space-2: 8px;
+  --ui-space-3: 12px;
+  --ui-space-4: 16px;
+}
+
+body {
+  font-size: var(--ui-font-size);
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+button, input, textarea, select {
+  font-family: var(--font-sans);
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 28%, transparent);
+  color: var(--color-text);
+}
+
+/* Thin, quiet scrollbars keep dense workspaces from feeling bulky. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-hover) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border-hover);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Consistent, compact controls without shrinking touch targets excessively. */
+.control-field {
+  min-height: var(--ui-control-height);
+  border-radius: var(--ui-radius);
+}
+.btn-primary, .btn-secondary {
+  min-height: 34px;
+  padding: 0 13px;
+  border-radius: var(--ui-radius);
+  font-size: 13px;
+  font-weight: 600;
+}
+.btn-ghost, .btn-ghost-danger {
+  min-height: 30px;
+  padding: 0 9px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.settings-section { padding: 18px 0; }
+.section-eyebrow {
+  font-size: 11px;
+  letter-spacing: .075em;
+}
+
+/* Message typography: comfortable reading, with tighter vertical rhythm. */
+.chat-scroll-area {
+  font-size: 16px;
+  line-height: 1.65;
+}
+.chat-scroll-area .prose,
+.chat-scroll-area [class~="prose"] {
+  max-width: none;
+  font-size: 16px;
+  line-height: 1.68;
+  letter-spacing: -0.012em;
+}
+.chat-scroll-area .prose p,
+.chat-scroll-area [class~="prose"] p {
+  margin-top: .55em;
+  margin-bottom: .75em;
+}
+.chat-scroll-area .prose :is(h1, h2, h3, h4),
+.chat-scroll-area [class~="prose"] :is(h1, h2, h3, h4) {
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+  margin-top: 1.15em;
+  margin-bottom: .45em;
+}
+.chat-scroll-area .prose :is(ul, ol),
+.chat-scroll-area [class~="prose"] :is(ul, ol) {
+  padding-left: 1.35em;
+  margin: .5em 0 .8em;
+}
+.chat-scroll-area .prose :is(pre, blockquote),
+.chat-scroll-area [class~="prose"] :is(pre, blockquote) {
+  border-radius: 9px;
+}
+.chat-scroll-area .prose :not(pre) > code,
+.chat-scroll-area [class~="prose"] :not(pre) > code {
+  padding: .12em .35em;
+  border-radius: 4px;
+}
+
+/* Navigation and utility labels have a clear, consistent hierarchy. */
+.cowork-nav-item, .home-nav-row {
+  font-size: 13px;
+  line-height: 1.35;
+  border-radius: 7px;
+}
+.menu-row {
+  min-height: 32px;
+  font-size: 12px;
+  border-radius: 7px;
+}
+.title-control { width: 44px; font-size: 15px; }
+.title-icon { transition: background-color .14s ease, color .14s ease; }
+.home-nav-row svg, .cowork-nav-item svg { flex-shrink: 0; }
+
+/* Keep the charcoal theme restrained and consistent across every shell surface. */
+.dark {
+  color-scheme: dark;
+  --color-bg: #141414;
+  --color-surface: #1f1f1f;
+  --color-surface-secondary: #252525;
+  --color-surface-tertiary: #333333;
+  --color-surface-hover: #333333;
+  --color-surface-elevated: #252525;
+  --color-text: #f2f2f2;
+  --color-text-secondary: #c4c4c4;
+  --color-text-tertiary: #969696;
+  --color-border: #333333;
+  --color-border-light: #292929;
+  --color-border-hover: #454545;
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, .22), 0 10px 28px rgba(0, 0, 0, .14);
+}
+.dark .title-control { color: #a1a1a1; }
+.dark .title-control:hover { background: #333333; color: #f5f5f5; }
+.dark .cowork-nav-item { color: #b3b3b3; }
+.dark .cowork-nav-item:hover,
+.dark .cowork-nav-item.active { background: #333333; color: #f5f5f5; }
+.dark .menu-row { color: #c4c4c4; }
+.dark .menu-row:hover { background: #333333; color: #ffffff; }
+.dark .home-nav-row:hover { background: #292929; color: #f2f2f2; }
+.dark .home-nav-row[class*="bg-[#f0eeeb]"] {
+  background: #333333;
+  color: #f2f2f2;
+}
+.dark .workbench-panel { background: #1f1f1f; border-color: #333333; }
+.dark .control-field { background: #202020; border-color: #383838; }
+.dark .control-field:focus-within {
+  border-color: color-mix(in srgb, var(--color-accent) 68%, #383838);
+  box-shadow: 0 0 0 3px rgba(217, 119, 87, .10);
+}
+.dark .btn-secondary {
+  background: #252525;
+  border-color: #383838;
+  color: #d0d0d0;
+}
+.dark .btn-secondary:hover { background: #333333; color: #ffffff; border-color: #494949; }
+.dark .btn-ghost, .dark .btn-ghost-danger { color: #a3a3a3; }
+.dark .btn-ghost:hover { background: #2a2a2a; color: #f2f2f2; }
+
+/* Avoid animation and decorative shadows becoming visual noise. */
+@media (prefers-reduced-motion: no-preference) {
+  button, [role="button"], a {
+    transition-duration: .14s;
+  }
+}
