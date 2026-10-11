@@ -44,18 +44,18 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
 
   if (isUser) {
     return (
-      <div className="flex justify-end py-2.5 group animate-message-appear">
+      <div className="flex justify-end py-2 group animate-message-appear">
         <div className="flex flex-row-reverse items-start gap-2.5 max-w-[85%] lg:max-w-[70%]">
           {/* Avatar */}
           <div className="shrink-0 mt-1">
-            <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center text-white shadow-sm">
-              <User size={16} strokeWidth={2.5} />
+            <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center text-white shadow-sm">
+              <User size={14} strokeWidth={2.5} />
             </div>
           </div>
 
           <div className="flex flex-col items-end gap-2 min-w-0">
             <div
-              className="bg-accent text-accent-foreground px-4 py-2.5 text-[14px] leading-[1.65] wrap-break-word rounded-2xl rounded-tr-md shadow-sm font-normal"
+              className="bg-accent text-accent-foreground px-3.5 py-2 text-[14px] leading-[1.65] wrap-break-word rounded-2xl rounded-tr-md shadow-sm font-normal"
             >
               {message.parts.map((part, idx) => {
                 if (part.type !== 'text') return null
@@ -91,7 +91,7 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
   }
 
   return (
-    <div className="flex justify-start py-4 group animate-message-appear">
+    <div className="flex justify-start py-3 group animate-message-appear">
       <div
         className={`flex gap-3 ${
           isDocument
@@ -102,8 +102,8 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
         {/* Avatar */}
         <div className="shrink-0 mt-1">
           <div className="relative group/bot">
-            <div className="relative w-8 h-8 rounded-xl bg-surface border border-border flex items-center justify-center text-accent">
-              <Cpu size={16} strokeWidth={2} />
+            <div className="relative w-7 h-7 rounded-lg bg-surface border border-border flex items-center justify-center text-accent">
+              <Cpu size={14} strokeWidth={2} />
             </div>
           </div>
         </div>
