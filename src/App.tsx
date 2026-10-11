@@ -250,22 +250,53 @@ function App() {
 
   useEffect(() => {
     if (!inTauri) return
-    void jcodeStatus().catch(() => {})
-    useMCPStore.getState().refreshAllServers().catch(() => {})
-    useSkillStore.getState().refreshSkills().catch(() => {})
+
+    // Let the first interactive frame settle before starting optional native
+    // discovery. MCP, skills and JCode status are useful background work, but
+    // must not compete with the first chat paint and SQLite hydration.
+    const backgroundStartup = window.setTimeout(() => {
+      void jcodeStatus().catch(() => {})
+      void useMCPStore.getState().refreshAllServers().catch(() => {})
+      void useSkillStore.getState().refreshSkills().catch(() => {})
+    }, 1800)
+
     initDatabase().then(async () => {
-      const storedState = localStorage.getItem(APP_STORAGE_KEY)
-      if (storedState) {
-        try {
-          const parsed = JSON.parse(storedState)
-          const { sessions, sessionMessages } = parsed?.state || {}
-          if (sessions?.length > 0 && (await getAllSessions()).length === 0) {
-            for (const s of sessions) await dbCreateSession(s.id, s.title || '', s.model || '', s.piId || undefined)
-            if (sessionMessages) for (const [sessionId, msgs] of Object.entries(sessionMessages)) {
-              if (Array.isArray(msgs)) for (const msg of msgs as any[]) await dbSaveMessage(msg.info?.id || msg.id, sessionId, msg.info?.role || 'assistant', msg.parts || [], msg.info || {})
+      // SQLite is authoritative once it contains sessions. Avoid parsing the
+      // potentially large legacy Zustand payload on every normal app launch.
+      const existingSessions = await getAllSessions()
+      if (existingSessions.length === 0) {
+        const storedState = localStorage.getItem(APP_STORAGE_KEY)
+        if (storedState) {
+          try {
+            const parsed = JSON.parse(storedState)
+            const { sessions, sessionMessages } = parsed?.state || {}
+            if (sessions?.length > 0) {
+              let migratedRecords = 0
+              const yieldToUi = async () => {
+                migratedRecords += 1
+                if (migratedRecords % 20 === 0) {
+                  await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
+                }
+              }
+
+              for (const s of sessions) {
+                await dbCreateSession(s.id, s.title || '', s.model || '', s.piId || undefined)
+                await yieldToUi()
+              }
+              if (sessionMessages) {
+                for (const [sessionId, msgs] of Object.entries(sessionMessages)) {
+                  if (!Array.isArray(msgs)) continue
+                  for (const msg of msgs as any[]) {
+                    await dbSaveMessage(msg.info?.id || msg.id, sessionId, msg.info?.role || 'assistant', msg.parts || [], msg.info || {})
+                    await yieldToUi()
+                  }
+                }
+              }
             }
+          } catch (error) {
+            console.warn('[startup] Legacy session migration failed:', error)
           }
-        } catch {}
+        }
       }
       await useAppStore.getState().loadFromDb()
       // If the persisted active project pointed to a session that no longer
@@ -284,6 +315,8 @@ function App() {
       // SQLite is initialized, even if CodeWorkspace mounted before startup finished.
       if (state.codeActiveSessionId) await state.loadMessages(state.codeActiveSessionId)
     }).catch(console.warn)
+
+    return () => window.clearTimeout(backgroundStartup)
   }, [])
 
   const newTask = () => {
@@ -333,13 +366,16 @@ function App() {
           <Suspense fallback={<div className="min-h-0 flex-1 grid place-items-center text-[12px] text-text-tertiary">Loading workspace…</div>}>
           <div className="min-h-0 flex-1 flex">
             <div className={`min-w-0 flex-1 flex flex-col transition-[margin] duration-150 ${page === 'chat' && rightOpen && ((codeMode && !!activeCodeProjectId) || (!codeMode && !!activeSessionId && activeSessionMessageCount > 0)) ? 'mr-[360px]' : ''}`}>
-              {page === 'chat' && (
-                <div className={codeMode ? 'hidden' : 'min-w-0 min-h-0 flex-1 flex flex-col'}>
+              {/* Mount only the active chat workspace. Keeping both ChatViews hidden in
+                  the DOM caused duplicate store subscriptions and duplicate message-tree
+                  work on every chat/session update. Session history is persisted in SQLite. */}
+              {page === 'chat' && !codeMode && (
+                <div className="min-w-0 min-h-0 flex-1 flex flex-col">
                   <ChatView />
                 </div>
               )}
-              {hasVisitedCode && (
-                <div className={page === 'chat' && codeMode ? 'min-w-0 flex-1 flex flex-col' : 'hidden'}>
+              {hasVisitedCode && page === 'chat' && codeMode && (
+                <div className="min-w-0 flex-1 flex flex-col">
                   <CodeWorkspace />
                 </div>
               )}

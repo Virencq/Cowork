@@ -43,6 +43,16 @@ export function useTelegramChatSync() {
           return
         }
 
+        let processed = 0
+        const yieldToUi = async () => {
+          processed += 1
+          // Long first-run syncs must yield instead of monopolising the UI
+          // event loop while thousands of SQLite bridge calls are queued.
+          if (processed % 20 === 0) {
+            await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
+          }
+        }
+
         for (const conversation of snapshot.conversations || []) {
           const existing = await getSession(conversation.sessionId)
           const sessionModel = `platform:${conversation.platformId}`
@@ -53,6 +63,7 @@ export function useTelegramChatSync() {
           } else {
             await updateSession(conversation.sessionId, { model: sessionModel })
           }
+          await yieldToUi()
         }
 
         for (const message of snapshot.messages || []) {
@@ -77,6 +88,7 @@ export function useTelegramChatSync() {
               time: { created: message.createdAt, completed: message.createdAt },
             },
           )
+          await yieldToUi()
         }
 
         lastUpdatedAtRef.current = snapshot.updatedAt
@@ -93,13 +105,16 @@ export function useTelegramChatSync() {
       }
     }
 
-    void sync()
+    // Platform sync is optional background work. Let the chat render first,
+    // then keep the existing polling cadence.
+    const startup = window.setTimeout(() => { void sync() }, 1800)
     const timer = window.setInterval(() => {
       void sync()
     }, 4000)
 
     return () => {
       disposed = true
+      window.clearTimeout(startup)
       window.clearInterval(timer)
     }
   }, [])

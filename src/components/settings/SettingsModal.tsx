@@ -27,13 +27,32 @@ function JCodeRuntimeSettings() {
 
   const check = async () => {
     setChecking(true)
+    setStatus(null)
+    // Show executable detection as soon as it returns. Provider/model inspection
+    // is a separate CLI call and must not keep the connection indicator stuck.
     try {
-      const [nextStatus, nextRuntime] = await Promise.all([Pi.status(), Pi.runtimeInfo()])
+      const nextStatus = await Pi.status()
       setStatus(nextStatus)
-      setRuntime(nextRuntime)
+      if (!nextStatus.installed) {
+        setRuntime(null)
+        return
+      }
     } catch (error) {
-      setStatus({ installed: false, error: error instanceof Error ? error.message : 'Unable to check JCode' })
-    } finally { setChecking(false) }
+      setStatus({ installed: false, error: error instanceof Error ? error.message : String(error) })
+      setRuntime(null)
+      return
+    } finally {
+      setChecking(false)
+    }
+
+    try {
+      const nextRuntime = await Pi.runtimeInfo()
+      setRuntime(nextRuntime)
+    } catch {
+      // Runtime metadata is optional; executable detection remains valid even
+      // when provider/model introspection is slow or unsupported by this CLI.
+      setRuntime(null)
+    }
   }
 
   useEffect(() => { void check() }, [])

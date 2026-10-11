@@ -4,13 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useWorkspaceStore } from '../src/stores/workspaceStore'
 
 const getAllSessions = vi.fn()
+const getMessages = vi.fn(async () => [])
 const updateSession = vi.fn(async () => undefined)
 const deleteDbSession = vi.fn(async () => undefined)
 const deleteJCodeSession = vi.fn(async () => undefined)
 
 vi.mock('../src/utils/database', () => ({
   getAllSessions,
-  getMessages: vi.fn(async () => []),
+  getMessages,
   createSession: vi.fn(async () => undefined),
   updateSession,
   deleteSession: deleteDbSession,
@@ -25,6 +26,8 @@ describe('app store session identity', () => {
   beforeEach(async () => {
     localStorage.clear()
     getAllSessions.mockReset()
+    getMessages.mockReset()
+    getMessages.mockResolvedValue([])
     updateSession.mockClear()
     deleteDbSession.mockClear()
     deleteJCodeSession.mockClear()
@@ -70,6 +73,25 @@ describe('app store session identity', () => {
     })
     // ACP session identifiers are process-scoped and must not be resumed after restart.
     expect(useAppStore.getState().sessions[0].piId).toBeUndefined()
+  })
+
+  it('deduplicates concurrent and repeated history loads, including empty chats', async () => {
+    let resolveMessages!: (messages: never[]) => void
+    getMessages.mockImplementationOnce(() => new Promise((resolve) => {
+      resolveMessages = resolve
+    }))
+    const { useAppStore } = await import('../src/stores/appStore')
+
+    const first = useAppStore.getState().loadMessages('empty-session')
+    const second = useAppStore.getState().loadMessages('empty-session')
+    expect(getMessages).toHaveBeenCalledTimes(1)
+
+    resolveMessages([])
+    await Promise.all([first, second])
+    await useAppStore.getState().loadMessages('empty-session')
+
+    expect(getMessages).toHaveBeenCalledTimes(1)
+    expect(useAppStore.getState().sessionMessages['empty-session']).toEqual([])
   })
 
   it('updates the in-memory and SQLite ACP session id together', async () => {

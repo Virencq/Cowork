@@ -130,6 +130,11 @@ function mergeProviderList(currentList: ProviderInfo[], customProviders: Provide
 
 const generateId = () => Math.random().toString(36).substring(2, 15)
 
+// Avoid duplicate SQLite reads when sidebar/project actions and component effects
+// request the same session at nearly the same time. Empty histories are cached too.
+const messageLoadsInFlight = new Map<string, Promise<void>>()
+const loadedMessageSessions = new Set<string>()
+
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -201,14 +206,31 @@ export const useAppStore = create<AppState>()(
       },
 
       loadMessages: async (sessionId: string) => {
-        try {
-          const messages = await db.getMessages(sessionId)
-          set((state) => ({
-            sessionMessages: { ...state.sessionMessages, [sessionId]: messages },
-          }))
-        } catch (err) {
-          console.warn('[appStore] loadMessages failed:', err)
-        }
+        if (loadedMessageSessions.has(sessionId)) return
+        const existingLoad = messageLoadsInFlight.get(sessionId)
+        if (existingLoad) return existingLoad
+
+        // If the session was edited while its initial read was pending, don't let
+        // the older database snapshot overwrite the newer in-memory conversation.
+        const initialMessages = get().sessionMessages[sessionId]
+        const load = (async () => {
+          try {
+            const messages = await db.getMessages(sessionId)
+            const currentMessages = get().sessionMessages[sessionId]
+            if (currentMessages === initialMessages) {
+              set((state) => ({
+                sessionMessages: { ...state.sessionMessages, [sessionId]: messages },
+              }))
+            }
+            loadedMessageSessions.add(sessionId)
+          } catch (err) {
+            console.warn('[appStore] loadMessages failed:', err)
+          } finally {
+            messageLoadsInFlight.delete(sessionId)
+          }
+        })()
+        messageLoadsInFlight.set(sessionId, load)
+        return load
       },
 
       // ---- Session actions ----

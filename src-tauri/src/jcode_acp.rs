@@ -55,13 +55,65 @@ fn read_until_response(reader: &mut BufReader<std::process::ChildStdout>, reques
 }
 
 fn find_jcode() -> Result<PathBuf, String> {
-    let candidates = if cfg!(windows) { vec!["jcode.exe", "jcode"] } else { vec!["jcode"] };
-    for candidate in candidates {
-        if Command::new(candidate).arg("--version").stdout(Stdio::null()).stderr(Stdio::null()).status().is_ok() {
-            return Ok(PathBuf::from(candidate));
+    // A packaged Windows app launched from the Start menu does not necessarily
+    // inherit the PATH that was updated in an existing terminal. Check the
+    // documented per-user install location before relying on PATH.
+    let mut candidates: Vec<PathBuf> = Vec::new();
+
+    if let Some(explicit) = std::env::var_os("JCODE_PATH") {
+        candidates.push(PathBuf::from(explicit));
+    }
+
+    if cfg!(windows) {
+        if let Some(home) = std::env::var_os("USERPROFILE").map(PathBuf::from) {
+            candidates.push(home.join(".jcode").join("bin").join("jcode.exe"));
+            candidates.push(home.join(".jcode").join("bin").join("jcode"));
+        }
+        if let Some(local_app_data) = std::env::var_os("LOCALAPPDATA").map(PathBuf::from) {
+            candidates.push(local_app_data.join("Programs").join("JCode").join("jcode.exe"));
+            candidates.push(local_app_data.join("JCode").join("jcode.exe"));
+        }
+        if let Some(app_data) = std::env::var_os("APPDATA").map(PathBuf::from) {
+            candidates.push(app_data.join("npm").join("jcode.exe"));
+        }
+        if let Some(path) = std::env::var_os("PATH") {
+            candidates.extend(std::env::split_paths(&path).flat_map(|dir| {
+                [dir.join("jcode.exe"), dir.join("jcode")].into_iter()
+            }));
+        }
+    } else {
+        candidates.push(PathBuf::from("jcode"));
+        if let Some(home) = std::env::var_os("HOME").map(PathBuf::from) {
+            candidates.push(home.join(".jcode").join("bin").join("jcode"));
+        }
+        if let Some(path) = std::env::var_os("PATH") {
+            candidates.extend(std::env::split_paths(&path).map(|dir| dir.join("jcode")));
         }
     }
-    Err("JCode was not found on PATH. Install JCode and ensure the jcode command is available.".to_string())
+
+    // De-duplicate candidate paths while retaining priority order.
+    let mut seen = std::collections::HashSet::new();
+    for candidate in candidates {
+        let key = candidate.to_string_lossy().to_ascii_lowercase();
+        if !seen.insert(key) {
+            continue;
+        }
+        let executable = if candidate.components().count() == 1 {
+            candidate.clone()
+        } else if candidate.is_file() {
+            candidate.clone()
+        } else {
+            continue;
+        };
+        if Command::new(&executable).arg("--version")
+            .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null())
+            .status().is_ok()
+        {
+            return Ok(executable);
+        }
+    }
+
+    Err("JCode was not found. Checked JCODE_PATH, the per-user JCode install location, and PATH. If JCode is installed, restart Cowork after installation or set JCODE_PATH to the jcode executable.".to_string())
 }
 
 fn start_reader(
