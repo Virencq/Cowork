@@ -378,10 +378,12 @@ export const useMCPStore = create<MCPState>()(
         // stale snapshot below.
         set({ serverStatuses: statusMap });
 
-        // Try connecting remote servers that aren't yet connected
+        // Reconnect every enabled server missing from the live process snapshot.
+        // The native MCP manager is in-memory, so a fresh app launch starts with
+        // no active stdio processes even though their configs remain persisted.
         for (const server of enabledServers) {
-          if ((server.type === 'sse' || server.type === 'http') && !statusMap[server.name]) {
-            get().connectServer(server.name).catch(() => {});
+          if (!statusMap[server.name]) {
+            await get().connectServer(server.name);
           }
         }
 

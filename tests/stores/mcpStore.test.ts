@@ -134,8 +134,14 @@ describe('mcpStore', () => {
     // connectServer was called (via the store's internal logic), which triggers invoke
   })
 
-  it('disconnects and cleans statuses for all servers on refreshAllServers', async () => {
+  it('reconnects enabled stdio servers missing from the live process snapshot', async () => {
     invoke.mockResolvedValueOnce([]) // mcp_list_servers returns empty
+    invoke.mockResolvedValue({
+      name: 'connected-server',
+      status: 'connected',
+      error: null,
+      tools: [],
+    })
 
     useMCPStore.getState().addServer({
       name: 's1', type: 'stdio', command: 'node', args: [],
@@ -146,8 +152,13 @@ describe('mcpStore', () => {
 
     await useMCPStore.getState().refreshAllServers()
 
-    // mcp_list_servers was called
     expect(invoke).toHaveBeenCalledWith('mcp_list_servers')
+    expect(invoke).toHaveBeenCalledWith('mcp_connect', {
+      name: 's1', command: 'node', args: [],
+    })
+    expect(invoke).toHaveBeenCalledWith('mcp_connect', {
+      name: 's2', command: 'node', args: [],
+    })
   })
 
   it('refreshes a single enabled server', async () => {
