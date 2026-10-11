@@ -86,6 +86,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
   }, [workspaceMode])
   const [error, setError] = useState<string | null>(null)
   const [draftValue, setDraftValue] = useState<string | null>(null)
+  const [pendingEditMessage, setPendingEditMessage] = useState<{ sessionId: string; messageId: string } | null>(null)
   const [contextStatus, setContextStatus] = useState<JCode.ContextStatus | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [dragTargetZone, setDragTargetZone] = useState<'message' | 'input'>('message')
@@ -201,6 +202,16 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
 
       // JCode is the runtime and owns provider/model selection. Cowork never supplies
       // provider credentials, provider IDs, or model IDs to ACP.
+
+      // Editing is non-destructive until the user submits the revised prompt.
+      // Only then remove that prompt and its later turns, preserving history if
+      // the user decides not to send the edit.
+      if (pendingEditMessage) {
+        if (pendingEditMessage.sessionId === sid) {
+          deleteMessagesFrom(sid, pendingEditMessage.messageId)
+        }
+        setPendingEditMessage(null)
+      }
 
       // Add user message
       const uid = Math.random().toString(36).substring(2, 15)
@@ -354,7 +365,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
       useAppStore.getState().incrementFileTreeVersion()
       usePetStore.getState().onResponded()
     },
-    [activeSessionId, session, t, startStreaming, finishStreaming, commitStreamingMessage, addMessage, updateSessionTitle, appendStreamingDelta, subscribeStream, isReadOnlySession, workspaceMode, workspaceDir, createModeSession],
+    [activeSessionId, session, t, startStreaming, finishStreaming, commitStreamingMessage, addMessage, updateSessionTitle, appendStreamingDelta, subscribeStream, isReadOnlySession, workspaceMode, workspaceDir, createModeSession, pendingEditMessage, deleteMessagesFrom],
   )
 
   const activeJCodeSessionId = activeSessionId
@@ -362,16 +373,19 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
     : ''
 
   const handleEditMessage = useCallback((message: KiloMessage) => {
-    if (message.info.role !== 'user') return
+    if (message.info.role !== 'user' || !activeSessionId) return
     const content = message.parts
       .filter((part) => part.type === 'text')
       .map((part) => 'text' in part ? part.text : '')
       .join('\n')
       .trim()
     if (!content) return
-    deleteMessagesFrom(activeSessionId!, message.info.id)
+
+    // Do not mutate the conversation merely by clicking Edit. Keep the original
+    // turns intact until the revised prompt is actually submitted.
+    setPendingEditMessage({ sessionId: activeSessionId, messageId: message.info.id })
     setDraftValue(content)
-  }, [activeSessionId, deleteMessagesFrom])
+  }, [activeSessionId])
 
   const handleDeleteMessage = useCallback((message: KiloMessage) => {
     if (!activeSessionId) return
