@@ -104,7 +104,7 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
             message.info.role === 'assistant'
 
           return (
-            <div key={message.info.id} className="px-4 sm:px-5">
+            <div key={message.info.id} className="px-2 sm:px-3">
               <MessageItem
                 message={message}
                 isStreaming={isStreaming}
