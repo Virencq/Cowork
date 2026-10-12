@@ -1,8 +1,8 @@
-# S-Loop -> JCode Migration Plan
+# Cowork -> JCode Migration Plan
 
 ## Phase 1 — Baseline
 
-1. Bring the S-Loop Tauri/React application structure into Cowork.
+1. Establish the Cowork Tauri/React application structure.
 2. Preserve the existing independent infrastructure.
 3. Remove Pi from the application dependency graph.
 4. Establish English-only UI resources.
@@ -91,7 +91,7 @@ Resizable, collapsible and persistent.
 
 ## Phase 5 — Tools
 
-Connect the retained S-Loop systems:
+Connect the existing application systems:
 
 - filesystem
 - shell
@@ -116,7 +116,7 @@ Persist:
 
 ## Phase 7 — Scheduler
 
-Retain and adapt S-Loop scheduling so scheduled tasks execute through JCode rather than Pi.
+Retain and adapt application scheduling so scheduled tasks execute through JCode rather than Pi.
 
 ## Phase 8 — Browser
 
