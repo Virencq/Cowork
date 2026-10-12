@@ -238,8 +238,8 @@ function App() {
 
   useEffect(() => {
     const openSettings = () => setShowSettings(true)
-    window.addEventListener('s-loop:open-settings', openSettings)
-    return () => window.removeEventListener('s-loop:open-settings', openSettings)
+    window.addEventListener('cowork:open-settings', openSettings)
+    return () => window.removeEventListener('cowork:open-settings', openSettings)
   }, [])
 
   useEffect(() => {
