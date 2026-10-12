@@ -323,7 +323,7 @@ export const useAgentStore = create<AgentStore>()(
           ) as unknown as Agent
           if (
             migrated.id === DEFAULT_AGENT_ID &&
-            migrated.name === 'S-Loop'
+            migrated.name === 'Cowork'
           ) {
             return {
               ...migrated,
