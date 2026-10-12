@@ -322,8 +322,7 @@ export const useAgentStore = create<AgentStore>()(
             migrateAgentWorkspaceRoots(agent) as unknown as Record<string, unknown>,
           ) as unknown as Agent
           if (
-            migrated.id === DEFAULT_AGENT_ID &&
-            migrated.name === 'Cowork'
+            migrated.id === DEFAULT_AGENT_ID
           ) {
             return {
               ...migrated,
