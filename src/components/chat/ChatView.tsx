@@ -11,7 +11,6 @@ import { Paperclip, FolderTree, MessagesSquare, ShieldAlert, Sparkles, ArrowUp, 
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { FilePreviewPanel } from '../preview'
-import { SLoopMark } from '../ui'
 import * as JCode from '../../utils/jcodeClient'
 import {
   getVoiceConversation,
@@ -120,7 +119,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
         }
       },
       onToolCall: (id, name, args) => {
-        console.log('[S-Loop] Tool call:', name, id)
+        console.log('[Cowork] Tool call:', name, id)
         usePetStore.getState().onWorking()
         const sm = useAppStore.getState().streamingMessage[sid]
         if (!sm) return
@@ -457,7 +456,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
     const nativeFiles = Array.from(e.dataTransfer?.files || [])
 
     try {
-      const fileData = e.dataTransfer.getData('application/x-s-loop-file')
+      const fileData = e.dataTransfer.getData('application/x-cowork-file')
       if (fileData) {
         const { path, name, isDir } = JSON.parse(fileData)
 
