@@ -2,7 +2,7 @@
 
 ## Objective
 
-Cowork Desktop is a Windows-first Tauri 2 desktop agent built from the S-Loop architecture and powered by the existing installed JCode CLI through JCode ACP.
+Cowork Desktop is a Windows-first Tauri 2 desktop agent built as a native Cowork desktop application and powered by the existing installed JCode CLI through JCode ACP.
 
 The UI is English-only.
 
@@ -14,9 +14,9 @@ Pi is not used as the agent runtime.
 OpenCode is not used as the agent runtime.
 Electron is not used.
 
-## S-Loop components to retain
+## Core application components
 
-Use S-Loop's existing architecture where it is independent of Pi:
+The application maintains its own product identity and uses reusable native desktop infrastructure:
 
 - Tauri 2 desktop shell
 - React/TypeScript application structure
@@ -109,4 +109,4 @@ Do not copy proprietary Claude/Anthropic source code or assets.
 
 ## Target
 
-The result should feel like a polished Cowork-style desktop agent while remaining technically based on S-Loop and using JCode as the actual agent engine.
+The result should feel like a polished Cowork desktop agent, using JCode as the actual agent engine.
