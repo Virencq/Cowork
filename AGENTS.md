@@ -2,7 +2,7 @@
 
 ## Project
 
-Build a Windows-first desktop AI workspace based on S-Loop and powered by the installed JCode CLI through JCode ACP.
+Build a Windows-first desktop AI workspace built as a native desktop application and powered by the installed JCode CLI through JCode ACP.
 
 ## Non-negotiable runtime
 
@@ -59,9 +59,9 @@ The application is English-only.
 
 Never add Chinese UI strings, Chinese locale files, Chinese navigation labels, Chinese onboarding or Chinese documentation.
 
-## S-Loop reuse
+## Existing application capabilities
 
-Retain S-Loop functionality that is independent of Pi, especially:
+Preserve functionality independent of the agent runtime, especially:
 
 - MCP
 - Skills
@@ -98,4 +98,4 @@ Support the ACP lifecycle required by JCode, including initialization, session c
 - Keep changes modular.
 - Prefer small commits.
 - Run TypeScript/Rust/build checks after major changes.
-- Preserve existing working S-Loop functionality unless it conflicts with JCode.
+- Preserve existing working functionality unless it conflicts with JCode.
