@@ -1,6 +1,6 @@
 # Cowork Desktop
 
-A lightweight Windows desktop AI workspace based on S-Loop and powered by the installed JCode CLI through JCode ACP.
+A lightweight Windows desktop AI workspace built as a native desktop application and powered by the installed JCode CLI through JCode ACP.
 
 ## Architecture
 
@@ -47,6 +47,6 @@ See:
 
 ## Upstream foundation
 
-The implementation uses the architecture and reusable infrastructure of S-Loop, while replacing its Pi runtime with JCode ACP.
+Cowork has its own product identity and UI, with JCode ACP as the agent runtime.
 
 JCode is expected to be installed separately on the target Windows system.
