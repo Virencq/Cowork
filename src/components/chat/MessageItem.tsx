@@ -5,7 +5,8 @@ import { MessageActionBar } from './shared/MessageActionBar'
 import { StreamingIndicator } from './shared/StreamingIndicator'
 import { shouldUseDocumentLayout } from './shared/Markdown'
 import { FileChip } from './shared/FileChip'
-import { User, Cpu } from 'lucide-react'
+import { User } from 'lucide-react'
+import { CoworkLogo } from '../ui/CoworkLogo'
 
 import type { KiloMessage, MessagePart, TextPart } from '../../types'
 
@@ -102,9 +103,7 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
         {/* Avatar */}
         <div className="shrink-0 mt-1">
           <div className="relative group/bot">
-            <div className="relative w-7 h-7 rounded-lg bg-surface border border-border flex items-center justify-center text-accent">
-              <Cpu size={14} strokeWidth={2} />
-            </div>
+            <CoworkLogo isWorking={isStreaming} size={27} />
           </div>
         </div>
 
