@@ -11,6 +11,7 @@ import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
 import { activateCodeProject } from '../../utils/codeProjectActions'
 import { projectPathsEqual } from '../../utils/projectPaths'
+import { CoworkLogo } from '../ui/CoworkLogo'
 import type { Page } from '../../types/navigation'
 
 export function ResizeHandle({ side, onDrag }: { side: 'left' | 'right'; onDrag: (delta: number) => void }) {
@@ -65,6 +66,7 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
     ? allSessions.filter((s) => codeSessionIds.includes(s.id) || codeProjectSessionIds.includes(s.id))
     : allSessions.filter((s) => !codeSessionIds.includes(s.id) && !codeProjectSessionIds.includes(s.id))
   const activeSessionId = codeMode ? codeActiveSessionId : coworkActiveSessionId
+  const isAgentWorking = useAppStore((s) => Boolean(activeSessionId && s.streamingMessage[activeSessionId]?.isStreaming))
   const setActiveSession = useAppStore((s) => s.setActiveSession)
   const setCodeActiveSessionId = useAppStore((s) => s.setCodeActiveSessionId)
   const updateSessionTitle = useAppStore((s) => s.updateSessionTitle)
@@ -167,7 +169,7 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
 
       <div className="px-1.5 pt-1 pb-1.5">
         <div className="grid grid-cols-2 h-7 rounded-md bg-surface-secondary p-0.5">
-          <button onClick={onCowork} className={`rounded-md text-[13px] font-semibold transition-colors ${!codeMode ? 'bg-surface text-text shadow-sm' : 'text-text-secondary hover:text-text'}`}>☷&nbsp; Cowork</button>
+          <button onClick={onCowork} className={`rounded-md text-[13px] font-semibold transition-colors ${!codeMode ? 'bg-surface text-text shadow-sm' : 'text-text-secondary hover:text-text'}`}><CoworkLogo isWorking={isAgentWorking} size={17}/>Cowork</button>
           <button onClick={onCode} className={`rounded-md text-[13px] font-medium transition-colors ${codeMode ? 'bg-surface text-text shadow-sm' : 'text-text-secondary hover:text-text'}`}>‹/&gt;&nbsp; Code</button>
         </div>
       </div>
