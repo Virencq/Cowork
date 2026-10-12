@@ -100,8 +100,8 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
             : 'max-w-[96%] lg:max-w-[85%]'
         }`}
       >
-        {/* Avatar */}
-        <div className="shrink-0 mt-1">
+        {/* Markdown's first paragraph has top margin; align the logo with its first text line. */}
+        <div className="shrink-0 mt-3">
           <div className="relative group/bot">
             <CoworkLogo isWorking={isStreaming} size={27} />
           </div>
