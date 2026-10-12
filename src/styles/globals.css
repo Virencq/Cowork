@@ -101,6 +101,21 @@
 }
 
 /* ── Animations ── */
+.cowork-logo {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 9999px;
+  color: var(--color-accent);
+  transform-origin: 50% 50%;
+}
+.cowork-logo svg { display: block; overflow: visible; }
+.cowork-logo--working { animation: cowork-logo-spin 1.8s linear infinite; }
+.cowork-logo--working .cowork-logo-ring { stroke: #f0784d; stroke-opacity: .85; }
+@keyframes cowork-logo-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .cowork-logo--working { animation-duration: 6s; } }
+
+
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
@@ -181,11 +196,6 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.s-loop-brand-mask {
-  -webkit-mask: url('/s-loop-icon.png') center / contain no-repeat;
-  mask: url('/s-loop-icon.png') center / contain no-repeat;
 }
 
 /* ── Chat Input: Force text wrapping on HeroUI TextArea ── */
