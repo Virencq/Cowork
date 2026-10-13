@@ -4,7 +4,7 @@ import { open } from '@tauri-apps/plugin-dialog'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useAppStore } from '../../stores'
 
-export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id: string; name: string; path?: string }) => void }) {
+export function ProjectsPage({ onOpenProject, onNewChat }: { onOpenProject?: (project: { id: string; name: string; path?: string }) => void; onNewChat?: (project: { id: string; name: string; path?: string }) => void }) {
   const projects = useWorkspaceStore(s => s.projects)
   const addProject = useWorkspaceStore(s => s.addProject)
   const removeProject = useWorkspaceStore(s => s.removeProject)
@@ -72,10 +72,14 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    const sessionId = createSession()
-                    useWorkspaceStore.getState().updateProject(project.id, { sessionId })
-                    if (project.path) setWorkspaceDir(project.path)
-                    onOpenProject?.(project)
+                    if (onNewChat) {
+                      onNewChat(project)
+                    } else {
+                      const sessionId = createSession()
+                      useWorkspaceStore.getState().updateProject(project.id, { sessionId })
+                      if (project.path) setWorkspaceDir(project.path)
+                      onOpenProject?.(project)
+                    }
                   }}
                   className="absolute right-3 bottom-2 h-7 px-2 grid place-items-center gap-1 rounded-md hover:bg-surface-hover text-[11px] font-medium"
                   style={{ color: 'var(--color-text)' }}
