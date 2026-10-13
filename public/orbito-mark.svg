@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="orbito" x1="8" y1="7" x2="55" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFB66E"/>
+      <stop offset=".52" stop-color="#F47B42"/>
+      <stop offset="1" stop-color="#E34B32"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="#171513"/>
+  <circle cx="32" cy="32" r="23" fill="none" stroke="#5B3022" stroke-width="4"/>
+  <path d="M48.5 16.5A23 23 0 1 0 52 39.5" fill="none" stroke="url(#orbito)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M43.8 22.2A15.5 15.5 0 1 1 32 16.5" fill="none" stroke="url(#orbito)" stroke-width="5.5" stroke-linecap="round"/>
+  <circle cx="32" cy="32" r="5.5" fill="url(#orbito)"/>
+</svg>
