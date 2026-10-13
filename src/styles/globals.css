@@ -828,3 +828,45 @@ button {
 .dark .cowork-home textarea::placeholder { color: #aaa7a1 !important; opacity: 1 !important; }
 .dark .cowork-home [style*="color: var(--color-text-secondary)"] { color: #d0ceca !important; }
 .dark .cowork-home [style*="color: var(--color-text-tertiary)"] { color: #aaa7a1 !important; }
+
+
+/* User-requested high-contrast dark theme: all UI text is white. */
+.dark,
+.dark body,
+.dark #root,
+.dark button,
+.dark input,
+.dark textarea,
+.dark select,
+.dark option,
+.dark label,
+.dark p,
+.dark span,
+.dark div,
+.dark a,
+.dark li,
+.dark td,
+.dark th,
+.dark summary,
+.dark small,
+.dark strong,
+.dark em,
+.dark code,
+.dark pre,
+.dark blockquote,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6,
+.dark [class*="text-"],
+.dark [style*="color:"] {
+  color: #ffffff !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #ffffff !important;
+  opacity: .78 !important;
+}
+.dark svg { color: inherit; }
