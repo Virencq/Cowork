@@ -77,7 +77,7 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                     if (project.path) setWorkspaceDir(project.path)
                     onOpenProject?.(project)
                   }}
-                  className="absolute right-12 top-3 h-7 px-2 grid place-items-center gap-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-surface-hover text-[11px] font-medium"
+                  className="absolute right-3 bottom-3 h-7 px-2 grid place-items-center gap-1 rounded-md hover:bg-surface-hover text-[11px] font-medium"
                   style={{ color: 'var(--color-text)' }}
                   title={`Start a new chat in ${project.name}`}
                   aria-label={`Start a new chat in ${project.name}`}
@@ -104,7 +104,7 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                 >
                   <Trash2 size={14}/>
                 </button>
-                <div className="absolute right-4 bottom-3 flex items-center gap-1 text-[11px] pointer-events-none" style={{ color: 'var(--color-text-secondary)' }}><FolderOpen size={13}/><span className="max-w-[160px] truncate">{project.name}</span></div>
+                <div className="absolute left-4 bottom-3 flex items-center gap-1 text-[11px] pointer-events-none" style={{ color: 'var(--color-text-secondary)' }}><FolderOpen size={13}/><span className="max-w-[160px] truncate">{project.name}</span></div>
               </div>
             ))}
           </div>
