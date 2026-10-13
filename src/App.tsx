@@ -30,6 +30,7 @@ import { recordPerformance, startPerformanceTimer, elapsedPerformanceMs } from '
 import type { Page } from './types/navigation'
 export type { Page } from './types/navigation'
 
+const inTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 const APP_STORAGE_KEY = 'snotra-storage'
 
 function CoworkTitleBar({ onToggleSidebar, onToggleRightPanel, onBack, onForward }: {
