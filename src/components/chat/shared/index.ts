@@ -1,6 +1,6 @@
 export { Markdown } from './Markdown'
 export { SmoothStream } from './SmoothStream'
-export { shouldUseDocumentLayout } from './Markdown'
+export { shouldUseDocumentLayout } from './markdownLayout'
 export { Hyperlink } from './Hyperlink'
 export { CitationTooltip } from './CitationTooltip'
 export { MarkdownShadowDOM, StyleWrapper } from './MarkdownShadowDOM'
