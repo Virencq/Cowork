@@ -1,5 +1,4 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
-import { getCurrentWindow } from '@tauri-apps/api/window'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { ChevronRight, FolderKanban, History, Lightbulb, Menu, Plus, Settings, X, Pencil, Columns2, ArrowLeft, ArrowRight } from 'lucide-react'
 import { ChatView } from './components/chat'
@@ -31,44 +30,22 @@ import { recordPerformance, startPerformanceTimer, elapsedPerformanceMs } from '
 import type { Page } from './types/navigation'
 export type { Page } from './types/navigation'
 
-const inTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 const APP_STORAGE_KEY = 'snotra-storage'
 
-function WindowControls() {
-  const appWindow = inTauri ? getCurrentWindow() : null
-  return (
-    <div className="flex h-full">
-      <button onClick={() => appWindow?.minimize()} className="title-control">—</button>
-      <button onClick={() => appWindow?.toggleMaximize()} className="title-control">□</button>
-      <button onClick={() => appWindow?.close()} className="title-control hover:bg-[#e81123] hover:text-white">×</button>
-    </div>
-  )
-}
-
-function CoworkTitleBar({ onToggleSidebar, onToggleRightPanel, onBack, onForward, codeMode, onCode, onCowork }: {
+function CoworkTitleBar({ onToggleSidebar, onToggleRightPanel, onBack, onForward }: {
   onToggleSidebar: () => void
   onToggleRightPanel: () => void
   onBack: () => void
   onForward: () => void
-  codeMode: boolean
-  onCode: () => void
-  onCowork: () => void
 }) {
-  const appWindow = inTauri ? getCurrentWindow() : null
-  const drag = useCallback((e: React.MouseEvent) => {
-    if (e.detail === 2) { void appWindow?.toggleMaximize(); return }
-    if (e.target === e.currentTarget) void appWindow?.startDragging()
-  }, [appWindow])
-
   return (
-    <header onMouseDown={drag} className="fixed top-0 left-0 right-0 z-[100] h-11 bg-surface border-b border-border flex items-center justify-between select-none">
+    <header className="fixed top-0 left-0 right-0 z-[100] h-11 bg-surface border-b border-border flex items-center justify-between select-none">
       <div className="flex items-center h-full gap-1 px-3 text-[#5d5852]">
         <button onClick={onToggleSidebar} className="title-icon" title="Toggle sidebar" aria-label="Toggle sidebar"><Menu size={16}/></button>
         <button onClick={onToggleRightPanel} className="title-icon" title="Toggle project panel" aria-label="Toggle project panel"><Columns2 size={16}/></button>
         <button onClick={onBack} className="title-icon" title="Back" aria-label="Back"><ArrowLeft size={17}/></button>
         <button onClick={onForward} className="title-icon" title="Forward" aria-label="Forward"><ArrowRight size={17}/></button>
       </div>
-      <WindowControls />
     </header>
   )
 }
@@ -410,9 +387,6 @@ function App() {
       }}
     >
       <CoworkTitleBar
-        codeMode={codeMode}
-        onCode={() => { setHasVisitedCode(true); setCodeMode(true); setPage('chat') }}
-        onCowork={() => { setCodeMode(false); setPage('chat') }}
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
         onToggleRightPanel={() => setRightOpen((open) => !open)}
         onBack={() => {
