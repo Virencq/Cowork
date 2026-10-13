@@ -35,7 +35,7 @@ export function ProjectDetailPage({ project, onBack, onStartChat, onOpenSession,
   const projectSessions = useMemo(() => {
     const normalize = (value: string) => value.split(String.fromCharCode(92)).join('/').toLowerCase()
     const projectPath = activeProject.path ? normalize(activeProject.path) : ''
-    const pathTokens = (activeProject.path || '').split(/[\\/]+/).map((token) => token.toLowerCase()).filter((token) => token.length >= 4 && !['web_site', 'website', 'workspace', 'projects'].includes(token))
+    const pathTokens = normalize(activeProject.path || '').split('/').map((token) => token.toLowerCase()).filter((token) => token.length >= 4 && !['web_site', 'website', 'workspace', 'projects'].includes(token))
     const projectName = activeProject.name.toLowerCase()
     return sessions.filter((session) => {
       if (session.id === activeProject.sessionId || activeProject.sessionIds?.includes(session.id)) return true
