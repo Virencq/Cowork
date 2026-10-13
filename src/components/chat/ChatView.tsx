@@ -617,6 +617,15 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
           </div>
         )}
         <div className="flex-1 min-h-0 relative bg-transparent">
+          {activeSessionId && session && !isEmpty && (
+            <div className="relative z-20 flex h-12 shrink-0 items-center gap-2 border-b border-border/70 px-5 pr-24 text-[13px] text-text-secondary">
+              <span className="font-medium text-text-secondary">{workspaceMode === 'code' ? 'Code' : 'Cowork'}</span>
+              <ChevronDown size={13} className="rotate-[-90deg] opacity-50" />
+              {session.sourceLabel && <><span>{session.sourceLabel}</span><span className="opacity-40">/</span></>}
+              <span className="min-w-0 truncate font-semibold text-text">{session.title || 'New Chat'}</span>
+              <ChevronDown size={14} className="shrink-0 opacity-60" />
+            </div>
+          )}
           <AnimatePresence mode="wait">
             {isEmpty ? (
               <motion.div
