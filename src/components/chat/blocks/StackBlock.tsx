@@ -33,6 +33,35 @@ export function StackBlock({ parts, isStreaming }: StackBlockProps) {
 
   if (parts.length === 0) return null
 
+  // Match Claude's restrained inline reasoning indicator instead of rendering
+  // a large "THOUGHT PROCESS" card. Details remain available on demand.
+  if (toolCount === 0) {
+    const reasoningText = parts
+      .filter((part) => part.type === 'reasoning')
+      .map((part) => (part as any).text || '')
+      .join('\\n')
+    if (!reasoningText && !isStreaming) return null
+    return (
+      <div className="my-3">
+        <button
+          type="button"
+          onClick={handleToggle}
+          aria-expanded={expanded}
+          className="inline-flex items-center gap-3 rounded-lg py-1 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
+        >
+          <Sparkles size={18} className={isStreaming ? "text-[var(--color-accent)] animate-spin-slow" : "text-[var(--color-text-tertiary)]"} />
+          <span>{isStreaming ? 'Thinking…' : 'Thought process'}</span>
+          <ChevronDown size={13} className={`text-[var(--color-text-tertiary)] transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        </button>
+        {expanded && reasoningText && (
+          <div className="mt-2 max-h-[300px] overflow-y-auto whitespace-pre-wrap rounded-lg border border-[var(--color-border)]/60 bg-[var(--color-surface-secondary)]/40 px-3 py-2 text-[13px] leading-relaxed text-[var(--color-text-secondary)]">
+            {reasoningText}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className={`my-2 rounded-xl overflow-hidden border transition-all duration-500 ${
       isStreaming
@@ -58,7 +87,7 @@ export function StackBlock({ parts, isStreaming }: StackBlockProps) {
           <span className={`text-[11px] font-bold uppercase tracking-[0.2em] ${
             isStreaming ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-tertiary)]'
           }`}>
-            {t('chat.parts.thoughtProcess')}
+            {toolCount > 0 ? 'Activity' : t('chat.parts.thoughtProcess')}
           </span>
 
           {isStreaming && (
