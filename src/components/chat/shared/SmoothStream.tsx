@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { Markdown } from './Markdown'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+
+// Keep the Markdown parser and its plugins out of the initial desktop bundle.
+const Markdown = lazy(() => import('./Markdown').then((module) => ({ default: module.Markdown })))
 
 interface SmoothStreamProps {
   text: string
