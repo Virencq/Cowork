@@ -1,7 +1,6 @@
 import { useCallback } from 'react'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { X } from 'lucide-react'
-import { SLoopMark } from '../ui'
 
 const inTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
@@ -31,10 +30,7 @@ export function TitleBar() {
       onMouseDown={handleMouseDown}
     >
       <div className="flex items-center gap-2.5 pointer-events-none select-none">
-        <SLoopMark size="sm" />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
-          S-Loop
-        </span>
+        <span className="text-[12px] font-semibold tracking-wide text-text-secondary">Cowork</span>
         <span className="h-3 w-px bg-border" />
         <span className="text-[10px] font-medium text-text-tertiary">Agent workbench</span>
       </div>
