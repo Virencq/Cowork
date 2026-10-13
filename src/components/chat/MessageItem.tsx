@@ -56,13 +56,13 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
 
           <div className="flex flex-col items-end gap-2 min-w-0">
             <div
-              className="bg-accent text-accent-foreground px-3.5 py-2 text-[14px] leading-[1.65] wrap-break-word rounded-2xl rounded-tr-md shadow-sm font-normal"
+              className="user-message-bubble px-3.5 py-2 text-[15px] leading-[1.65] wrap-break-word rounded-2xl rounded-tr-md font-normal"
             >
               {message.parts.map((part, idx) => {
                 if (part.type !== 'text') return null
                 const segments = parseUserText(part.text)
                 return (
-                  <div key={part.id || idx} className="text-accent-foreground flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                  <div key={part.id || idx} className="user-message-text flex flex-wrap items-center gap-x-1.5 gap-y-1">
                     {segments.map((seg, si) =>
                       seg.type === 'chip' ? (
                         <FileChip key={si} name={seg.name} path={seg.path} isFolder={seg.isFolder} onDark />
