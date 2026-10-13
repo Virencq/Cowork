@@ -369,7 +369,7 @@ function App() {
       <div className="h-full flex">
         <LeftNav width={sidebarOpen ? leftWidth : 0} onWidth={setLeftWidth} page={page} onPage={navigateToPage} onNew={newTask} onSettings={() => setShowSettings(true)} codeMode={codeMode} onCode={() => { setHasVisitedCode(true); setCodeMode(true); setPage('chat') }} onCowork={() => { setCodeMode(false); setPage('chat') }} />
         <main className="relative min-w-0 flex-1 pt-11 flex flex-col bg-bg">
-          <Suspense fallback={<div className="min-h-0 flex-1 grid place-items-center text-[12px] text-text-tertiary">Loading workspace…</div>}>
+          
           <div className="min-h-0 flex-1 flex">
             <div className={`min-w-0 flex-1 flex flex-col transition-[margin] duration-150 ${page === 'chat' && rightOpen && ((codeMode && !!activeCodeProjectId) || (!codeMode && !!activeSessionId && activeSessionMessageCount > 0)) ? 'mr-[360px]' : ''}`}>
               {/* Mount only the active chat workspace. Keeping both ChatViews hidden in
@@ -382,12 +382,12 @@ function App() {
               )}
               {hasVisitedCode && page === 'chat' && codeMode && (
                 <div className="min-w-0 flex-1 flex flex-col">
-                  <CodeWorkspace />
+                  <Suspense fallback={<div className="min-h-0 flex-1" />}><CodeWorkspace /></Suspense>
                 </div>
               )}
 
-              {page === 'tasks' && <TasksPage />}
-              {page === 'projects' && <ProjectsPage
+              {page === 'tasks' && <Suspense fallback={<div className="min-h-0 flex-1" />}><TasksPage /></Suspense>}
+              {page === 'projects' && <Suspense fallback={<div className="min-h-0 flex-1" />}><ProjectsPage
                 onOpenProject={(project) => {
                   const fullProject = useWorkspaceStore.getState().projects.find((item) => item.id === project.id)
                   if (!fullProject) return
@@ -404,8 +404,8 @@ function App() {
                   setQueuedProjectPrompt(null)
                   navigateToPage('chat')
                 }}
-              />}
-              {page === 'project-detail' && selectedProject && <ProjectDetailPage
+              /></Suspense>}
+              {page === 'project-detail' && selectedProject && <Suspense fallback={<div className="min-h-0 flex-1" />}><ProjectDetailPage
                 project={selectedProject}
                 onBack={() => navigateToPage('projects')}
                 onStartChat={(prompt) => {
@@ -423,11 +423,11 @@ function App() {
                   navigateToPage('chat')
                 }}
                 onOpenScheduled={() => navigateToPage('tasks')}
-              />}
+              /></Suspense>}
               {page === 'ideas' && <div className="flex-1 grid place-items-center"><div className="text-center max-w-md"><Lightbulb className="mx-auto mb-4 text-[#b0a79e]" size={30}/><h2 className="text-xl font-semibold">Ideas</h2><p className="mt-2 text-sm text-[#8c847c]">Capture ideas here and turn them into tasks when ready.</p></div></div>}
-              {page === 'extensions' && <ExtensionsPage />}
-              {page === 'customize' && <WorkspaceLibraryPage initialSection="skills" />}
-              {page === 'artifacts' && <ArtifactsPage onOpenArtifact={(artifactId) => {
+              {page === 'extensions' && <Suspense fallback={<div className="min-h-0 flex-1" />}><ExtensionsPage /></Suspense>}
+              {page === 'customize' && <Suspense fallback={<div className="min-h-0 flex-1" />}><WorkspaceLibraryPage initialSection="skills" /></Suspense>}
+              {page === 'artifacts' && <Suspense fallback={<div className="min-h-0 flex-1" />}><ArtifactsPage onOpenArtifact={(artifactId) => {
                 const artifact = useWorkspaceStore.getState().artifacts.find((a) => a.id === artifactId)
                 if (!artifact) return
                 let sessionId = artifact.sessionId
@@ -438,11 +438,10 @@ function App() {
                 }
                 setActiveSession(sessionId)
                 navigateToPage('chat')
-              }} />}
+              }} /></Suspense>}
             </div>
             {page === 'chat' && rightOpen && ((codeMode && !!activeCodeProjectId) || (!codeMode && !!activeSessionId && activeSessionMessageCount > 0)) && <RightPanel width={rightWidth} onWidth={setRightWidth} onClose={() => setRightOpen(false)} onAddScheduled={() => navigateToPage('tasks')} codeMode={codeMode} />}
           </div>
-          </Suspense>
         </main>
       </div>
       {page === 'chat' && !rightOpen && ((codeMode && !!activeCodeProjectId) || (!codeMode && !!activeSessionId && activeSessionMessageCount > 0)) && (
