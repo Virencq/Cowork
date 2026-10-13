@@ -50,8 +50,10 @@ jobs:
         with:
           workspaces: src-tauri -> target
       - run: npm ci
+      - name: Generate all Orbito native icons
+        run: npm run icons:generate
       - name: Build Windows installers
-        run: npm run tauri:build
+        run: node scripts/with-native-build-env.mjs tauri build
       - name: Upload Windows installers
         uses: actions/upload-artifact@v4
         with:
@@ -72,4 +74,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
+      - run: npm ci
+      - name: Generate all Orbito native icons
+        run: npm run icons:generate
       - run: cargo check --manifest-path src-tauri/Cargo.toml
