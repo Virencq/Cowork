@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import type { FormEvent } from 'react'
 import { ArrowLeft, ChevronDown, Clock3, Folder, LockKeyhole, MessageSquare, Pencil, Pin, Plus, Send } from 'lucide-react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { useAppStore } from '../../stores'
@@ -15,9 +16,9 @@ interface ProjectDetailPageProps {
 
 export function ProjectDetailPage({ project, onBack, onStartChat, onOpenSession, onOpenScheduled }: ProjectDetailPageProps) {
   const [prompt, setPrompt] = useState('')
-  const [editingInstructions, setEditingInstructions] = useState(false)
-  const [instructions, setInstructions] = useState(activeProject.instructions || '')
   const activeProject = useWorkspaceStore((s) => s.projects.find((item) => item.id === project.id) || project)
+  const [editingInstructions, setEditingInstructions] = useState(false)
+  const [instructions, setInstructions] = useState(project.instructions || '')
   const updateProject = useWorkspaceStore((s) => s.updateProject)
   const pinnedProjectIds = useWorkspaceStore((s) => s.pinnedProjectIds)
   const toggleProjectPin = useWorkspaceStore((s) => s.toggleProjectPin)
@@ -30,7 +31,7 @@ export function ProjectDetailPage({ project, onBack, onStartChat, onOpenSession,
     .slice(0, 5), [sessions, activeProject.id, activeProject.sessionId, activeProject.name])
   const projectTasks = tasks.filter((task) => activeProject.path && task.workspaceDir && task.workspaceDir.replace(/\\/g, '/').toLowerCase() === activeProject.path.replace(/\\/g, '/').toLowerCase())
 
-  const submit = (event: React.FormEvent) => {
+  const submit = (event: FormEvent) => {
     event.preventDefault()
     const value = prompt.trim()
     if (!value) return
@@ -50,7 +51,7 @@ export function ProjectDetailPage({ project, onBack, onStartChat, onOpenSession,
           </div>
 
           <div className="mb-8 flex items-center justify-between">
-            <h1 className="truncate font-serif text-[28px] tracking-[-.025em] text-[#f1efeb]">{project.name}</h1>
+            <h1 className="truncate font-serif text-[28px] tracking-[-.025em] text-[#f1efeb]">{activeProject.name}</h1>
             <div className="flex items-center gap-2">
               <button onClick={() => toggleProjectPin(activeProject.id)} className="rounded-md p-2 text-[#c4c1ba] hover:bg-[#292926]" title="Update project"><Pin size={17} className={pinnedProjectIds.includes(activeProject.id) ? "fill-current" : ""}/></button>
               <button onClick={() => setEditingInstructions(true)} className="rounded-md p-2 text-[#c4c1ba] hover:bg-[#292926]" title="Edit project instructions"><Pencil size={16}/></button>
@@ -74,12 +75,11 @@ export function ProjectDetailPage({ project, onBack, onStartChat, onOpenSession,
                 </div>
               </form>
               <div className="mt-3 flex items-center gap-2 px-4 text-[12px] text-[#8f8d85]">
-                <Folder size={14}/><span className="max-w-[420px] truncate">{activeProject.path || project.name}</span><ChevronDown size={13}/>
+                <Folder size={14}/><span className="max-w-[420px] truncate">{activeProject.path || activeProject.name}</span><ChevronDown size={13}/>
               </div>
 
               <div className="mt-8 flex items-center justify-between">
                 <h2 className="text-[13px] font-medium text-[#aaa79f]">Recents</h2>
-                <button onClick={() => {}} className="text-[11px] text-[#8f8d85] hover:text-[#dedbd4]"> </button>
               </div>
               <div className="mt-2 divide-y divide-[#2c2c29]">
                 {projectSessions.length ? projectSessions.map((session) => {
