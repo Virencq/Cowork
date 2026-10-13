@@ -379,7 +379,7 @@ function App() {
       recordPerformance('startup.hydration.complete', { durationMs: elapsedPerformanceMs(startupStartedAt) })
       scheduleBackgroundDiscovery()
     }).catch((error) => {
-      recordPerformance('startup.hydration.failed', { error: String(error) })
+      recordPerformance('startup.hydration.failed', { failed: true })
       console.warn(error)
       scheduleBackgroundDiscovery()
     })
