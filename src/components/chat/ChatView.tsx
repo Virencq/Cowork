@@ -264,7 +264,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPr
           pid = ks.id
           useAppStore.getState().setSessionPiId(sid, pid)
         } catch (error) {
-          recordPerformance('prompt.jcode-session-create.failed', { durationMs: elapsedPerformanceMs(createSessionStartedAt), error: String(error) })
+          recordPerformance('prompt.jcode-session-create.failed', { durationMs: elapsedPerformanceMs(createSessionStartedAt), failed: true })
           setError(t('chat.errors.sessionFailed'))
           usePetStore.getState().onError()
           return
