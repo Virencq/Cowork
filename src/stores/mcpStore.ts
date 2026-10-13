@@ -351,12 +351,8 @@ export const useMCPStore = create<MCPState>()(
             statusMap[s.name] = mapRustStatus(s);
           }
         } catch {
-          // If listing fails, fallback to individual refresh
-          for (const server of enabledServers) {
-            if (server.type === 'stdio') {
-              get().refreshServer(server.name).catch(() => {});
-            }
-          }
+          // A status refresh must never start every configured server.
+          // Leave enabled stdio servers dormant until the runtime requests one.
         }
 
         // JCode currently supports stdio MCP servers only. Mark configured
@@ -373,19 +369,24 @@ export const useMCPStore = create<MCPState>()(
           }
         }
 
-        // Publish the snapshot before starting asynchronous connections. This
-        // prevents connectServer() results from being overwritten by the
-        // stale snapshot below.
+        // Publish the live snapshot without auto-starting configured stdio
+        // servers. They remain dormant until a request explicitly needs them.
+        // JCode ACP owns its configured MCP runtime; this store must not spawn
+        // a second process for every enabled server during application startup.
         set({ serverStatuses: statusMap });
 
-        // Reconnect every enabled server missing from the live process snapshot.
-        // The native MCP manager is in-memory, so a fresh app launch starts with
-        // no active stdio processes even though their configs remain persisted.
         for (const server of enabledServers) {
-          if (!statusMap[server.name]) {
-            await get().connectServer(server.name);
+          if (server.type === 'stdio' && !statusMap[server.name]) {
+            statusMap[server.name] = {
+              name: server.name,
+              status: 'disabled',
+              error: undefined,
+              tools: [],
+              resources: [],
+            };
           }
         }
+        set({ serverStatuses: statusMap });
 
         // Mark disabled servers
         for (const server of servers) {
