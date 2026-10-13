@@ -33,7 +33,7 @@ import {
 const EMPTY_MESSAGES: never[] = []
 const EMPTY_STREAMING = null
 
-export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPrompt, onInitialPromptHandled }: { embedded?: boolean; workspaceMode?: 'cowork' | 'code'; initialPrompt?: { id: string; text: string } | null; onInitialPromptHandled?: (id: string) => void }) {
+export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPrompt, onInitialPromptHandled, onOpenProjects }: { embedded?: boolean; workspaceMode?: 'cowork' | 'code'; initialPrompt?: { id: string; text: string } | null; onInitialPromptHandled?: (id: string) => void; onOpenProjects?: () => void }) {
   const { t } = useTranslation()
   const {
     activeSessionId: coworkActiveSessionId,
@@ -659,9 +659,16 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPr
         <div className="flex-1 min-h-0 relative bg-transparent">
           {activeSessionId && session && !isEmpty && (
             <div className="relative z-20 flex h-12 shrink-0 items-center gap-2 border-b border-border/70 px-5 pr-24 text-[13px]">
-              <span className="min-w-0 max-w-[38%] truncate font-medium text-white" title={activeProject?.name || workspaceDir || 'Workspace'}>
+              <button
+                type="button"
+                onClick={() => { if (workspaceMode === 'cowork') onOpenProjects?.() }}
+                disabled={workspaceMode !== 'cowork' || !onOpenProjects}
+                className="min-w-0 max-w-[38%] truncate text-left font-medium text-white hover:text-[#f0a078] disabled:cursor-default disabled:hover:text-white transition-colors"
+                title={workspaceMode === 'cowork' ? 'Open project selection' : (activeProject?.name || workspaceDir || 'Workspace')}
+                aria-label={workspaceMode === 'cowork' ? 'Open project selection' : (activeProject?.name || 'Workspace')}
+              >
                 {activeProject?.name || workspaceDir?.split(/[\\/]/).filter(Boolean).pop() || 'Workspace'}
-              </span>
+              </button>
               <ChevronDown size={13} className="shrink-0 rotate-[-90deg] text-white/60" />
               <span className="min-w-0 truncate font-semibold text-white" title={session.title || 'New Chat'}>
                 {session.title || 'New Chat'}
