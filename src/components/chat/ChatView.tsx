@@ -32,7 +32,7 @@ import {
 const EMPTY_MESSAGES: never[] = []
 const EMPTY_STREAMING = null
 
-export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embedded?: boolean; workspaceMode?: 'cowork' | 'code' }) {
+export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPrompt, onInitialPromptHandled }: { embedded?: boolean; workspaceMode?: 'cowork' | 'code'; initialPrompt?: { id: string; text: string } | null; onInitialPromptHandled?: (id: string) => void }) {
   const { t } = useTranslation()
   const {
     activeSessionId: coworkActiveSessionId,
@@ -372,6 +372,15 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
     },
     [activeSessionId, session, t, startStreaming, finishStreaming, commitStreamingMessage, addMessage, updateSessionTitle, appendStreamingDelta, subscribeStream, isReadOnlySession, workspaceMode, workspaceDir, createModeSession, pendingEditMessage, deleteMessagesFrom],
   )
+
+  useEffect(() => {
+    if (!initialPrompt || !activeSessionId) return
+    let cancelled = false
+    void handleSubmit(initialPrompt.text).finally(() => {
+      if (!cancelled) onInitialPromptHandled?.(initialPrompt.id)
+    })
+    return () => { cancelled = true }
+  }, [initialPrompt?.id, activeSessionId, handleSubmit, onInitialPromptHandled])
 
   const activeJCodeSessionId = activeSessionId
     ? (sessions.find((s) => s.id === activeSessionId) as any)?.piId ?? ''
