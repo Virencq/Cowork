@@ -292,15 +292,20 @@ function App() {
     // Let the first interactive frame settle before starting optional native
     // discovery. MCP, skills and JCode status are useful background work, but
     // must not compete with the first chat paint and SQLite hydration.
-    const backgroundStartup = window.setTimeout(() => {
-      const backgroundStartedAt = startPerformanceTimer()
-      recordPerformance('startup.background-discovery.begin')
-      void Promise.allSettled([
-        jcodeStatus().then(() => recordPerformance('startup.jcode-status.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) })),
-        useMCPStore.getState().refreshAllServers().then(() => recordPerformance('startup.mcp-refresh.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) })),
-        useSkillStore.getState().refreshSkills().then(() => recordPerformance('startup.skills-refresh.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) })),
-      ]).then(() => recordPerformance('startup.background-discovery.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) }))
-    }, 1800)
+    let backgroundStartup: number | undefined
+    const scheduleBackgroundDiscovery = () => {
+      // Start optional native discovery only after SQLite/session hydration has
+      // finished; a fixed delay from app mount can overlap a slow cold startup.
+      backgroundStartup = window.setTimeout(() => {
+        const backgroundStartedAt = startPerformanceTimer()
+        recordPerformance('startup.background-discovery.begin')
+        void Promise.allSettled([
+          jcodeStatus().then(() => recordPerformance('startup.jcode-status.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) })),
+          useMCPStore.getState().refreshAllServers().then(() => recordPerformance('startup.mcp-refresh.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) })),
+          useSkillStore.getState().refreshSkills().then(() => recordPerformance('startup.skills-refresh.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) })),
+        ]).then(() => recordPerformance('startup.background-discovery.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) }))
+      }, 1800)
+    }
 
     const dbStartedAt = startPerformanceTimer()
     recordPerformance('startup.database-init.begin')
@@ -372,12 +377,14 @@ function App() {
         recordPerformance('startup.active-code-history.complete', { durationMs: elapsedPerformanceMs(codeMessagesStartedAt), messageCount: useAppStore.getState().sessionMessages[state.codeActiveSessionId]?.length ?? 0 })
       }
       recordPerformance('startup.hydration.complete', { durationMs: elapsedPerformanceMs(startupStartedAt) })
+      scheduleBackgroundDiscovery()
     }).catch((error) => {
       recordPerformance('startup.hydration.failed', { error: String(error) })
       console.warn(error)
+      scheduleBackgroundDiscovery()
     })
 
-    return () => { window.clearTimeout(backgroundStartup); window.cancelAnimationFrame(firstFrame) }
+    return () => { if (backgroundStartup !== undefined) window.clearTimeout(backgroundStartup); window.cancelAnimationFrame(firstFrame) }
   }, [])
 
   const newTask = () => {
