@@ -33,7 +33,7 @@ export function ProjectDetailPage({ project, onBack, onStartChat, onOpenSession,
   }, [activeProject.id, sessionIdsSignature, loadMessages])
   const tasks = useTaskStore((s) => s.tasks)
   const projectSessions = useMemo(() => {
-    const normalize = (value: string) => value.replace(/\\\\/g, '/').toLowerCase()
+    const normalize = (value: string) => value.split(String.fromCharCode(92)).join('/').toLowerCase()
     const projectPath = activeProject.path ? normalize(activeProject.path) : ''
     const pathTokens = projectPath.split(/[\\/._ -]+/).filter((token) => token.length >= 4)
     const projectName = activeProject.name.toLowerCase()
