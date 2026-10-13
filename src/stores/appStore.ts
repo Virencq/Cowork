@@ -248,7 +248,7 @@ export const useAppStore = create<AppState>()(
         // while a Cowork project folder is active, not only the first chat.
         const activeWorkspaceDir = get().workspaceDir
         if (activeWorkspaceDir) {
-          const normalizePath = (value: string) => value.replaceAll('\\\\', '/').replace(/\/+$/, '').toLowerCase()
+          const normalizePath = (value: string) => value.split(String.fromCharCode(92)).join('/').replace(/\/+$/, '').toLowerCase()
           const project = useWorkspaceStore.getState().projects.find(
             (item) => item.path && normalizePath(item.path) === normalizePath(activeWorkspaceDir),
           )
