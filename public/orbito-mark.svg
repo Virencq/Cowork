@@ -1,14 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="orbito" x1="8" y1="7" x2="55" y2="58" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFB66E"/>
-      <stop offset=".52" stop-color="#F47B42"/>
-      <stop offset="1" stop-color="#E34B32"/>
+    <linearGradient id="orbit" x1="110" y1="40" x2="395" y2="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffbe4b"/>
+      <stop offset=".55" stop-color="#ff7a00"/>
+      <stop offset="1" stop-color="#f33d1e"/>
     </linearGradient>
+    <radialGradient id="node" cx="30%" cy="25%" r="75%">
+      <stop offset="0" stop-color="#ffd36b"/>
+      <stop offset=".62" stop-color="#ff7a00"/>
+      <stop offset="1" stop-color="#f34b20"/>
+    </radialGradient>
   </defs>
-  <rect width="64" height="64" rx="15" fill="#171513"/>
-  <circle cx="32" cy="32" r="23" fill="none" stroke="#5B3022" stroke-width="4"/>
-  <path d="M48.5 16.5A23 23 0 1 0 52 39.5" fill="none" stroke="url(#orbito)" stroke-width="7" stroke-linecap="round"/>
-  <path d="M43.8 22.2A15.5 15.5 0 1 1 32 16.5" fill="none" stroke="url(#orbito)" stroke-width="5.5" stroke-linecap="round"/>
-  <circle cx="32" cy="32" r="5.5" fill="url(#orbito)"/>
+  <rect width="512" height="512" rx="106" fill="#12100f"/>
+  <circle cx="256" cy="256" r="157" fill="none" stroke="#39231a" stroke-width="28"/>
+  <path d="M356 137a157 157 0 1 0 57 145" fill="none" stroke="url(#orbit)" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="346" cy="145" r="43" fill="url(#node)"/>
+  <circle cx="333" cy="130" r="9" fill="#fff0bd" fill-opacity=".72"/>
 </svg>
