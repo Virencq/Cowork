@@ -372,6 +372,10 @@ function App() {
       state.deleteSession(currentId)
     }
     setActiveSession(null)
+    // A global New chat must not inherit a previously opened folder as JCode's
+    // working directory. Project-specific chats set this explicitly in their
+    // project action handlers.
+    setWorkspaceDir(null)
     navigateToPage('chat')
   }
 
