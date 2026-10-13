@@ -3,14 +3,14 @@
 @import "@heroui/styles";
 
 @theme {
-  --color-accent: #8b4c3c;
-  --color-accent-rgb: 139, 76, 60;
+  --color-accent: #f0783f;
+  --color-accent-rgb: 240, 120, 63;
   --color-accent-foreground: #ffffff;
-  --color-accent-light: #a66a5a;
-  --color-accent-lighter: #c08d7a;
-  --color-accent-muted: rgba(139, 76, 60, 0.1);
-  --color-accent-subtle: rgba(139, 76, 60, 0.05);
-  --color-accent-glow: rgba(139, 76, 60, 0.18);
+  --color-accent-light: #ff925c;
+  --color-accent-lighter: #ffb66e;
+  --color-accent-muted: rgba(240, 120, 63, 0.1);
+  --color-accent-subtle: rgba(240, 120, 63, 0.05);
+  --color-accent-glow: rgba(240, 120, 63, 0.18);
 
   --color-bg: #fdfcfb;
   --color-surface: #ffffff;
