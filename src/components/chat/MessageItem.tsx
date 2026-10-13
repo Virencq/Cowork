@@ -5,7 +5,7 @@ import { MessageActionBar } from './shared/MessageActionBar'
 import { StreamingIndicator } from './shared/StreamingIndicator'
 import { shouldUseDocumentLayout } from './shared/markdownLayout'
 import { FileChip } from './shared/FileChip'
-import { User } from 'lucide-react'
+import { User, Sparkles } from 'lucide-react'
 import { CoworkLogo } from '../ui/CoworkLogo'
 
 import type { KiloMessage, MessagePart, TextPart } from '../../types'
@@ -35,13 +35,11 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
 
   const isDocument = !isUser && shouldUseDocumentLayout(allText)
 
-  const streamingVerb = useMemo(() => {
-    if (!isStreaming) return undefined
-    const lastPart = message.parts[message.parts.length - 1]
-    if (lastPart?.type === 'reasoning') return t('chat.parts.thinking')
-    if (lastPart?.type === 'tool') return t('chat.parts.running')
-    return t('chat.parts.working')
-  }, [isStreaming, message.parts, t])
+  const isThinking = useMemo(() => {
+    if (!isStreaming) return false
+    const lastPart = [...message.parts].reverse().find((part) => part.type !== 'step-start' && part.type !== 'step-finish')
+    return lastPart?.type !== 'tool' || (lastPart as any)?.state?.status !== 'running'
+  }, [isStreaming, message.parts])
 
   if (isUser) {
     return (
@@ -157,9 +155,10 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
             </div>
           </div>
 
-          {isStreaming && streamingVerb && (
-            <div className="mt-4">
-              <StreamingIndicator verb={streamingVerb} />
+          {isThinking && (
+            <div className="mt-3 inline-flex items-center gap-3 py-1 text-sm text-text-secondary" role="status" aria-live="polite">
+              <Sparkles size={19} className="text-accent animate-spin-slow" />
+              <span>Thinking…</span>
             </div>
           )}
         </div>
@@ -172,9 +171,9 @@ function groupPartsIntoBlocks(parts: MessagePart[]): MessageBlock[] {
   const blocks: MessageBlock[] = []
 
   for (const part of parts) {
-    if (part.type === 'step-start' || part.type === 'step-finish') continue
+    if (part.type === 'step-start' || part.type === 'step-finish' || part.type === 'reasoning') continue
 
-    let isStack = part.type === 'reasoning' || part.type === 'tool'
+    let isStack = part.type === 'tool'
     let blockType: BlockType = isStack ? 'stack' : 'text'
     if (part.type !== 'text' && part.type !== 'reasoning' && part.type !== 'tool') continue
 
