@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ArrowLeft, ChevronDown, Clock3, Folder, LockKeyhole, MessageSquare, Pencil, Pin, Plus, Send, Sparkles, X } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Clock3, Folder, LockKeyhole, MessageSquare, Pencil, Pin, Plus, Send } from 'lucide-react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { useAppStore } from '../../stores'
 import { useWorkspaceStore, type CoworkProject } from '../../stores/workspaceStore'
@@ -16,16 +16,19 @@ interface ProjectDetailPageProps {
 export function ProjectDetailPage({ project, onBack, onStartChat, onOpenSession, onOpenScheduled }: ProjectDetailPageProps) {
   const [prompt, setPrompt] = useState('')
   const [editingInstructions, setEditingInstructions] = useState(false)
-  const [instructions, setInstructions] = useState(project.instructions || '')
+  const [instructions, setInstructions] = useState(activeProject.instructions || '')
+  const activeProject = useWorkspaceStore((s) => s.projects.find((item) => item.id === project.id) || project)
   const updateProject = useWorkspaceStore((s) => s.updateProject)
+  const pinnedProjectIds = useWorkspaceStore((s) => s.pinnedProjectIds)
+  const toggleProjectPin = useWorkspaceStore((s) => s.toggleProjectPin)
   const sessions = useAppStore((s) => s.sessions)
   const messages = useAppStore((s) => s.sessionMessages)
   const tasks = useTaskStore((s) => s.tasks)
   const projectSessions = useMemo(() => sessions
-    .filter((session) => session.id === project.sessionId || session.title?.toLowerCase().includes(project.name.toLowerCase()))
+    .filter((session) => session.id === activeProject.sessionId || session.title?.toLowerCase().includes(activeProject.name.toLowerCase()))
     .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, 5), [sessions, project.id, project.sessionId, project.name])
-  const projectTasks = tasks.filter((task) => project.path && task.workspaceDir && task.workspaceDir.replace(/\\/g, '/').toLowerCase() === project.path.replace(/\\/g, '/').toLowerCase())
+    .slice(0, 5), [sessions, activeProject.id, activeProject.sessionId, activeProject.name])
+  const projectTasks = tasks.filter((task) => activeProject.path && task.workspaceDir && task.workspaceDir.replace(/\\/g, '/').toLowerCase() === activeProject.path.replace(/\\/g, '/').toLowerCase())
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault()
@@ -42,14 +45,14 @@ export function ProjectDetailPage({ project, onBack, onStartChat, onOpenSession,
           <div className="mb-9 flex items-center gap-3 text-[13px]">
             <button onClick={onBack} className="text-[#b8b5ae] hover:text-white">Projects</button>
             <span className="text-[#686761]">/</span>
-            <span className="font-semibold text-[#f1efeb]">{project.name}</span>
+            <span className="font-semibold text-[#f1efeb]">{activeProject.name}</span>
             <button onClick={onBack} className="ml-auto rounded-md p-1.5 text-[#9a978f] hover:bg-[#2a2a27] hover:text-white" title="Back to projects"><ArrowLeft size={15}/></button>
           </div>
 
           <div className="mb-8 flex items-center justify-between">
             <h1 className="truncate font-serif text-[28px] tracking-[-.025em] text-[#f1efeb]">{project.name}</h1>
             <div className="flex items-center gap-2">
-              <button onClick={() => updateProject(project.id, { updatedAt: Date.now() })} className="rounded-md p-2 text-[#c4c1ba] hover:bg-[#292926]" title="Update project"><Pin size={17}/></button>
+              <button onClick={() => toggleProjectPin(activeProject.id)} className="rounded-md p-2 text-[#c4c1ba] hover:bg-[#292926]" title="Update project"><Pin size={17} className={pinnedProjectIds.includes(activeProject.id) ? "fill-current" : ""}/></button>
               <button onClick={() => setEditingInstructions(true)} className="rounded-md p-2 text-[#c4c1ba] hover:bg-[#292926]" title="Edit project instructions"><Pencil size={16}/></button>
             </div>
           </div>
@@ -71,7 +74,7 @@ export function ProjectDetailPage({ project, onBack, onStartChat, onOpenSession,
                 </div>
               </form>
               <div className="mt-3 flex items-center gap-2 px-4 text-[12px] text-[#8f8d85]">
-                <Folder size={14}/><span className="max-w-[420px] truncate">{project.path || project.name}</span><ChevronDown size={13}/>
+                <Folder size={14}/><span className="max-w-[420px] truncate">{activeProject.path || project.name}</span><ChevronDown size={13}/>
               </div>
 
               <div className="mt-8 flex items-center justify-between">
@@ -105,7 +108,7 @@ export function ProjectDetailPage({ project, onBack, onStartChat, onOpenSession,
           </div>
           {editingInstructions ? <div className="mt-3">
             <textarea autoFocus value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="Add instructions to guide JCode on goals, style, constraints, and project conventions." className="min-h-[100px] w-full resize-y rounded-lg border border-[#3b3b36] bg-[#242422] p-3 text-[12px] leading-5 text-[#e9e7e2] outline-none focus:border-[#686860]"/>
-            <div className="mt-2 flex justify-end gap-2"><button onClick={() => { setInstructions(project.instructions || ''); setEditingInstructions(false) }} className="rounded-md px-2 py-1 text-[11px] text-[#b8b5ae]">Cancel</button><button onClick={() => { updateProject(project.id, { instructions: instructions.trim() }); setEditingInstructions(false) }} className="rounded-md bg-[#393934] px-3 py-1 text-[11px] text-white">Save</button></div>
+            <div className="mt-2 flex justify-end gap-2"><button onClick={() => { setInstructions(project.instructions || ''); setEditingInstructions(false) }} className="rounded-md px-2 py-1 text-[11px] text-[#b8b5ae]">Cancel</button><button onClick={() => { updateProject(activeProject.id, { instructions: instructions.trim() }); setEditingInstructions(false) }} className="rounded-md bg-[#393934] px-3 py-1 text-[11px] text-white">Save</button></div>
           </div> : <p className="mt-2 whitespace-pre-wrap text-[12px] leading-[1.55] text-[#a9a69e]">{project.instructions || 'Add instructions to guide JCode on goals, style, constraints, and project conventions.'}</p>}
         </div>
 
