@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ArrowLeft, ChevronDown, Clock3, Folder, LockKeyhole, MessageSquare, Pencil, Pin, Plus, Send } from 'lucide-react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
@@ -24,11 +24,31 @@ export function ProjectDetailPage({ project, onBack, onStartChat, onOpenSession,
   const toggleProjectPin = useWorkspaceStore((s) => s.toggleProjectPin)
   const sessions = useAppStore((s) => s.sessions)
   const messages = useAppStore((s) => s.sessionMessages)
+  const loadMessages = useAppStore((s) => s.loadMessages)
+  const sessionIdsSignature = sessions.map((session) => session.id).join('|')
+  useEffect(() => {
+    // Older sessions did not store a project link. Load their messages once so
+    // we can recover chats that mention this project's folder or name.
+    for (const session of sessions) void loadMessages(session.id)
+  }, [activeProject.id, sessionIdsSignature, loadMessages])
   const tasks = useTaskStore((s) => s.tasks)
-  const projectSessions = useMemo(() => sessions
-    .filter((session) => session.id === activeProject.sessionId || session.title?.toLowerCase().includes(activeProject.name.toLowerCase()))
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, 5), [sessions, activeProject.id, activeProject.sessionId, activeProject.name])
+  const projectSessions = useMemo(() => {
+    const normalize = (value: string) => value.replace(/\\\\/g, '/').toLowerCase()
+    const projectPath = activeProject.path ? normalize(activeProject.path) : ''
+    const pathTokens = projectPath.split(/[\\/._ -]+/).filter((token) => token.length >= 4)
+    const projectName = activeProject.name.toLowerCase()
+    return sessions.filter((session) => {
+      if (session.id === activeProject.sessionId || activeProject.sessionIds?.includes(session.id)) return true
+      if (session.title?.toLowerCase().includes(projectName)) return true
+      const userText = (messages[session.id] || [])
+        .filter((message) => message.info.role === 'user')
+        .flatMap((message) => message.parts.filter((part) => part.type === 'text').map((part) => 'text' in part ? part.text : ''))
+        .join(' ').toLowerCase()
+      if (!userText) return false
+      if (projectPath && userText.includes(projectPath)) return true
+      return pathTokens.some((token) => userText.includes(token)) && pathTokens.length > 0
+    }).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 8)
+  }, [sessions, messages, activeProject.id, activeProject.sessionId, activeProject.sessionIds, activeProject.name, activeProject.path])
   const projectTasks = tasks.filter((task) => activeProject.path && task.workspaceDir && task.workspaceDir.replace(/\\/g, '/').toLowerCase() === activeProject.path.replace(/\\/g, '/').toLowerCase())
 
   const submit = (event: FormEvent) => {
