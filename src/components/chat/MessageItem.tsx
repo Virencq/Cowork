@@ -2,7 +2,6 @@ import { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StackBlock, MainTextBlock } from './blocks'
 import { MessageActionBar } from './shared/MessageActionBar'
-import { StreamingIndicator } from './shared/StreamingIndicator'
 import { shouldUseDocumentLayout } from './shared/markdownLayout'
 import { FileChip } from './shared/FileChip'
 import { User, Sparkles } from 'lucide-react'
@@ -169,23 +168,32 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
 
 function groupPartsIntoBlocks(parts: MessagePart[]): MessageBlock[] {
   const blocks: MessageBlock[] = []
+  let activityBlock: MessageBlock | null = null
 
   for (const part of parts) {
     if (part.type === 'step-start' || part.type === 'step-finish' || part.type === 'reasoning') continue
+    if (part.type !== 'text' && part.type !== 'tool') continue
 
-    let isStack = part.type === 'tool'
-    let blockType: BlockType = isStack ? 'stack' : 'text'
-    if (part.type !== 'text' && part.type !== 'reasoning' && part.type !== 'tool') continue
+    if (part.type === 'tool') {
+      // All tool calls for one assistant turn belong to one activity card,
+      // even when text or hidden reasoning updates occur between tool calls.
+      if (!activityBlock) {
+        activityBlock = { type: 'stack', parts: [] }
+        blocks.push(activityBlock)
+      }
+      activityBlock.parts.push(part)
+      continue
+    }
 
     const lastBlock = blocks[blocks.length - 1]
-    if (lastBlock && lastBlock.type === blockType) {
+    if (lastBlock?.type === 'text') {
       lastBlock.parts.push(part)
     } else {
-      blocks.push({ type: blockType, parts: [part] })
+      blocks.push({ type: 'text', parts: [part] })
     }
   }
 
-  return blocks
+  return blocks.filter((block) => block.parts.length > 0)
 }
 
 // Split user message text into segments: plain text and FileChip components
