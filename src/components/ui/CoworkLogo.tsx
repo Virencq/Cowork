@@ -6,7 +6,7 @@ interface CoworkLogoProps {
   className?: string
 }
 
-/** Round Cowork mark. It rotates only while the selected session is actively streaming. */
+/** Round Cowork mark. The C stays still while an orange ring segment rotates during streaming. */
 export function CoworkLogo({ isWorking = false, size = 22, className = '' }: CoworkLogoProps) {
   const style: CSSProperties = { width: size, height: size }
   return (
