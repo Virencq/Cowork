@@ -325,8 +325,12 @@ impl MCPServerProcess {
             let response: Result<Value, _> = serde_json::from_str(&line);
             let response = match response {
                 Ok(r) => r,
-                Err(e) => {
-                    eprintln!("[s-loop:mcp] JSON parse error: {} | line: {}", e, line.trim());
+                Err(_) => {
+                    // Some third-party stdio servers incorrectly print startup
+                    // banners to stdout. They are not MCP frames; ignore them
+                    // while waiting for the matching JSON-RPC response instead
+                    // of flooding the application log for every banner line.
+                    // Proper servers should write diagnostics to stderr only.
                     continue;
                 }
             };
