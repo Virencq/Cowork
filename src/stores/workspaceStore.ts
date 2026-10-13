@@ -6,6 +6,7 @@ export interface CoworkProject {
   name: string
   path?: string
   sessionId?: string
+  sessionIds?: string[]
   instructions?: string
   createdAt: number
   updatedAt: number
