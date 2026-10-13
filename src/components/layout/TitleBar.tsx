@@ -13,12 +13,10 @@ export function TitleBar() {
   const handleClose = () => appWindow?.close()
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // Double-click to maximize
     if (e.detail === 2) {
       handleMaximize()
       return
     }
-    // Only start drag when clicking the outer div background (not on buttons)
     if (e.target === e.currentTarget) {
       appWindow?.startDragging().catch(() => {})
     }
@@ -30,33 +28,19 @@ export function TitleBar() {
       onMouseDown={handleMouseDown}
     >
       <div className="flex items-center gap-2.5 pointer-events-none select-none">
-        <span className="text-[12px] font-semibold tracking-wide text-text-secondary">Cowork</span>
+        <span className="text-[12px] font-semibold tracking-wide text-text-secondary">Orbito</span>
         <span className="h-3 w-px bg-border" />
-        <span className="text-[10px] font-medium text-text-tertiary">Agent workbench</span>
+        <span className="text-[10px] font-medium text-text-tertiary">AI Workspace for Real Work</span>
       </div>
 
       <div className={`items-center h-full relative z-50 ${inTauri ? 'flex' : 'hidden'}`}>
-        {/* Minimize */}
-        <button
-          onClick={handleMinimize}
-          className="w-11 h-full flex items-center justify-center text-text-tertiary hover:bg-surface-secondary transition-colors group/btn"
-        >
+        <button aria-label="Minimize" onClick={handleMinimize} className="w-11 h-full flex items-center justify-center text-text-tertiary hover:bg-surface-secondary transition-colors group/btn">
           <div className="w-3.5 h-[1.2px] bg-current opacity-80" />
         </button>
-
-        {/* Maximize/Restore */}
-        <button
-          onClick={handleMaximize}
-          className="w-11 h-full flex items-center justify-center text-text-tertiary hover:bg-surface-secondary transition-colors group/btn"
-        >
+        <button aria-label="Maximize or restore" onClick={handleMaximize} className="w-11 h-full flex items-center justify-center text-text-tertiary hover:bg-surface-secondary transition-colors group/btn">
           <div className="w-3 h-3 border-[1.2px] border-current rounded-[2px] opacity-80" />
         </button>
-
-        {/* Close */}
-        <button
-          onClick={handleClose}
-          className="w-11 h-full flex items-center justify-center text-text-tertiary hover:bg-[#e81123] hover:text-white transition-colors group/close"
-        >
+        <button aria-label="Close" onClick={handleClose} className="w-11 h-full flex items-center justify-center text-text-tertiary hover:bg-[#e81123] hover:text-white transition-colors group/close">
           <X size={16} strokeWidth={1.5} className="opacity-80 group-hover/close:opacity-100" />
         </button>
       </div>
