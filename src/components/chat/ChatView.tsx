@@ -8,6 +8,7 @@ import { useFilePreviewStore } from '../../stores/filePreviewStore'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { projectPathsEqual } from '../../utils/projectPaths'
 import { invoke } from '@tauri-apps/api/core'
+import { recordPerformance, startPerformanceTimer, elapsedPerformanceMs } from '../../utils/performanceDiagnostics'
 import type { ImageAttachment } from './ChatInput'
 import { Paperclip, FolderTree, MessagesSquare, ShieldAlert, Sparkles, ArrowUp, FolderKanban, ChevronDown, Asterisk } from 'lucide-react'
 import { MessageList } from './MessageList'
@@ -100,12 +101,18 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPr
   const [pendingApproval, setPendingApproval] = useState<{ requestId: string; toolName: string; args: any; reason?: string; piSessionId: string } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const streamUnsubsRef = useRef(new Map<string, () => void>())
+  const promptStartedAtRef = useRef<number | null>(null)
+  const firstOutputLoggedRef = useRef(false)
 
   const subscribeStream = useCallback(async (jcodeSessionId: string, sid: string) => {
     streamUnsubsRef.current.get(jcodeSessionId)?.()
     let unsubscribe = () => {}
     unsubscribe = await JCode.subscribeStream(jcodeSessionId, {
       onText: (partPid, delta) => {
+        if (!firstOutputLoggedRef.current && promptStartedAtRef.current !== null) {
+          firstOutputLoggedRef.current = true
+          recordPerformance('prompt.first-text-chunk', { timeToFirstOutputMs: elapsedPerformanceMs(promptStartedAtRef.current), mode: workspaceMode })
+        }
         if (useAppStore.getState().streamingMessage[sid]) {
           useAppStore.getState().appendStreamingDelta(sid, partPid, delta)
         }
@@ -192,8 +199,12 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPr
 
   const handleSubmit = useCallback(
     async (content: string, images?: ImageAttachment[]) => {
+      const submitStartedAt = startPerformanceTimer()
       let sid = workspaceMode === 'code' ? useAppStore.getState().codeActiveSessionId : useAppStore.getState().activeSessionId
       if ((!content || !content.trim()) && (!images || images.length === 0)) return
+      promptStartedAtRef.current = null
+      firstOutputLoggedRef.current = false
+      recordPerformance('prompt.submit.begin', { mode: workspaceMode, hasImages: Boolean(images?.length), textLength: content.length })
       if (!sid) {
         sid = createModeSession()
       }
@@ -232,20 +243,28 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPr
 
       // Synchronize configured stdio connectors into JCode's own MCP config.
       // JCode ACP currently reads MCP from ~/.jcode/mcp.json rather than host-supplied mcpServers.
+      const mcpSyncStartedAt = startPerformanceTimer()
+      recordPerformance('prompt.mcp-config-sync.begin', { serverCount: useMCPStore.getState().servers.length })
       try {
         await JCode.syncMcpConfig(useMCPStore.getState().servers)
       } catch (error) {
         console.warn('[Cowork] Could not sync MCP config to JCode:', error)
+      } finally {
+        recordPerformance('prompt.mcp-config-sync.complete', { durationMs: elapsedPerformanceMs(mcpSyncStartedAt) })
       }
 
       // Create or reuse JCode session
       let pid = (useAppStore.getState().sessions.find(s => s.id === sid) as any)?.piId ?? null
       if (!pid) {
+        const createSessionStartedAt = startPerformanceTimer()
+        recordPerformance('prompt.jcode-session-create.begin', { mode: workspaceMode })
         try {
           const ks = await JCode.createSession(workspaceDir ?? undefined)
+          recordPerformance('prompt.jcode-session-create.complete', { durationMs: elapsedPerformanceMs(createSessionStartedAt) })
           pid = ks.id
           useAppStore.getState().setSessionPiId(sid, pid)
-        } catch {
+        } catch (error) {
+          recordPerformance('prompt.jcode-session-create.failed', { durationMs: elapsedPerformanceMs(createSessionStartedAt), error: String(error) })
           setError(t('chat.errors.sessionFailed'))
           usePetStore.getState().onError()
           return
@@ -253,7 +272,9 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPr
       }
 
       // Subscribe for streaming visual feedback
+      const subscribeStartedAt = startPerformanceTimer()
       await subscribeStream(pid, sid)
+      recordPerformance('prompt.stream-subscription.ready', { durationMs: elapsedPerformanceMs(subscribeStartedAt) })
 
       // Build context
       const agentStore = useAgentStore.getState()
@@ -307,7 +328,10 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPr
         images,
       }
 
+      promptStartedAtRef.current = startPerformanceTimer()
+      recordPerformance('prompt.acp-request.begin', { mode: workspaceMode, setupDurationMs: elapsedPerformanceMs(submitStartedAt) })
       let result = await JCode.prompt(pid!, enrichedContent, promptOptions)
+      recordPerformance('prompt.acp-request.completed', { durationMs: elapsedPerformanceMs(promptStartedAtRef.current), hadError: Boolean(result.error) })
 
       // ACP session IDs are process-local. Recover automatically if an old
       // Cowork session contains an ID from a JCode process that has exited.
