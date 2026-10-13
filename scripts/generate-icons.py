@@ -93,7 +93,7 @@ def ico_dib(size):
                 row = size - 1 - y
                 mask[row * mask_stride + (x // 8)] |= 0x80 >> (x % 8)
     header = struct.pack("<IiiHHIIiiII", 40, size, size * 2, 1, 32, 0,
-                         len(xor) + len(mask), 0, 0, 0, 0)
+                         len(xor), 0, 0, 0, 0)
     return header + xor + mask
 
 frames = [(size, ico_dib(size)) for size in (16, 32, 48, 64, 128, 256)]
