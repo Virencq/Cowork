@@ -398,7 +398,7 @@ function App() {
                 onNewChat={(project) => {
                   const fullProject = useWorkspaceStore.getState().projects.find((item) => item.id === project.id)
                   const sessionId = createSession()
-                  if (fullProject) useWorkspaceStore.getState().updateProject(project.id, { sessionId })
+                  if (fullProject) useWorkspaceStore.getState().updateProject(project.id, { sessionId, sessionIds: [...new Set([...(fullProject.sessionIds || []), ...(fullProject.sessionId ? [fullProject.sessionId] : []), sessionId])] })
                   if (project.path) setWorkspaceDir(project.path)
                   setActiveSession(sessionId)
                   setQueuedProjectPrompt(null)
@@ -410,7 +410,7 @@ function App() {
                 onBack={() => navigateToPage('projects')}
                 onStartChat={(prompt) => {
                   const sessionId = createSession()
-                  useWorkspaceStore.getState().updateProject(selectedProject.id, { sessionId })
+                  useWorkspaceStore.getState().updateProject(selectedProject.id, { sessionId, sessionIds: [...new Set([...(selectedProject.sessionIds || []), ...(selectedProject.sessionId ? [selectedProject.sessionId] : []), sessionId])] })
                   if (selectedProject.path) setWorkspaceDir(selectedProject.path)
                   setActiveSession(sessionId)
                   setQueuedProjectPrompt({ id: `${Date.now()}-${sessionId}`, text: prompt })
