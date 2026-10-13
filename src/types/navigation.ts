@@ -1,1 +1,1 @@
-export type Page = 'chat' | 'tasks' | 'projects' | 'ideas' | 'extensions' | 'artifacts' | 'customize'
+export type Page = 'chat' | 'tasks' | 'projects' | 'project-detail' | 'ideas' | 'extensions' | 'artifacts' | 'customize'
