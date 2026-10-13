@@ -93,6 +93,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPr
   const [draftValue, setDraftValue] = useState<string | null>(null)
   const [pendingEditMessage, setPendingEditMessage] = useState<{ sessionId: string; messageId: string } | null>(null)
   const [contextStatus, setContextStatus] = useState<JCode.ContextStatus | null>(null)
+  const handledInitialPromptRef = useRef<string | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [dragTargetZone, setDragTargetZone] = useState<'message' | 'input'>('message')
   const [showPermissionPopup, setShowPermissionPopup] = useState(false)
@@ -374,12 +375,11 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPr
   )
 
   useEffect(() => {
-    if (!initialPrompt || !activeSessionId) return
-    let cancelled = false
+    if (!initialPrompt || !activeSessionId || handledInitialPromptRef.current === initialPrompt.id) return
+    handledInitialPromptRef.current = initialPrompt.id
     void handleSubmit(initialPrompt.text).finally(() => {
-      if (!cancelled) onInitialPromptHandled?.(initialPrompt.id)
+      onInitialPromptHandled?.(initialPrompt.id)
     })
-    return () => { cancelled = true }
   }, [initialPrompt?.id, activeSessionId, handleSubmit, onInitialPromptHandled])
 
   const activeJCodeSessionId = activeSessionId
