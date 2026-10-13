@@ -75,5 +75,5 @@
     "vite": "^7.0.4",
     "vitest": "^4.1.9"
   },
-  "description": "Cowork desktop workspace powered by the installed JCode CLI through ACP."
+  "description": "Orbito — AI Workspace for Real Work. A Tauri desktop AI workspace powered by the installed JCode CLI through ACP."
 }
