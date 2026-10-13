@@ -17,6 +17,7 @@ import { CitationTooltip } from './CitationTooltip'
 import { FileChip, parseFileLink } from './FileChip'
 import { highlightInWorker } from './shikiWorker'
 import { rehypeHeadingIds, remarkDisableConstructs, rehypeScalableSvg } from './plugins'
+import { shouldUseDocumentLayout } from './markdownLayout'
 
 // Specialized code renderers are loaded only when a matching code fence is present.
 const MermaidBlock = lazy(() => import('./MermaidBlock').then((m) => ({ default: m.MermaidBlock })))
