@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { FolderOpen, FolderKanban, Pin, Plus, Search, ArrowUpDown, Trash2 } from 'lucide-react'
+import { FolderOpen, FolderKanban, Pin, Plus, Search, ArrowUpDown, Trash2, MessageSquarePlus } from 'lucide-react'
 import { open } from '@tauri-apps/plugin-dialog'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useAppStore } from '../../stores'
@@ -11,6 +11,7 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
   const toggleProjectPin = useWorkspaceStore(s => s.toggleProjectPin)
   const pinnedProjectIds = useWorkspaceStore(s => s.pinnedProjectIds)
   const setWorkspaceDir = useAppStore(s => s.setWorkspaceDir)
+  const createSession = useAppStore(s => s.createSession)
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [sort, setSort] = useState<'updated' | 'name'>('updated')
@@ -71,8 +72,23 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    toggleProjectPin(project.id)
+                    const sessionId = createSession()
+                    useWorkspaceStore.getState().updateProject(project.id, { sessionId })
+                    if (project.path) setWorkspaceDir(project.path)
+                    onOpenProject?.(project)
                   }}
+                  className="absolute right-12 top-3 h-7 px-2 grid place-items-center gap-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-surface-hover text-[11px] font-medium"
+                  style={{ color: 'var(--color-text)' }}
+                  title={`Start a new chat in ${project.name}`}
+                  aria-label={`Start a new chat in ${project.name}`}
+                >
+                  <span className="inline-flex items-center gap-1"><MessageSquarePlus size={13}/> New chat</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleProjectPin(project.id)
+                  }
                   className="absolute right-3 top-3 h-7 w-7 grid place-items-center rounded-md hover:bg-surface-hover" style={{ color: 'var(--color-text-secondary)' }}
                   title={pinnedProjectIds.includes(project.id) ? 'Unpin project' : 'Pin project'}
                 >
