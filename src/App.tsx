@@ -26,6 +26,7 @@ import { initDatabase } from './utils/database'
 import { getAllSessions, createSession as dbCreateSession, saveMessage as dbSaveMessage } from './utils/database'
 import { status as jcodeStatus } from './utils/jcodeClient'
 import { getActiveTokens } from './themes'
+import { recordPerformance, startPerformanceTimer, elapsedPerformanceMs } from './utils/performanceDiagnostics'
 
 import type { Page } from './types/navigation'
 export type { Page } from './types/navigation'
@@ -255,21 +256,35 @@ function App() {
   }, [theme, colorScheme])
 
   useEffect(() => {
-    if (!inTauri) return
+    const startupStartedAt = startPerformanceTimer()
+    recordPerformance('startup.effect.begin', { inTauri })
+    const firstFrame = window.requestAnimationFrame(() => {
+      recordPerformance('startup.first-animation-frame', { sinceEffectMs: elapsedPerformanceMs(startupStartedAt) })
+    })
+    if (!inTauri) return () => window.cancelAnimationFrame(firstFrame)
 
     // Let the first interactive frame settle before starting optional native
     // discovery. MCP, skills and JCode status are useful background work, but
     // must not compete with the first chat paint and SQLite hydration.
     const backgroundStartup = window.setTimeout(() => {
-      void jcodeStatus().catch(() => {})
-      void useMCPStore.getState().refreshAllServers().catch(() => {})
-      void useSkillStore.getState().refreshSkills().catch(() => {})
+      const backgroundStartedAt = startPerformanceTimer()
+      recordPerformance('startup.background-discovery.begin')
+      void Promise.allSettled([
+        jcodeStatus().then(() => recordPerformance('startup.jcode-status.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) })),
+        useMCPStore.getState().refreshAllServers().then(() => recordPerformance('startup.mcp-refresh.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) })),
+        useSkillStore.getState().refreshSkills().then(() => recordPerformance('startup.skills-refresh.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) })),
+      ]).then(() => recordPerformance('startup.background-discovery.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) }))
     }, 1800)
 
+    const dbStartedAt = startPerformanceTimer()
+    recordPerformance('startup.database-init.begin')
     initDatabase().then(async () => {
+      recordPerformance('startup.database-init.complete', { durationMs: elapsedPerformanceMs(dbStartedAt) })
+      const sessionsStartedAt = startPerformanceTimer()
       // SQLite is authoritative once it contains sessions. Avoid parsing the
       // potentially large legacy Zustand payload on every normal app launch.
       const existingSessions = await getAllSessions()
+      recordPerformance('startup.sessions-query.complete', { durationMs: elapsedPerformanceMs(sessionsStartedAt), sessionCount: existingSessions.length })
       if (existingSessions.length === 0) {
         const storedState = localStorage.getItem(APP_STORAGE_KEY)
         if (storedState) {
@@ -304,7 +319,9 @@ function App() {
           }
         }
       }
+      const hydrationStartedAt = startPerformanceTimer()
       await useAppStore.getState().loadFromDb()
+      recordPerformance('startup.store-hydration.complete', { durationMs: elapsedPerformanceMs(hydrationStartedAt) })
       // If the persisted active project pointed to a session that no longer
       // exists in SQLite, reconcile it by creating one fresh session for that
       // project after the database is ready.
@@ -316,13 +333,25 @@ function App() {
         activateCodeProject(activeCodeProject)
       }
       const state = useAppStore.getState()
-      if (state.activeSessionId) await state.loadMessages(state.activeSessionId)
+      if (state.activeSessionId) {
+        const activeMessagesStartedAt = startPerformanceTimer()
+        await state.loadMessages(state.activeSessionId)
+        recordPerformance('startup.active-cowork-history.complete', { durationMs: elapsedPerformanceMs(activeMessagesStartedAt), messageCount: useAppStore.getState().sessionMessages[state.activeSessionId]?.length ?? 0 })
+      }
       // Code sessions are independent of Cowork selection and must hydrate after
       // SQLite is initialized, even if CodeWorkspace mounted before startup finished.
-      if (state.codeActiveSessionId) await state.loadMessages(state.codeActiveSessionId)
-    }).catch(console.warn)
+      if (state.codeActiveSessionId) {
+        const codeMessagesStartedAt = startPerformanceTimer()
+        await state.loadMessages(state.codeActiveSessionId)
+        recordPerformance('startup.active-code-history.complete', { durationMs: elapsedPerformanceMs(codeMessagesStartedAt), messageCount: useAppStore.getState().sessionMessages[state.codeActiveSessionId]?.length ?? 0 })
+      }
+      recordPerformance('startup.hydration.complete', { durationMs: elapsedPerformanceMs(startupStartedAt) })
+    }).catch((error) => {
+      recordPerformance('startup.hydration.failed', { error: String(error) })
+      console.warn(error)
+    })
 
-    return () => window.clearTimeout(backgroundStartup)
+    return () => { window.clearTimeout(backgroundStartup); window.cancelAnimationFrame(firstFrame) }
   }, [])
 
   const newTask = () => {
