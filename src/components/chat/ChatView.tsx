@@ -120,14 +120,15 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPr
       onThinking: (delta) => {
         const sm = useAppStore.getState().streamingMessage[sid]
         if (!sm) return
-        const parts = [...sm.parts]
-        const last = parts[parts.length - 1]
-        if (last?.type === 'reasoning') {
-          useAppStore.getState().appendStreamingDelta(sid, last.id, delta)
+        // Keep one reasoning part for the whole assistant turn. Creating a new
+        // timestamp ID after every tool/text transition produced duplicate cards.
+        const reasoningId = `jcode-reasoning-${sm.messageID}`
+        const existing = sm.parts.find((part) => part.id === reasoningId)
+        if (existing) {
+          useAppStore.getState().appendStreamingDelta(sid, reasoningId, delta)
         } else {
-          const rid = `thinking_${Date.now()}`
-          useAppStore.getState().updateStreamingPart(sid, rid, {
-            id: rid, type: 'reasoning', text: delta,
+          useAppStore.getState().updateStreamingPart(sid, reasoningId, {
+            id: reasoningId, type: 'reasoning', text: delta,
             sessionID: sid, messageID: sm.messageID,
           } as any)
         }
