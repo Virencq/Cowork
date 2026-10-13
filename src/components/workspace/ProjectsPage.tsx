@@ -88,7 +88,7 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                   onClick={(e) => {
                     e.stopPropagation()
                     toggleProjectPin(project.id)
-                  }
+                  }}
                   className="absolute right-3 top-3 h-7 w-7 grid place-items-center rounded-md hover:bg-surface-hover" style={{ color: 'var(--color-text-secondary)' }}
                   title={pinnedProjectIds.includes(project.id) ? 'Unpin project' : 'Pin project'}
                 >
