@@ -244,6 +244,19 @@ export const useAppStore = create<AppState>()(
           activeSessionId: id,
           sessionMessages: { ...state.sessionMessages, [id]: [] },
         }))
+        // Persist the conversation-to-project relationship for every chat created
+        // while a Cowork project folder is active, not only the first chat.
+        const activeWorkspaceDir = get().workspaceDir
+        if (activeWorkspaceDir) {
+          const normalizePath = (value: string) => value.replace(/\\\\/g, '/').replace(/\\/+$/, '').toLowerCase()
+          const project = useWorkspaceStore.getState().projects.find(
+            (item) => item.path && normalizePath(item.path) === normalizePath(activeWorkspaceDir),
+          )
+          if (project) {
+            const sessionIds = [...new Set([...(project.sessionIds || []), ...(project.sessionId ? [project.sessionId] : []), id])]
+            useWorkspaceStore.getState().updateProject(project.id, { sessionId: project.sessionId || id, sessionIds })
+          }
+        }
         db.createSession(id, 'New Chat').catch(console.warn)
         return id
       },
