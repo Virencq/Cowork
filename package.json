@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "tauri": "node scripts/with-native-build-env.mjs tauri",
-    "tauri:dev": "node scripts/with-native-build-env.mjs tauri dev",
+    "tauri:dev": "python scripts/generate-icons.py && node scripts/with-native-build-env.mjs tauri dev",
     "tauri:build": "python scripts/generate-icons.py && node scripts/with-native-build-env.mjs tauri build",
     "native:check": "node scripts/with-native-build-env.mjs cargo check --manifest-path src-tauri/Cargo.toml",
     "native:test:speech": "node scripts/with-native-build-env.mjs cargo test --manifest-path stt/Cargo.toml --lib",
