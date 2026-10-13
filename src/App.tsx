@@ -11,6 +11,7 @@ const TasksPage = lazy(() => import('./components/tasks').then((m) => ({ default
 const ExtensionsPage = lazy(() => import('./components/extensions/ExtensionsPage').then((m) => ({ default: m.ExtensionsPage })))
 const WorkspaceLibraryPage = lazy(() => import('./components/workspace/WorkspaceLibraryPage').then((m) => ({ default: m.WorkspaceLibraryPage })))
 const ProjectsPage = lazy(() => import('./components/workspace/ProjectsPage').then((m) => ({ default: m.ProjectsPage })))
+const ProjectDetailPage = lazy(() => import('./components/workspace/ProjectDetailPage').then((m) => ({ default: m.ProjectDetailPage })))
 const ArtifactsPage = lazy(() => import('./components/workspace/ArtifactsPage').then((m) => ({ default: m.ArtifactsPage })))
 const CodeWorkspace = lazy(() => import('./components/workspace/CodeWorkspace').then((m) => ({ default: m.CodeWorkspace })))
 import { useAppStore } from './stores'
@@ -18,7 +19,7 @@ import { useTaskScheduler, useTelegramChatSync } from './hooks'
 import { useMCPStore } from './stores/mcpStore'
 import { useSkillStore } from './stores/skillStore'
 import { useAgentStore } from './stores/agentStore'
-import { useWorkspaceStore } from './stores/workspaceStore'
+import { useWorkspaceStore, type CoworkProject } from './stores/workspaceStore'
 import { activateCodeProject } from './utils/codeProjectActions'
 import { projectPathsEqual } from './utils/projectPaths'
 import { initDatabase } from './utils/database'
@@ -207,6 +208,11 @@ function App() {
   const activeCodeProjectId = useWorkspaceStore((s) => s.activeCodeProjectId)
   const activeSessionMessageCount = useAppStore((s) => activeSessionId ? (s.sessionMessages[activeSessionId]?.length ?? 0) : 0)
   const [page, setPage] = useState<Page>('chat')
+  const [selectedProject, setSelectedProject] = useState<CoworkProject | null>(null)
+  const [queuedProjectPrompt, setQueuedProjectPrompt] = useState<{ id: string; text: string } | null>(null)
+  const handleInitialPromptHandled = useCallback((id: string) => {
+    setQueuedProjectPrompt((current) => current?.id === id ? null : current)
+  }, [])
   const [showSettings, setShowSettings] = useState(false)
   const [leftWidth, setLeftWidth] = useState(() => Number(localStorage.getItem('cowork-left-width')) || 200)
   const [rightWidth, setRightWidth] = useState(() => Math.min(360, Math.max(280, Number(localStorage.getItem('cowork-right-width')) || 330)))
@@ -371,7 +377,7 @@ function App() {
                   work on every chat/session update. Session history is persisted in SQLite. */}
               {page === 'chat' && !codeMode && (
                 <div className="min-w-0 min-h-0 flex-1 flex flex-col">
-                  <ChatView />
+                  <ChatView initialPrompt={queuedProjectPrompt} onInitialPromptHandled={handleInitialPromptHandled} />
                 </div>
               )}
               {hasVisitedCode && page === 'chat' && codeMode && (
@@ -381,50 +387,43 @@ function App() {
               )}
 
               {page === 'tasks' && <TasksPage />}
-              {page === 'projects' && <ProjectsPage onOpenProject={(project) => {
-                if (project.path) setWorkspaceDir(project.path)
-                // Reopen this project's existing chat instead of creating a new
-                // session on every click. Associate a session on first open only.
-                const workspaceState = useWorkspaceStore.getState()
-                const storedProject = workspaceState.projects.find((item) => item.id === project.id)
-                const storedSessionId = storedProject?.sessionId
-                const appState = useAppStore.getState()
-                const sessions = appState.sessions
-                const linkedSessionIds = new Set(
-                  workspaceState.projects
-                    .filter((item) => item.id !== project.id && item.sessionId)
-                    .map((item) => item.sessionId as string),
-                )
-
-                // Prefer the project's saved session. For projects created before
-                // session linking existed, recover a likely existing chat rather
-                // than silently creating "New Chat" on every project click.
-                let sessionId = storedSessionId
-                if (!sessionId || !sessions.some((session) => session.id === sessionId)) {
-                  const projectName = project.name.trim().toLowerCase()
-                  const namedMatch = sessions
-                    .filter((session) => !linkedSessionIds.has(session.id))
-                    .find((session) => session.title?.toLowerCase().includes(projectName))
-                  const activeWithHistory = appState.activeSessionId
-                    ? sessions.find((session) => session.id === appState.activeSessionId &&
-                        (appState.sessionMessages[session.id]?.length ?? 0) > 0 &&
-                        !linkedSessionIds.has(session.id))
-                    : undefined
-                  const mostRecentWithHistory = [...sessions]
-                    .filter((session) => !linkedSessionIds.has(session.id) &&
-                      (appState.sessionMessages[session.id]?.length ?? 0) > 0)
-                    .sort((a, b) => b.updatedAt - a.updatedAt)[0]
-                  sessionId = namedMatch?.id ?? activeWithHistory?.id ?? mostRecentWithHistory?.id
-                }
-
-                if (!sessionId) {
-                  sessionId = createSession()
-                }
-                workspaceState.updateProject(project.id, { sessionId })
-                setActiveSession(sessionId)
-                void useAppStore.getState().loadMessages(sessionId)
-                navigateToPage('chat')
-              }} />}
+              {page === 'projects' && <ProjectsPage
+                onOpenProject={(project) => {
+                  const fullProject = useWorkspaceStore.getState().projects.find((item) => item.id === project.id)
+                  if (!fullProject) return
+                  setSelectedProject(fullProject)
+                  if (fullProject.path) setWorkspaceDir(fullProject.path)
+                  navigateToPage('project-detail')
+                }}
+                onNewChat={(project) => {
+                  const fullProject = useWorkspaceStore.getState().projects.find((item) => item.id === project.id)
+                  const sessionId = createSession()
+                  if (fullProject) useWorkspaceStore.getState().updateProject(project.id, { sessionId })
+                  if (project.path) setWorkspaceDir(project.path)
+                  setActiveSession(sessionId)
+                  setQueuedProjectPrompt(null)
+                  navigateToPage('chat')
+                }}
+              />}
+              {page === 'project-detail' && selectedProject && <ProjectDetailPage
+                project={selectedProject}
+                onBack={() => navigateToPage('projects')}
+                onStartChat={(prompt) => {
+                  const sessionId = createSession()
+                  useWorkspaceStore.getState().updateProject(selectedProject.id, { sessionId })
+                  if (selectedProject.path) setWorkspaceDir(selectedProject.path)
+                  setActiveSession(sessionId)
+                  setQueuedProjectPrompt({ id: `${Date.now()}-${sessionId}`, text: prompt })
+                  navigateToPage('chat')
+                }}
+                onOpenSession={(sessionId) => {
+                  if (selectedProject.path) setWorkspaceDir(selectedProject.path)
+                  setActiveSession(sessionId)
+                  void useAppStore.getState().loadMessages(sessionId)
+                  navigateToPage('chat')
+                }}
+                onOpenScheduled={() => navigateToPage('tasks')}
+              />}
               {page === 'ideas' && <div className="flex-1 grid place-items-center"><div className="text-center max-w-md"><Lightbulb className="mx-auto mb-4 text-[#b0a79e]" size={30}/><h2 className="text-xl font-semibold">Ideas</h2><p className="mt-2 text-sm text-[#8c847c]">Capture ideas here and turn them into tasks when ready.</p></div></div>}
               {page === 'extensions' && <ExtensionsPage />}
               {page === 'customize' && <WorkspaceLibraryPage initialSection="skills" />}
