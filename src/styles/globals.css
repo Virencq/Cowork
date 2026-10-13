@@ -110,10 +110,20 @@
   transform-origin: 50% 50%;
 }
 .cowork-logo svg { display: block; overflow: visible; }
-.cowork-logo--working { animation: cowork-logo-spin 1.8s linear infinite; }
-.cowork-logo--working .cowork-logo-ring { stroke: #f0784d; stroke-opacity: .85; }
-@keyframes cowork-logo-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .cowork-logo--working { animation-duration: 6s; } }
+.cowork-logo--working { animation: none; }
+.cowork-logo--working .cowork-logo-ring {
+  stroke: #f0784d;
+  stroke-opacity: .95;
+  stroke-dasharray: 25 88;
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cowork-ring-spin 1.2s linear infinite;
+}
+@keyframes cowork-ring-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .cowork-logo--working .cowork-logo-ring { animation: none; stroke-dasharray: none; }
+}
 
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
