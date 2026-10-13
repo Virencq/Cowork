@@ -80,8 +80,12 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPr
   const workspaceDir = workspaceMode === 'code' ? codeWorkspaceDir : coworkWorkspaceDir
   const activeProject = useWorkspaceStore((state) => workspaceMode === 'code'
     ? state.codeProjects.find((project) => project.id === state.activeCodeProjectId)
-    : state.projects.find((project) => project.sessionId === activeSessionId) ??
-      state.projects.find((project) => Boolean(project.path && workspaceDir && projectPathsEqual(project.path, workspaceDir))))
+    // In Cowork, a folder is shown as the chat's project only when the chat is
+    // explicitly linked to that project. A leftover global workspaceDir must
+    // not make an unrelated/new chat appear to belong to a project.
+    : activeSessionId
+      ? state.projects.find((project) => project.sessionId === activeSessionId || project.sessionIds?.includes(activeSessionId))
+      : undefined)
   const setModeActiveSession = useCallback((id: string | null) => {
     if (workspaceMode === 'code') { setCodeActiveSessionId(id); if (id) markCodeSession(id) }
     else useAppStore.getState().setActiveSession(id)
@@ -664,10 +668,12 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPr
                 onClick={() => { if (workspaceMode === 'cowork') onOpenProjects?.() }}
                 disabled={workspaceMode !== 'cowork' || !onOpenProjects}
                 className="min-w-0 max-w-[38%] truncate text-left font-medium text-white hover:text-[#f0a078] disabled:cursor-default disabled:hover:text-white transition-colors"
-                title={workspaceMode === 'cowork' ? 'Open project selection' : (activeProject?.name || workspaceDir || 'Workspace')}
-                aria-label={workspaceMode === 'cowork' ? 'Open project selection' : (activeProject?.name || 'Workspace')}
+                title={workspaceMode === 'cowork' ? (activeProject?.name || 'No project selected') : (activeProject?.name || workspaceDir || 'Workspace')}
+                aria-label={workspaceMode === 'cowork' ? (activeProject?.name || 'No project selected') : (activeProject?.name || 'Workspace')}
               >
-                {activeProject?.name || workspaceDir?.split(/[\\/]/).filter(Boolean).pop() || 'Workspace'}
+                {workspaceMode === 'cowork'
+                  ? (activeProject?.name || 'New chat')
+                  : (activeProject?.name || workspaceDir?.split(/[\\/]/).filter(Boolean).pop() || 'Workspace')}
               </button>
               <ChevronDown size={13} className="shrink-0 rotate-[-90deg] text-white/60" />
               <span className="min-w-0 truncate font-semibold text-white" title={session.title || 'New Chat'}>
