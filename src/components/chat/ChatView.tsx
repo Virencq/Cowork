@@ -5,6 +5,8 @@ import { useAppStore, useAgentStore, useWebSearchStore, usePetStore } from '../.
 import { useSkillStore } from '../../stores/skillStore'
 import { useMCPStore } from '../../stores/mcpStore'
 import { useFilePreviewStore } from '../../stores/filePreviewStore'
+import { useWorkspaceStore } from '../../stores/workspaceStore'
+import { projectPathsEqual } from '../../utils/projectPaths'
 import { invoke } from '@tauri-apps/api/core'
 import type { ImageAttachment } from './ChatInput'
 import { Paperclip, FolderTree, MessagesSquare, ShieldAlert, Sparkles, ArrowUp, FolderKanban, ChevronDown, Asterisk } from 'lucide-react'
@@ -75,6 +77,10 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
   })))
   const activeSessionId = workspaceMode === 'code' ? codeActiveSessionId : coworkActiveSessionId
   const workspaceDir = workspaceMode === 'code' ? codeWorkspaceDir : coworkWorkspaceDir
+  const activeProject = useWorkspaceStore((state) => workspaceMode === 'code'
+    ? state.codeProjects.find((project) => project.id === state.activeCodeProjectId)
+    : state.projects.find((project) => project.sessionId === activeSessionId) ??
+      state.projects.find((project) => Boolean(project.path && workspaceDir && projectPathsEqual(project.path, workspaceDir))))
   const setModeActiveSession = useCallback((id: string | null) => {
     if (workspaceMode === 'code') { setCodeActiveSessionId(id); if (id) markCodeSession(id) }
     else useAppStore.getState().setActiveSession(id)
@@ -618,12 +624,14 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
         )}
         <div className="flex-1 min-h-0 relative bg-transparent">
           {activeSessionId && session && !isEmpty && (
-            <div className="relative z-20 flex h-12 shrink-0 items-center gap-2 border-b border-border/70 px-5 pr-24 text-[13px] text-text-secondary">
-              <span className="font-medium text-text-secondary">{workspaceMode === 'code' ? 'Code' : 'Cowork'}</span>
-              <ChevronDown size={13} className="rotate-[-90deg] opacity-50" />
-              {session.sourceLabel && <><span>{session.sourceLabel}</span><span className="opacity-40">/</span></>}
-              <span className="min-w-0 truncate font-semibold text-text">{session.title || 'New Chat'}</span>
-              <ChevronDown size={14} className="shrink-0 opacity-60" />
+            <div className="relative z-20 flex h-12 shrink-0 items-center gap-2 border-b border-border/70 px-5 pr-24 text-[13px]">
+              <span className="min-w-0 max-w-[38%] truncate font-medium text-white" title={activeProject?.name || workspaceDir || 'Workspace'}>
+                {activeProject?.name || workspaceDir?.split(/[\\/]/).filter(Boolean).pop() || 'Workspace'}
+              </span>
+              <ChevronDown size={13} className="shrink-0 rotate-[-90deg] text-white/60" />
+              <span className="min-w-0 truncate font-semibold text-white" title={session.title || 'New Chat'}>
+                {session.title || 'New Chat'}
+              </span>
             </div>
           )}
           <AnimatePresence mode="wait">
