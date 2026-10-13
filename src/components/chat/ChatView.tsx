@@ -522,12 +522,12 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
       .slice(0, 3)
 
     return (
-      <div className="flex-1 h-full overflow-auto bg-white">
+      <div className="cowork-home flex-1 h-full overflow-auto bg-bg">
         <div className="min-h-full flex flex-col">
           <div className="flex-1 flex flex-col items-center pt-[264px] px-8">
             <div className="mb-11 flex items-center justify-center gap-3">
               <div className="h-10 w-10 grid place-items-center text-[#df7650]"><Asterisk size={39} strokeWidth={1.7}/></div>
-              <h1 className="font-serif text-[39px] leading-none tracking-[-0.04em] text-[#171411]">
+              <h1 className="cowork-home-greeting font-serif text-[39px] leading-none tracking-[-0.04em]" style={{ color: "var(--color-text)" }}>
                 You’re here!
               </h1>
             </div>
@@ -572,7 +572,7 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork' }: { embed
                 </div>
               ) : (
                 <div className="flex items-center gap-3 px-1 py-2" style={{ color: 'var(--color-text-secondary)' }}>
-                  <span className="text-[#8c857e]">☷</span>
+                  <span className="text-text-secondary">☷</span>
                   <span className="text-[12px]">No active tasks</span>
                 </div>
               )}
