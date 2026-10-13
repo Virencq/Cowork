@@ -766,3 +766,47 @@ button {
     transition-duration: .14s;
   }
 }
+
+
+/* Chat polish: neutral prompts, crisp text, and a quiet dark surface. */
+.dark .user-message-bubble {
+  background: #252524;
+  color: #f0efed;
+  border: 1px solid #343432;
+  box-shadow: none;
+}
+.dark .user-message-text { color: #f0efed; }
+.dark .user-message-text .file-chip,
+.dark .user-message-text [data-file-chip] { color: #e9e7e3; }
+.dark .chat-scroll-area .prose,
+.dark .chat-scroll-area .prose p,
+.dark .chat-scroll-area .prose li,
+.dark .chat-scroll-area .prose blockquote,
+.dark .chat-scroll-area .prose td,
+.dark .chat-scroll-area .prose th {
+  color: #f0efed;
+  font-size: 16px;
+  line-height: 1.72;
+  font-weight: 400;
+}
+.dark .chat-scroll-area .prose strong,
+.dark .chat-scroll-area .prose b {
+  color: #ffffff;
+  font-weight: 650;
+}
+.dark .chat-scroll-area .prose h1,
+.dark .chat-scroll-area .prose h2,
+.dark .chat-scroll-area .prose h3,
+.dark .chat-scroll-area .prose h4 {
+  color: #ffffff;
+  font-weight: 650;
+}
+.dark .chat-scroll-area .prose a { color: #e8a17f; }
+.dark .chat-scroll-area .prose :not(pre) > code {
+  color: #f1b18e;
+  background: #292826;
+}
+.dark .chat-scroll-area .prose pre {
+  background: #1b1b1a;
+  border-color: #393936;
+}
