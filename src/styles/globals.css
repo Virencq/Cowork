@@ -85,19 +85,19 @@
 .dark {
   --color-accent: #d97757;
   --color-accent-rgb: 217, 119, 87;
-  --color-bg: #141414;
-  --color-surface: #1f1f1f;
-  --color-surface-secondary: #252525;
-  --color-surface-tertiary: #333333;
-  --color-surface-hover: #333333;
-  --color-surface-elevated: #252525;
-  --color-text: #f2f2f2;
-  --color-text-secondary: #c4c4c4;
-  --color-text-tertiary: #969696;
-  --color-text-quaternary: #707070;
-  --color-border: #333333;
-  --color-border-light: #292929;
-  --color-border-hover: #454545;
+  --color-bg: #171716;
+  --color-surface: #1e1e1c;
+  --color-surface-secondary: #242422;
+  --color-surface-tertiary: #2d2d2a;
+  --color-surface-hover: #30302d;
+  --color-surface-elevated: #252523;
+  --color-text: #e9e7e2;
+  --color-text-secondary: #b8b5ae;
+  --color-text-tertiary: #96928a;
+  --color-text-quaternary: #77736c;
+  --color-border: #343430;
+  --color-border-light: #2b2b28;
+  --color-border-hover: #484842;
 }
 
 /* ── Animations ── */
@@ -830,43 +830,75 @@ button {
 .dark .cowork-home [style*="color: var(--color-text-tertiary)"] { color: #aaa7a1 !important; }
 
 
-/* User-requested high-contrast dark theme: all UI text is white. */
-.dark,
+
+
+/* Refined dark palette: warm charcoal surfaces and soft, readable typography. */
+.dark {
+  color-scheme: dark;
+  background-color: #171716;
+  color: #e9e7e2;
+  --color-bg: #171716;
+  --color-surface: #1e1e1c;
+  --color-surface-secondary: #242422;
+  --color-surface-tertiary: #2d2d2a;
+  --color-surface-hover: #30302d;
+  --color-surface-elevated: #252523;
+  --color-text: #e9e7e2;
+  --color-text-secondary: #b8b5ae;
+  --color-text-tertiary: #96928a;
+  --color-text-quaternary: #77736c;
+  --color-border: #343430;
+  --color-border-light: #2b2b28;
+  --color-border-hover: #484842;
+}
 .dark body,
 .dark #root,
-.dark button,
+.dark .app-shell {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+.dark .cowork-home {
+  background: radial-gradient(ellipse at 50% 0%, #20201e 0%, #171716 64%) !important;
+  color: var(--color-text);
+}
+.dark .cowork-home-greeting { color: #e9e7e2 !important; }
+.dark .cowork-home :is(button, span, p, label, small) { text-shadow: none; }
+.dark .cowork-home [style*="color: var(--color-text-secondary)"] { color: #b8b5ae !important; }
+.dark .cowork-home [style*="color: var(--color-text-tertiary)"] { color: #96928a !important; }
+.dark .cowork-home input::placeholder,
+.dark .cowork-home textarea::placeholder { color: #96928a !important; opacity: 1 !important; }
+.dark .cowork-nav-item { color: #b8b5ae; }
+.dark .cowork-nav-item:hover,
+.dark .cowork-nav-item.active { color: #e9e7e2; }
+.dark .menu-row { color: #c7c4bd; }
+.dark .title-control,
+.dark .btn-ghost,
+.dark .btn-ghost-danger { color: #aaa69e; }
+.dark .user-message-bubble {
+  background: #292926;
+  border-color: #393934;
+  color: #e9e7e2;
+}
+.dark .user-message-text { color: #e9e7e2; }
+.dark .chat-scroll-area .prose,
+.dark .chat-scroll-area .prose p,
+.dark .chat-scroll-area .prose li,
+.dark .chat-scroll-area .prose blockquote,
+.dark .chat-scroll-area .prose td,
+.dark .chat-scroll-area .prose th {
+  color: #d8d5cf;
+}
+.dark .chat-scroll-area .prose strong,
+.dark .chat-scroll-area .prose b,
+.dark .chat-scroll-area .prose :is(h1,h2,h3,h4) { color: #f0eee9; }
+.dark .chat-scroll-area .prose a { color: #d7a18b; }
+.dark .chat-scroll-area .prose :not(pre) > code {
+  color: #dcb49f;
+  background: #292825;
+}
 .dark input,
 .dark textarea,
-.dark select,
-.dark option,
-.dark label,
-.dark p,
-.dark span,
-.dark div,
-.dark a,
-.dark li,
-.dark td,
-.dark th,
-.dark summary,
-.dark small,
-.dark strong,
-.dark em,
-.dark code,
-.dark pre,
-.dark blockquote,
-.dark h1,
-.dark h2,
-.dark h3,
-.dark h4,
-.dark h5,
-.dark h6,
-.dark [class*="text-"],
-.dark [style*="color:"] {
-  color: #ffffff !important;
-}
+.dark select { color: #e9e7e2; }
 .dark input::placeholder,
-.dark textarea::placeholder {
-  color: #ffffff !important;
-  opacity: .78 !important;
-}
-.dark svg { color: inherit; }
+.dark textarea::placeholder { color: #96928a; opacity: 1; }
+.dark [class*="border"] { border-color: var(--color-border); }
