@@ -77,13 +77,36 @@ for name,size in sizes.items():
 for side in (30,44,71,89,107,142,150,284,310):
     (ICON_DIR/f"Square{side}x{side}Logo.png").write_bytes(png_bytes(side))
 (ICON_DIR/"StoreLogo.png").write_bytes(png_bytes(50))
-# Multi-resolution Windows ICO
-frames=[(16,png_bytes(16)),(32,images[32]),(48,png_bytes(48)),(64,images[64]),(128,images[128]),(256,images[256])]
-offset=6+16*len(frames); entries=[]; payload=bytearray()
-for size,data in frames:
-    entries.append(struct.pack("<BBBBHHII",0 if size==256 else size,0 if size==256 else size,0,0,1,32,len(data),offset))
-    payload.extend(data); offset+=len(data)
-(ICON_DIR/"icon.ico").write_bytes(struct.pack("<HHH",0,1,len(frames))+b"".join(entries)+payload)
+# Multi-resolution Windows ICO using classic 32-bit DIB frames.
+# Tauri's icon decoder rejects indexed PNG payloads in ICO files; DIB frames
+# avoid that decoder incompatibility and preserve alpha transparency.
+def ico_dib(size):
+    xor = bytearray()
+    mask_rows = []
+    mask_stride = ((size + 31) // 32) * 4
+    mask = bytearray(mask_stride * size)
+    for y in range(size - 1, -1, -1):  # DIB rows are bottom-up
+        for x in range(size):
+            r, g, b, a = rgba_at(x, y, size)
+            xor.extend((b, g, r, a))
+            if a < 128:
+                row = size - 1 - y
+                mask[row * mask_stride + (x // 8)] |= 0x80 >> (x % 8)
+    header = struct.pack("<IiiHHIIiiII", 40, size, size * 2, 1, 32, 0,
+                         len(xor) + len(mask), 0, 0, 0, 0)
+    return header + xor + mask
+
+frames = [(size, ico_dib(size)) for size in (16, 32, 48, 64, 128, 256)]
+offset = 6 + 16 * len(frames)
+entries, payload = [], bytearray()
+for size, data in frames:
+    entries.append(struct.pack("<BBBBHHII", 0 if size == 256 else size,
+                               0 if size == 256 else size, 0, 0, 1, 32,
+                               len(data), offset))
+    payload.extend(data)
+    offset += len(data)
+(ICON_DIR / "icon.ico").write_bytes(struct.pack("<HHH", 0, 1, len(frames)) +
+                                    b"".join(entries) + payload)
 # Standard ICNS PNG chunks for macOS
 chunks=[]
 for code,size in [(b"icp4",16),(b"icp5",32),(b"icp6",64),(b"ic07",128),(b"ic08",256),(b"ic09",512),(b"ic10",1024)]:
