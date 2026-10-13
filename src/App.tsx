@@ -439,7 +439,7 @@ function App() {
                   work on every chat/session update. Session history is persisted in SQLite. */}
               {page === 'chat' && !codeMode && (
                 <div className="min-w-0 min-h-0 flex-1 flex flex-col">
-                  <ChatView initialPrompt={queuedProjectPrompt} onInitialPromptHandled={handleInitialPromptHandled} />
+                  <ChatView initialPrompt={queuedProjectPrompt} onInitialPromptHandled={handleInitialPromptHandled} onOpenProjects={() => navigateToPage('projects')} />
                 </div>
               )}
               {hasVisitedCode && page === 'chat' && codeMode && (
