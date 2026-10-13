@@ -1,4 +1,4 @@
-import { shouldUseDocumentLayout } from '../shared/Markdown'
+import { shouldUseDocumentLayout } from '../shared/markdownLayout'
 import { SmoothStream } from '../shared/SmoothStream'
 
 interface TextPartViewProps {
