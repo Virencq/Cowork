@@ -133,5 +133,9 @@ export function SmoothStream({ text, isStreaming }: SmoothStreamProps) {
     }
   }, []) // Empty deps — loop runs continuously, uses refs for all state
 
-  return <Markdown>{displayed}</Markdown>
+  return (
+    <Suspense fallback={<div className="whitespace-pre-wrap break-words">{displayed}</div>}>
+      <Markdown>{displayed}</Markdown>
+    </Suspense>
+  )
 }
