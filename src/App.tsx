@@ -244,6 +244,32 @@ function App() {
   useTelegramChatSync()
 
   useEffect(() => {
+    const exportPerformanceLog = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'd')) return
+      event.preventDefault()
+      try {
+        const entries = localStorage.getItem('cowork-performance-diagnostics') || '[]'
+        const blob = new Blob([JSON.stringify({
+          exportedAt: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          entries: JSON.parse(entries),
+        }, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'cowork-performance-diagnostics.json'
+        link.click()
+        URL.revokeObjectURL(url)
+        recordPerformance('diagnostics.exported')
+      } catch (error) {
+        console.warn('[Cowork performance] Could not export diagnostics:', error)
+      }
+    }
+    window.addEventListener('keydown', exportPerformanceLog)
+    return () => window.removeEventListener('keydown', exportPerformanceLog)
+  }, [])
+
+  useEffect(() => {
     const openSettings = () => setShowSettings(true)
     window.addEventListener('cowork:open-settings', openSettings)
     return () => window.removeEventListener('cowork:open-settings', openSettings)
