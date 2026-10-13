@@ -51,7 +51,7 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
         {visible.length ? (
           <div className="grid grid-cols-2 gap-6">
             {visible.map(project => (
-              <div key={project.id} className="group relative h-[78px] rounded-xl border px-4 py-3 hover:shadow-sm transition" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }}>
+              <div key={project.id} className="group relative h-[92px] rounded-xl border px-4 py-3 hover:shadow-sm transition" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }}>
                 <button
                   onClick={() => {
                     if (onOpenProject) onOpenProject(project)
@@ -66,7 +66,7 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                       <span className="truncate">{project.name}</span>
                       {pinnedProjectIds.includes(project.id) && <Pin size={13} className="fill-current" style={{ color: 'var(--color-text-secondary)' }}/>}
                     </div>
-                    <div className="mt-2 text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>{new Date(project.updatedAt).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</div>
+                    <div className="mt-1.5 text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>{new Date(project.updatedAt).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</div>
                   </div>
                 </div>
                 <button
@@ -77,7 +77,7 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                     if (project.path) setWorkspaceDir(project.path)
                     onOpenProject?.(project)
                   }}
-                  className="absolute right-3 bottom-3 h-7 px-2 grid place-items-center gap-1 rounded-md hover:bg-surface-hover text-[11px] font-medium"
+                  className="absolute right-3 bottom-2 h-7 px-2 grid place-items-center gap-1 rounded-md hover:bg-surface-hover text-[11px] font-medium"
                   style={{ color: 'var(--color-text)' }}
                   title={`Start a new chat in ${project.name}`}
                   aria-label={`Start a new chat in ${project.name}`}
@@ -104,7 +104,7 @@ export function ProjectsPage({ onOpenProject }: { onOpenProject?: (project: { id
                 >
                   <Trash2 size={14}/>
                 </button>
-                <div className="absolute left-4 bottom-3 flex items-center gap-1 text-[11px] pointer-events-none" style={{ color: 'var(--color-text-secondary)' }}><FolderOpen size={13}/><span className="max-w-[160px] truncate">{project.name}</span></div>
+                
               </div>
             ))}
           </div>
