@@ -1,52 +1,51 @@
-# Cowork Desktop
+# Orbito — AI Workspace for Real Work
 
-A lightweight Windows desktop AI workspace built as a native desktop application and powered by the installed JCode CLI through JCode ACP.
+Orbito is a desktop AI workspace that brings projects, agents, tools, and tasks together in one place.
 
-## Architecture
-
-- Tauri 2
-- React
-- TypeScript
-- Rust
-- JCode ACP
-- SQLite where appropriate
-
-Runtime:
-
-`React -> Tauri -> Rust -> jcode acp -> installed JCode`
+> **AI Workspace for Real Work**
 
 ## Product
 
-The application provides a polished Cowork-style workflow with:
+- Project-based workspaces and task history
+- Agent conversations and tool execution
+- Contextual sidebars and workspace files
+- MCP integrations and Skills
+- Scheduled tasks and artifacts
+- Browser integration
 
-- resizable left navigation sidebar
-- central task workspace
-- resizable right contextual sidebar
-- projects
-- task history
-- filesystem/workspace context
-- permissions
-- MCP
-- Skills
-- scheduled tasks
-- artifacts
-- browser integration
+## Technology
 
-## Language
+- Tauri 2
+- React and TypeScript
+- Rust
+- JCode CLI through JCode ACP
+- SQLite where appropriate
 
-The application UI is English-only.
+Runtime: `React → Tauri → Rust → JCode ACP → installed JCode`
+
+## Requirements
+
+Orbito currently targets Windows desktop. The JCode CLI must be installed separately on the target machine.
 
 ## Development
 
-See:
+```bash
+npm install
+npm run tauri:dev
+```
 
-- `AGENTS.md`
-- `docs/ARCHITECTURE.md`
-- `docs/MIGRATION_PLAN.md`
-- `docs/ENGLISH_ONLY.md`
+For a production build:
 
-## Upstream foundation
+```bash
+npm run tauri:build
+```
 
-Cowork has its own product identity and UI, with JCode ACP as the agent runtime.
+See `AGENTS.md` and the `docs/` directory for architecture, security, and development notes.
 
-JCode is expected to be installed separately on the target Windows system.
+## Branding
+
+Orbito uses a warm orange orbital mark on a deep-charcoal background. The activity indicator animates while an agent is working. The logo and wordmark are original project assets.
+
+## License
+
+See [LICENSE](LICENSE).
