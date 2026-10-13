@@ -12,10 +12,11 @@
     "test:coverage": "vitest run --coverage",
     "tauri": "node scripts/with-native-build-env.mjs tauri",
     "tauri:dev": "node scripts/with-native-build-env.mjs tauri dev",
-    "tauri:build": "node scripts/with-native-build-env.mjs tauri build",
+    "tauri:build": "python scripts/generate-icons.py && node scripts/with-native-build-env.mjs tauri build",
     "native:check": "node scripts/with-native-build-env.mjs cargo check --manifest-path src-tauri/Cargo.toml",
     "native:test:speech": "node scripts/with-native-build-env.mjs cargo test --manifest-path stt/Cargo.toml --lib",
-    "publish:release": "node scripts/publish-release.mjs"
+    "publish:release": "node scripts/publish-release.mjs",
+    "icons:generate": "python scripts/generate-icons.py"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",

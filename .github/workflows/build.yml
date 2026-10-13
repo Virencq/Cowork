@@ -50,6 +50,8 @@ jobs:
         with:
           workspaces: src-tauri -> target
       - run: npm ci
+      - name: Generate Orbito Windows icons
+        run: python scripts/generate-icons.py
       - name: Build Windows installers
         run: npm run tauri:build
       - name: Upload Windows installers
