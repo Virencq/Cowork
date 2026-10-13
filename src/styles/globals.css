@@ -810,3 +810,21 @@ button {
   background: #1b1b1a;
   border-color: #393936;
 }
+
+
+/* Improve dark-mode contrast on the home screen and neutralize inherited light-theme text. */
+.dark {
+  --color-text: #f5f4f2;
+  --color-text-secondary: #d0ceca;
+  --color-text-tertiary: #aaa7a1;
+  --color-text-quaternary: #8d8982;
+}
+.dark .cowork-home { background: #141414 !important; color: #f5f4f2; }
+.dark .cowork-home-greeting { color: #f5f4f2 !important; }
+.dark .cowork-home button,
+.dark .cowork-home span,
+.dark .cowork-home p { text-shadow: none; }
+.dark .cowork-home input::placeholder,
+.dark .cowork-home textarea::placeholder { color: #aaa7a1 !important; opacity: 1 !important; }
+.dark .cowork-home [style*="color: var(--color-text-secondary)"] { color: #d0ceca !important; }
+.dark .cowork-home [style*="color: var(--color-text-tertiary)"] { color: #aaa7a1 !important; }
