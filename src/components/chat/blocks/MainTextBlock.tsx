@@ -11,6 +11,9 @@ export function MainTextBlock({ parts, isStreaming, isDocument }: MainTextBlockP
   // Merge all text from sequential text parts
   const allText = parts.map(p => (p as any).text || '').join('\n')
 
+  // Do not render an empty streaming text container; activity feedback lives on the Cowork logo.
+  if (!allText.trim()) return null
+
   if (isDocument) {
     return (
       <div className="relative">
