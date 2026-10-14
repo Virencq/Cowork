@@ -56,8 +56,8 @@ export function CodeWorkspace() {
     : 'No project')
 
   return (
-    <div className="h-full min-h-0 flex flex-col bg-white text-[#302c28]">
-      <header className="h-12 shrink-0 border-b border-[#e3dfda] bg-white flex items-center px-4">
+    <div className="code-workspace h-full min-h-0 flex flex-col bg-bg text-text">
+      <header className="h-12 shrink-0 border-b border-border bg-surface flex items-center px-4">
         <div className="h-6 w-px bg-[#e8e3de] mr-3" />
 
         <div className="flex items-center gap-2 min-w-0">
@@ -94,7 +94,7 @@ export function CodeWorkspace() {
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 flex bg-[#fcfbfa]">
+      <main className="min-h-0 flex-1 flex bg-bg">
         {showFiles && workspaceDir && (
           <aside className="w-[260px] shrink-0 border-r border-[#e8e3de] bg-[#fcfbfa] flex flex-col">
             <div className="h-10 shrink-0 px-3 border-b border-[#eee9e4] flex items-center justify-between">
