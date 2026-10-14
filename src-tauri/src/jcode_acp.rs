@@ -399,8 +399,7 @@ pub fn jcode_runtime_info() -> Result<Value, String> {
         "compactionEnabled": compaction_enabled,
         "compactionThreshold": compaction_threshold,
         "configuredMcpServers": mcp_configured,
-        "disabledSkills": disabled_skills,
-        "rawConfig": config
+        "disabledSkills": disabled_skills
     }))
 }
 
