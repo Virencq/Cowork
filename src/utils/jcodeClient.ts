@@ -166,14 +166,43 @@ export async function syncMcpConfig(servers: unknown[]) {
 export interface JCodeRuntimeInfo {
   installed: boolean
   path?: string
+  configPath?: string
+  configExists?: boolean
   provider?: string | null
   model?: string | null
+  smallModel?: string | null
   effort?: string | null
-  raw?: string
+  defaultMode?: 'approval' | 'plan' | 'full_access' | string
+  defaultContextLimit?: number | null
+  contextLimitOverrides?: number
+  compactionEnabled?: boolean
+  compactionThreshold?: number | null
+  configuredMcpServers?: number
+  disabledSkills?: number
+  skillsPath?: string
+  skillsExists?: boolean
+  mcpPath?: string
+  mcpConfigExists?: boolean
+}
+
+export interface JCodeRuntimeSettings {
+  defaultMode: 'approval' | 'plan' | 'full_access'
+  defaultContextLimit: number
+  compactionEnabled: boolean
+  compactionThreshold: number
 }
 
 export async function runtimeInfo(): Promise<JCodeRuntimeInfo> {
   return invoke<JCodeRuntimeInfo>('jcode_runtime_info')
+}
+
+export async function updateRuntimeSettings(settings: JCodeRuntimeSettings): Promise<JCodeRuntimeInfo> {
+  return invoke<JCodeRuntimeInfo>('jcode_update_runtime_settings', {
+    defaultMode: settings.defaultMode,
+    defaultContextLimit: settings.defaultContextLimit,
+    compactionEnabled: settings.compactionEnabled,
+    compactionThreshold: settings.compactionThreshold,
+  })
 }
 
 export interface JCodeDoctorResult {
