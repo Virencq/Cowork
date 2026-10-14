@@ -350,53 +350,75 @@ pub fn jcode_status() -> Result<Value, String> {
 #[tauri::command]
 pub fn jcode_runtime_info() -> Result<Value, String> {
     let executable = find_jcode()?;
-    let mut runtime_command = Command::new(&executable);
-    runtime_command.args(["--quiet", "--no-update", "--no-selfdev", "provider", "current", "--json"]);
-    configure_no_console(&mut runtime_command);
-    let output = runtime_command.output()
-        .map_err(|e| format!("Failed to query JCode provider: {e}"))?;
+    let home = std::env::var_os("USERPROFILE")
+        .or_else(|| std::env::var_os("HOME"))
+        .map(PathBuf::from)
+        .ok_or("Unable to resolve the user home directory.")?;
+    let config_path = home.join(".jcode").join("config.json");
+    let skills_path = home.join(".jcode").join("skills");
+    let mcp_path = home.join(".jcode").join("mcp.json");
 
-    let raw = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    let mut provider = None::<String>;
-    let mut model = None::<String>;
-    let mut effort = None::<String>;
-    if let Ok(value) = serde_json::from_str::<Value>(&raw) {
-        fn find_string(value: &Value, keys: &[&str]) -> Option<String> {
-            match value {
-                Value::Object(map) => {
-                    for key in keys {
-                        if let Some(Value::String(v)) = map.get(*key) { if !v.is_empty() { return Some(v.clone()); } }
-                    }
-                    for child in map.values() { if let Some(v) = find_string(child, keys) { return Some(v); } }
-                }
-                Value::Array(items) => for child in items { if let Some(v) = find_string(child, keys) { return Some(v); } },
-                _ => {}
-            }
-            None
-        }
-        provider = find_string(&value, &["resolved_provider", "provider", "providerId", "provider_id"]);
-        model = find_string(&value, &["selected_model", "model", "modelId", "model_id"]);
-        effort = find_string(&value, &["effort", "thinkingLevel", "reasoningEffort"]);
-    }
+    // Read only the documented JCode config. Never write credentials or infer
+    // active model settings from arbitrary CLI output.
+    let config: Value = if config_path.exists() {
+        let raw = std::fs::read_to_string(&config_path)
+            .map_err(|e| format!("Failed to read JCode config {}: {e}", config_path.display()))?;
+        serde_json::from_str(&raw)
+            .map_err(|e| format!("Invalid JSON in JCode config {}: {e}", config_path.display()))?
+    } else {
+        Value::Object(serde_json::Map::new())
+    };
 
-    if model.is_none() {
-        // Some JCode builds expose the current selection as human-readable output.
-        let text = if raw.is_empty() { String::from_utf8_lossy(&output.stderr).to_string() } else { raw.clone() };
-        for line in text.lines() {
-            let lower = line.to_ascii_lowercase();
-            if model.is_none() && lower.contains("model") {
-                if let Some((_, value)) = line.split_once(':') { let value = value.trim(); if !value.is_empty() { model = Some(value.to_string()); } }
-            }
-        }
-    }
+    let model = config.get("model").and_then(Value::as_str).map(str::to_owned);
+    let provider = model.as_deref().and_then(|value| value.split_once('/').map(|(p, _)| p.to_owned()));
+    let small_model = config.get("small_model").and_then(Value::as_str);
+    let default_mode = config.get("default_mode").and_then(Value::as_str).unwrap_or("approval");
+    let default_context_limit = config.get("default_context_limit").and_then(Value::as_u64);
+    let context_limit_count = config.get("context_limits").and_then(Value::as_object).map(|v| v.len()).unwrap_or(0);
+    let compaction = config.get("compaction");
+    let compaction_enabled = compaction.and_then(|v| v.get("enabled")).and_then(Value::as_bool).unwrap_or(false);
+    let compaction_threshold = compaction.and_then(|v| v.get("threshold")).and_then(Value::as_f64);
+    let disabled_skills = config.get("disabled_skills").and_then(Value::as_array).map(|v| v.len()).unwrap_or(0);
+    let mcp_configured = config.get("mcp_servers").and_then(Value::as_object).map(|v| v.len()).unwrap_or(0);
 
     Ok(json!({
         "installed": true,
         "path": executable.to_string_lossy(),
+        "configPath": config_path.to_string_lossy(),
+        "configExists": config_path.is_file(),
+        "skillsPath": skills_path.to_string_lossy(),
+        "skillsExists": skills_path.is_dir(),
+        "mcpPath": mcp_path.to_string_lossy(),
+        "mcpConfigExists": mcp_path.is_file(),
         "provider": provider,
         "model": model,
-        "effort": effort,
-        "raw": raw
+        "smallModel": small_model,
+        "defaultMode": default_mode,
+        "defaultContextLimit": default_context_limit,
+        "contextLimitOverrides": context_limit_count,
+        "compactionEnabled": compaction_enabled,
+        "compactionThreshold": compaction_threshold,
+        "configuredMcpServers": mcp_configured,
+        "disabledSkills": disabled_skills,
+        "rawConfig": config
+    }))
+}
+
+#[tauri::command]
+pub fn jcode_doctor() -> Result<Value, String> {
+    let executable = find_jcode()?;
+    let mut command = Command::new(executable);
+    configure_no_console(&mut command);
+    command.args(["doctor"]).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
+    let output = command.output().map_err(|e| format!("Failed to run jcode doctor: {e}"))?;
+    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+    Ok(json!({
+        "success": output.status.success(),
+        "code": output.status.code(),
+        "stdout": stdout,
+        "stderr": stderr,
+        "command": "jcode doctor"
     }))
 }
 
