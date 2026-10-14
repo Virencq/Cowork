@@ -119,14 +119,23 @@ export async function probeJCode(force = false): Promise<JCodeProbe> {
   if (!force && jcodeProbeInFlight) return jcodeProbeInFlight;
 
   const probe = (async (): Promise<JCodeProbe> => {
-    const nextStatus = await invoke<{ installed: boolean; path?: string; error?: string }>('jcode_status');
+    let nextStatus: { installed: boolean; path?: string; error?: string };
     let runtime: JCodeRuntimeInfo | null = null;
-    if (nextStatus.installed) {
-      try {
-        runtime = await invoke<JCodeRuntimeInfo>('jcode_runtime_info');
-      } catch {
-        // Runtime metadata is optional; installed status remains authoritative.
+    try {
+      nextStatus = await invoke<{ installed: boolean; path?: string; error?: string }>('jcode_status');
+      if (nextStatus.installed) {
+        try {
+          runtime = await invoke<JCodeRuntimeInfo>('jcode_runtime_info');
+        } catch {
+          // Runtime metadata is optional; installed status remains authoritative.
+        }
       }
+    } catch (error) {
+      // Cache failures too, so Settings does not retry a broken probe on every open.
+      nextStatus = {
+        installed: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
     const result = { status: nextStatus, runtime };
     jcodeProbeCache = result;
