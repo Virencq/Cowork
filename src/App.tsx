@@ -23,7 +23,7 @@ import { activateCodeProject } from './utils/codeProjectActions'
 import { projectPathsEqual } from './utils/projectPaths'
 import { initDatabase } from './utils/database'
 import { getAllSessions, createSession as dbCreateSession, saveMessage as dbSaveMessage } from './utils/database'
-import { status as jcodeStatus } from './utils/jcodeClient'
+import { probeJCode } from './utils/jcodeClient'
 import { getActiveTokens } from './themes'
 import { recordPerformance, startPerformanceTimer, elapsedPerformanceMs } from './utils/performanceDiagnostics'
 
@@ -278,7 +278,7 @@ function App() {
         const backgroundStartedAt = startPerformanceTimer()
         recordPerformance('startup.background-discovery.begin')
         void Promise.allSettled([
-          jcodeStatus().then(() => recordPerformance('startup.jcode-status.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) })),
+          probeJCode().then(() => recordPerformance('startup.jcode-status.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) })),
           useMCPStore.getState().refreshAllServers().then(() => recordPerformance('startup.mcp-refresh.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) })),
           useSkillStore.getState().refreshSkills().then(() => recordPerformance('startup.skills-refresh.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) })),
         ]).then(() => recordPerformance('startup.background-discovery.complete', { durationMs: elapsedPerformanceMs(backgroundStartedAt) }))
