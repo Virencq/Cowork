@@ -21,7 +21,6 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
   const wasAtBottomRef = useRef(true)
   const previousMessageCountRef = useRef(0)
   const groupedMessagesLengthRef = useRef(0)
-  groupedMessagesLengthRef.current = groupedMessages.length
 
   const groupedMessages = useMemo(() => {
     const rawMessages = [...messages]
@@ -55,6 +54,8 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
     }
     return result
   }, [messages, streamingMessage, sessionId])
+
+  groupedMessagesLengthRef.current = groupedMessages.length
 
   const scrollToBottom = useCallback((behavior: 'auto' | 'smooth' = 'auto') => {
     const length = groupedMessagesLengthRef.current
