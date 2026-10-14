@@ -4,7 +4,7 @@ import { Send, Square, X, File, Folder, Paperclip, FolderPlus, Mic, LoaderCircle
 import { TextField, TextArea } from "@heroui/react"
 import { Button, Card } from '../ui'
 import { useChatAttachments } from './useChatAttachments'
-import { runtimeInfo } from '../../utils/jcodeClient'
+import { JCodeModelControls } from '../settings/JCodeModelControls'
 import {
   cancelDictation,
   getDictationLevel,
@@ -83,7 +83,6 @@ export function ChatInput({
   const [recordingSeconds, setRecordingSeconds] = useState(0)
   const [voiceRuntime, setVoiceRuntime] = useState<VoiceRuntimeStatus | null>(null)
   const [voiceRuntimeAvailable, setVoiceRuntimeAvailable] = useState<boolean | null>(null)
-  const [jcodeRuntime, setJcodeRuntime] = useState<{ model?: string | null; effort?: string | null } | null>(null)
   const [realtimeMode, setRealtimeMode] = useState<'dictation' | 'conversation' | null>(null)
   const [realtimePartial, setRealtimePartial] = useState('')
   const [realtimeLevel, setRealtimeLevel] = useState(0)
@@ -437,12 +436,6 @@ export function ChatInput({
     }
   }
 
-  useEffect(() => {
-    let cancelled = false
-    void runtimeInfo().then(info => { if (!cancelled) setJcodeRuntime(info) }).catch(() => undefined)
-    return () => { cancelled = true }
-  }, [])
-
   const realtimeReady =
     !!voiceAsset(voiceRuntime, 'streaming-asr')?.installed &&
     !!voiceAsset(voiceRuntime, 'vad')?.installed
@@ -768,8 +761,7 @@ export function ChatInput({
                     </button>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[12px] font-medium text-[#302c28]">{jcodeRuntime?.model || 'JCode'}</span>
-                      <span className="text-[12px] text-[#8f8880]">{jcodeRuntime?.effort || 'Default'}</span>
+                      <JCodeModelControls compact />
                       <Button
                         type="submit"
                         variant="secondary"
@@ -797,6 +789,7 @@ export function ChatInput({
                       </Button>
                     ) : (
                       <div className="flex items-center gap-2">
+                        <JCodeModelControls compact />
                         {isTauriRuntime() && (
                           <>
                             <Button

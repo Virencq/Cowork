@@ -11,6 +11,7 @@ import i18n from '../../i18n'
 import { COLOR_SCHEMES } from '../../themes'
 import { ImportLibraryButton } from '../workspace/WorkspaceLibraryPage'
 import { useMCPStore } from '../../stores/mcpStore'
+import { JCodeModelControls } from './JCodeModelControls'
 import { useSkillStore } from '../../stores/skillStore'
 import { probeJCode, runDoctor, updateRuntimeSettings, type JCodeDoctorResult, type JCodeRuntimeInfo, type JCodeRuntimeSettings } from '../../utils/jcodeClient'
 
@@ -115,33 +116,7 @@ function JCodeRuntimeSettings() {
           </button>
         </div>
 
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <div className="text-[15px] font-semibold text-text">Provider and model</div>
-          <p className="mt-1 text-[12px] leading-5 text-text-tertiary">
-            Provider credentials, model selection, and model-specific configuration are owned by JCode. This app does not duplicate those settings.
-          </p>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-border bg-surface-secondary p-3">
-              <div className="text-[10px] uppercase tracking-widest text-text-quaternary">Transport</div>
-              <div className="mt-1 text-[12px] font-semibold text-text">JCode ACP</div>
-            </div>
-            <div className="rounded-lg border border-border bg-surface-secondary p-3">
-              <div className="text-[10px] uppercase tracking-widest text-text-quaternary">Process</div>
-              <div className="mt-1 text-[12px] font-semibold text-text">Installed CLI</div>
-            </div>
-            <div className="rounded-lg border border-border bg-surface-secondary p-3">
-              <div className="text-[10px] uppercase tracking-widest text-text-quaternary">Provider</div>
-              <div className="mt-1 text-[12px] font-semibold text-text truncate">{runtime?.provider || 'Managed by JCode'}</div>
-            </div>
-            <div className="rounded-lg border border-border bg-surface-secondary p-3">
-              <div className="text-[10px] uppercase tracking-widest text-text-quaternary">Model</div>
-              <div className="mt-1 text-[12px] font-semibold text-text truncate">{runtime?.model || 'Managed by JCode'}</div>
-            </div>
-          </div>
-          {runtime?.effort && (
-            <div className="mt-3 text-[11px] text-text-tertiary">Reasoning effort: <span className="font-semibold text-text-secondary">{runtime.effort}</span></div>
-          )}
-        </div>
+        <JCodeModelControls />
 
         <div className="rounded-xl border border-border bg-surface p-5">
           <div className="flex items-start justify-between gap-4">
