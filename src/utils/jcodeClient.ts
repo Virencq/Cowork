@@ -104,8 +104,45 @@ function extractUpdate(event: any, handlers: StreamHandlers) {
   }
 }
 
+export interface JCodeProbe {
+  status: { installed: boolean; path?: string; error?: string };
+  runtime: JCodeRuntimeInfo | null;
+}
+
+// One shared probe per app session. Startup and Settings consume the same
+// promise/result; opening or closing Settings never launches another CLI probe.
+let jcodeProbeCache: JCodeProbe | null = null;
+let jcodeProbeInFlight: Promise<JCodeProbe> | null = null;
+
+export async function probeJCode(force = false): Promise<JCodeProbe> {
+  if (!force && jcodeProbeCache) return jcodeProbeCache;
+  if (!force && jcodeProbeInFlight) return jcodeProbeInFlight;
+
+  const probe = (async (): Promise<JCodeProbe> => {
+    const nextStatus = await invoke<{ installed: boolean; path?: string; error?: string }>('jcode_status');
+    let runtime: JCodeRuntimeInfo | null = null;
+    if (nextStatus.installed) {
+      try {
+        runtime = await invoke<JCodeRuntimeInfo>('jcode_runtime_info');
+      } catch {
+        // Runtime metadata is optional; installed status remains authoritative.
+      }
+    }
+    const result = { status: nextStatus, runtime };
+    jcodeProbeCache = result;
+    return result;
+  })();
+
+  jcodeProbeInFlight = probe;
+  try {
+    return await probe;
+  } finally {
+    if (jcodeProbeInFlight === probe) jcodeProbeInFlight = null;
+  }
+}
+
 export async function status() {
-  return invoke<{ installed: boolean; path?: string; error?: string }>('jcode_status');
+  return (await probeJCode()).status;
 }
 
 export async function createSession(workspaceDir?: string): Promise<{ id: string }> {
