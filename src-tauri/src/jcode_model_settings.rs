@@ -1,4 +1,4 @@
-use serde_json::{json, Map, Value};
+use serde_json::{json, Value};
 use std::path::PathBuf;
 
 fn jcode_home() -> Result<PathBuf, String> {
@@ -28,11 +28,8 @@ fn write_json(path: &std::path::Path, value: &Value) -> Result<(), String> {
         .map_err(|e| format!("Failed to create {}: {e}", parent.display()))?;
     let bytes = serde_json::to_vec_pretty(value)
         .map_err(|e| format!("Failed to serialize {}: {e}", path.display()))?;
-    let temporary = path.with_extension("json.tmp");
-    std::fs::write(&temporary, bytes)
-        .map_err(|e| format!("Failed to write {}: {e}", temporary.display()))?;
-    std::fs::rename(&temporary, path)
-        .map_err(|e| format!("Failed to replace {}: {e}", path.display()))
+    std::fs::write(path, bytes)
+        .map_err(|e| format!("Failed to write {}: {e}", path.display()))
 }
 
 #[tauri::command]
@@ -113,9 +110,10 @@ pub fn jcode_set_active_model(provider: String, model: String) -> Result<Value, 
 
     let path = jcode_home()?.join(".jcode").join("config.json");
     let mut config = read_json_object(&path)?;
-    let providers = config.get("providers").and_then(Value::as_object)
-        .ok_or("No providers are configured in ~/.jcode/config.json.")?;
-    if !providers.contains_key(provider) {
+    let providers = config.get("providers").and_then(Value::as_object);
+    let current_model = config.get("model").and_then(Value::as_str).unwrap_or("");
+    let is_current_provider = current_model.split_once('/').is_some_and(|(current_provider, _)| current_provider == provider);
+    if !providers.is_some_and(|items| items.contains_key(provider)) && !is_current_provider {
         return Err(format!("Provider '{provider}' is not configured in ~/.jcode/config.json. Add it through JCode's supported setup first."));
     }
     let object = config.as_object_mut().ok_or("JCode config must be a JSON object.")?;
