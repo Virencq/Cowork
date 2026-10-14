@@ -364,7 +364,7 @@ pub async fn clawhub_install_skill(
 
     // ClawHub may return a public-github handoff descriptor instead of ZIP bytes
     // for GitHub-backed skills. Resolve only the documented, trusted archive hosts.
-    if bytes.first() == Some(&b'{') {
+    if bytes.iter().copied().find(|byte| !byte.is_ascii_whitespace()) == Some(b'{') {
         let descriptor: serde_json::Value = serde_json::from_slice(&bytes)
             .map_err(|e| format!("ClawHub returned JSON instead of a ZIP archive: {e}"))?;
         if descriptor.get("sourceRef").and_then(serde_json::Value::as_str) != Some("public-github") {
@@ -380,6 +380,10 @@ pub async fn clawhub_install_skill(
         }
         let archive_response = client.get(parsed_url).send().await
             .map_err(|e| format!("Failed to fetch the GitHub-backed skill archive: {e}"))?;
+        let final_host = archive_response.url().host_str().unwrap_or_default();
+        if !matches!(final_host, "github.com" | "codeload.github.com") {
+            return Err(format!("GitHub skill archive redirected to an untrusted host: {final_host}"));
+        }
         let archive_status = archive_response.status();
         if !archive_status.is_success() {
             let detail = archive_response.text().await.unwrap_or_default();
