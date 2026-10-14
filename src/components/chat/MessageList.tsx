@@ -1,4 +1,5 @@
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react'
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso'
 import { ArrowDown } from 'lucide-react'
 import { useAppStore } from '../../stores'
 import { MessageItem } from './MessageItem'
@@ -15,7 +16,7 @@ interface MessageListProps {
 export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
   const messages = useAppStore((state) => state.sessionMessages[sessionId]) ?? EMPTY_MESSAGES
   const streamingMessage = useAppStore((state) => state.streamingMessage[sessionId])
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<VirtuosoHandle>(null)
   const [atBottom, setAtBottom] = useState(true)
   const wasAtBottomRef = useRef(true)
   const previousMessageCountRef = useRef(0)
@@ -53,21 +54,16 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
     return result
   }, [messages, streamingMessage, sessionId])
 
-  const updateBottomState = useCallback(() => {
-    const el = scrollRef.current
-    if (!el) return
-    const isBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 32
-    wasAtBottomRef.current = isBottom
-    setAtBottom(isBottom)
-  }, [])
-
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
-    const el = scrollRef.current
-    if (!el) return
-    el.scrollTo({ top: el.scrollHeight, behavior })
+    if (groupedMessages.length === 0) return
+    listRef.current?.scrollToIndex({
+      index: groupedMessages.length - 1,
+      align: 'end',
+      behavior,
+    })
     wasAtBottomRef.current = true
     setAtBottom(true)
-  }, [])
+  }, [groupedMessages.length])
 
   // Only jump when a new user message is added. While reading older messages,
   // normal mouse-wheel scrolling stays entirely under the user's control.
@@ -91,20 +87,27 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
 
   return (
     <div className="relative flex-1 min-h-0 overflow-hidden pt-2">
-      <div
-        ref={scrollRef}
-        onScroll={updateBottomState}
-        className="h-full w-full overflow-y-auto overscroll-y-contain chat-scroll-area"
-        style={{ overflowAnchor: 'auto', scrollbarGutter: 'stable' }}
-      >
-        {groupedMessages.map((message, index) => {
+      <Virtuoso
+        ref={listRef}
+        data={groupedMessages}
+        computeItemKey={(_index, message) => message.info.id}
+        atBottomThreshold={32}
+        atBottomStateChange={(isAtBottom) => {
+          wasAtBottomRef.current = isAtBottom
+          setAtBottom(isAtBottom)
+        }}
+        followOutput={(isAtBottom) => isAtBottom ? 'auto' : false}
+        increaseViewportBy={{ top: 500, bottom: 700 }}
+        className="h-full w-full chat-scroll-area"
+        style={{ overflowAnchor: 'auto' }}
+        itemContent={(index, message) => {
           const isStreaming =
             !!streamingMessage?.isStreaming &&
             index === groupedMessages.length - 1 &&
             message.info.role === 'assistant'
 
           return (
-            <div key={message.info.id} className="px-2 sm:px-3">
+            <div className="px-2 sm:px-3">
               <MessageItem
                 message={message}
                 isStreaming={isStreaming}
@@ -113,9 +116,11 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
               />
             </div>
           )
-        })}
-        <div aria-hidden="true" className="h-2" />
-      </div>
+        }}
+        components={{
+          Footer: () => <div aria-hidden="true" className="h-2" />,
+        }}
+      />
       {!atBottom && (
         <button
           type="button"
