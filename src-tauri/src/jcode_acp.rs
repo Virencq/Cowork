@@ -404,6 +404,60 @@ pub fn jcode_runtime_info() -> Result<Value, String> {
 }
 
 #[tauri::command]
+pub fn jcode_update_runtime_settings(
+    default_mode: String,
+    default_context_limit: u64,
+    compaction_enabled: bool,
+    compaction_threshold: f64,
+) -> Result<Value, String> {
+    if !matches!(default_mode.as_str(), "approval" | "plan" | "full_access") {
+        return Err("Invalid default mode. Use approval, plan, or full_access.".to_string());
+    }
+    if !(1024..=2_000_000).contains(&default_context_limit) {
+        return Err("Default context limit must be between 1,024 and 2,000,000 tokens.".to_string());
+    }
+    if !compaction_threshold.is_finite() || !(0.5..=0.99).contains(&compaction_threshold) {
+        return Err("Compaction threshold must be between 0.50 and 0.99.".to_string());
+    }
+
+    let home = std::env::var_os("USERPROFILE")
+        .or_else(|| std::env::var_os("HOME"))
+        .map(PathBuf::from)
+        .ok_or("Unable to resolve the user home directory.")?;
+    let directory = home.join(".jcode");
+    std::fs::create_dir_all(&directory)
+        .map_err(|e| format!("Failed to create JCode config directory {}: {e}", directory.display()))?;
+    let path = directory.join("config.json");
+
+    let mut config = if path.exists() {
+        let raw = std::fs::read_to_string(&path)
+            .map_err(|e| format!("Failed to read JCode config {}: {e}", path.display()))?;
+        serde_json::from_str::<Value>(&raw)
+            .map_err(|e| format!("Invalid JSON in JCode config {}: {e}", path.display()))?
+    } else {
+        json!({})
+    };
+    let object = config.as_object_mut()
+        .ok_or("JCode config must be a JSON object; file was not changed.")?;
+    object.insert("default_mode".to_string(), json!(default_mode));
+    object.insert("default_context_limit".to_string(), json!(default_context_limit));
+
+    let compaction = object.entry("compaction".to_string())
+        .or_insert_with(|| json!({}));
+    let compaction_object = compaction.as_object_mut()
+        .ok_or("JCode compaction config must be a JSON object; file was not changed.")?;
+    compaction_object.insert("enabled".to_string(), json!(compaction_enabled));
+    compaction_object.insert("threshold".to_string(), json!(compaction_threshold));
+
+    let serialized = serde_json::to_vec_pretty(&config)
+        .map_err(|e| format!("Failed to serialize JCode config: {e}"))?;
+    std::fs::write(&path, serialized)
+        .map_err(|e| format!("Failed to write JCode config {}: {e}", path.display()))?;
+
+    jcode_runtime_info()
+}
+
+#[tauri::command]
 pub fn jcode_doctor() -> Result<Value, String> {
     let executable = find_jcode()?;
     let mut command = Command::new(executable);
