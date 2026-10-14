@@ -58,15 +58,16 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
   groupedMessagesLengthRef.current = groupedMessages.length
 
   const scrollToBottom = useCallback((behavior: 'auto' | 'smooth' = 'auto') => {
-    const length = groupedMessagesLengthRef.current
-    if (length === 0) return
+    if (groupedMessagesLengthRef.current === 0) return
+
+    // Use Virtuoso's LAST sentinel instead of a potentially stale numeric index.
+    // Do not optimistically mark the list as being at the bottom: Virtuoso's
+    // atBottomStateChange must confirm that the viewport actually reached it.
     listRef.current?.scrollToIndex({
-      index: length - 1,
+      index: 'LAST',
       align: 'end',
       behavior,
     })
-    wasAtBottomRef.current = true
-    setAtBottom(true)
   }, [])
 
   // Reset the count baseline on conversation changes. Otherwise a chat with a
