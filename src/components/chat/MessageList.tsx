@@ -69,8 +69,15 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
     setAtBottom(true)
   }, [])
 
-  // Only jump when a new user message is added. While reading older messages,
-  // normal mouse-wheel scrolling stays entirely under the user's control.
+  // Reset the count baseline on conversation changes. Otherwise a chat with a
+  // longer history can be mistaken for newly added messages in the next chat.
+  useEffect(() => {
+    previousMessageCountRef.current = groupedMessages.length
+    requestAnimationFrame(() => scrollToBottom('auto'))
+  }, [sessionId, scrollToBottom])
+
+  // Only jump when a new user message is appended to this conversation. Streaming
+  // updates and edits must never pull the viewport away from the user's position.
   useEffect(() => {
     const previousCount = previousMessageCountRef.current
     previousMessageCountRef.current = groupedMessages.length
@@ -105,7 +112,6 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
         followOutput={(isAtBottom) => isAtBottom ? 'auto' : false}
         increaseViewportBy={{ top: 500, bottom: 700 }}
         className="h-full w-full chat-scroll-area"
-        style={{ overflowAnchor: 'auto' }}
         itemContent={(index, message) => {
           const isStreaming =
             !!streamingMessage?.isStreaming &&
