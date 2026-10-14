@@ -1,5 +1,4 @@
-import { useRef, useMemo, useState, useEffect, useCallback } from 'react'
-import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso'
+import { useRef, useMemo, useState, useEffect, useLayoutEffect, useCallback } from 'react'
 import { ArrowDown } from 'lucide-react'
 import { useAppStore } from '../../stores'
 import { MessageItem } from './MessageItem'
@@ -16,12 +15,12 @@ interface MessageListProps {
 export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
   const messages = useAppStore((state) => state.sessionMessages[sessionId]) ?? EMPTY_MESSAGES
   const streamingMessage = useAppStore((state) => state.streamingMessage[sessionId])
-  const listRef = useRef<VirtuosoHandle>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
   const [atBottom, setAtBottom] = useState(true)
   const wasAtBottomRef = useRef(true)
+  const previousSessionRef = useRef(sessionId)
   const previousMessageCountRef = useRef(0)
-  const groupedMessagesLengthRef = useRef(0)
-
   const groupedMessages = useMemo(() => {
     const rawMessages = [...messages]
     if (streamingMessage?.isStreaming && streamingMessage.parts.length > 0) {
@@ -55,38 +54,65 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
     return result
   }, [messages, streamingMessage, sessionId])
 
-  groupedMessagesLengthRef.current = groupedMessages.length
-
-  const scrollToBottom = useCallback((behavior: 'auto' | 'smooth' = 'auto') => {
-    if (groupedMessagesLengthRef.current === 0) return
-
-    // Use Virtuoso's LAST sentinel instead of a potentially stale numeric index.
-    // Do not optimistically mark the list as being at the bottom: Virtuoso's
-    // atBottomStateChange must confirm that the viewport actually reached it.
-    listRef.current?.scrollToIndex({
-      index: 'LAST',
-      align: 'end',
-      behavior,
-    })
+  const updateBottomState = useCallback(() => {
+    const element = scrollRef.current
+    if (!element) return
+    const isAtBottom = element.scrollHeight - element.scrollTop - element.clientHeight <= 48
+    wasAtBottomRef.current = isAtBottom
+    setAtBottom(isAtBottom)
   }, [])
 
-  // Reset the count baseline on conversation changes. Otherwise a chat with a
-  // longer history can be mistaken for newly added messages in the next chat.
-  useEffect(() => {
-    previousMessageCountRef.current = groupedMessages.length
-    requestAnimationFrame(() => scrollToBottom('auto'))
-  }, [sessionId, scrollToBottom])
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+    const element = scrollRef.current
+    if (!element) return
+    element.scrollTo({ top: element.scrollHeight, behavior })
+  }, [])
 
-  // Only jump when a new user message is appended to this conversation. Streaming
-  // updates and edits must never pull the viewport away from the user's position.
-  useEffect(() => {
+  // A native scroll container avoids virtual-list measurement/anchoring conflicts
+  // when streamed markdown, code blocks, and tool output change message heights.
+  useLayoutEffect(() => {
+    const element = scrollRef.current
+    if (!element) return
+
+    if (previousSessionRef.current !== sessionId) {
+      previousSessionRef.current = sessionId
+      previousMessageCountRef.current = groupedMessages.length
+      wasAtBottomRef.current = true
+      element.scrollTop = element.scrollHeight
+      setAtBottom(true)
+      return
+    }
+
     const previousCount = previousMessageCountRef.current
     previousMessageCountRef.current = groupedMessages.length
     const last = groupedMessages[groupedMessages.length - 1]
     if (groupedMessages.length > previousCount && last?.info.role === 'user') {
-      requestAnimationFrame(() => scrollToBottom('auto'))
+      wasAtBottomRef.current = true
+      element.scrollTop = element.scrollHeight
+      setAtBottom(true)
+    } else if (wasAtBottomRef.current) {
+      // Keep following output only if the user was already at the bottom.
+      element.scrollTop = element.scrollHeight
+      setAtBottom(true)
+    } else {
+      updateBottomState()
     }
-  }, [groupedMessages, scrollToBottom])
+  }, [sessionId, groupedMessages, updateBottomState])
+
+  // Markdown/code blocks can grow after their first render (e.g. syntax
+  // highlighting or images). Follow those height changes only while pinned.
+  useEffect(() => {
+    const content = contentRef.current
+    if (!content || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => {
+      const element = scrollRef.current
+      if (!element || !wasAtBottomRef.current) return
+      element.scrollTop = element.scrollHeight
+      setAtBottom(true)
+    })
+    observer.observe(content)
+    return () => observer.disconnect()
+  }, [sessionId])
 
   if (groupedMessages.length === 0) {
     return null
@@ -94,39 +120,34 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
 
   return (
     <div className="relative flex-1 min-h-0 overflow-hidden pt-2">
-      <Virtuoso
-        ref={listRef}
-        data={groupedMessages}
-        computeItemKey={(_index, message) => message.info.id}
-        atBottomThreshold={32}
-        atBottomStateChange={(isAtBottom) => {
-          wasAtBottomRef.current = isAtBottom
-          setAtBottom(isAtBottom)
-        }}
-        followOutput={(isAtBottom) => isAtBottom ? 'auto' : false}
-        increaseViewportBy={{ top: 500, bottom: 700 }}
-        className="h-full w-full chat-scroll-area"
-        itemContent={(index, message) => {
-          const isStreaming =
-            !!streamingMessage?.isStreaming &&
-            index === groupedMessages.length - 1 &&
-            message.info.role === 'assistant'
+      <div
+        ref={scrollRef}
+        onScroll={updateBottomState}
+        className="h-full w-full overflow-y-auto overscroll-contain chat-scroll-area"
+        role="log"
+        aria-label="Conversation messages"
+        aria-live={streamingMessage?.isStreaming ? 'off' : 'polite'}
+      >
+        <div ref={contentRef} className="px-2 sm:px-3">
+          {groupedMessages.map((message, index) => {
+            const isStreaming =
+              !!streamingMessage?.isStreaming &&
+              index === groupedMessages.length - 1 &&
+              message.info.role === 'assistant'
 
-          return (
-            <div className="px-2 sm:px-3">
+            return (
               <MessageItem
+                key={message.info.id}
                 message={message}
                 isStreaming={isStreaming}
                 onEdit={onEdit}
                 onDelete={onDelete}
               />
-            </div>
-          )
-        }}
-        components={{
-          Footer: () => <div aria-hidden="true" className="h-2" />,
-        }}
-      />
+            )
+          })}
+          <div aria-hidden="true" className="h-2" />
+        </div>
+      </div>
       {!atBottom && (
         <button
           type="button"
