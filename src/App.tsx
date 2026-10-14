@@ -84,8 +84,8 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled, codeMode }: {
   }
 
   return (
-    <aside data-project-properties-panel style={{ width, backgroundColor: '#1f1f1f', borderColor: '#333333' }} className="fixed right-0 top-11 bottom-0 z-[80] border-l pt-0 overflow-auto text-[#f2f2f2] shadow-2xl">
-      <ResizeHandle side="right" onDrag={(d) => onWidth(Math.max(280, Math.min(360, width + d)))} />
+    <aside data-project-properties-panel style={{ width, backgroundColor: '#1f1f1f', borderColor: '#333333' }} className="relative h-full shrink-0 border-l pt-0 overflow-auto text-[#f2f2f2] shadow-2xl">
+      <ResizeHandle side="right" onDrag={(d) => onWidth(Math.max(280, Math.min(Math.floor(window.innerWidth * 0.45), width + d)))} />
       <div className="h-14 px-4 flex items-center justify-between border-b border-[#303030]">
         <div>
           <div className="text-[12px] uppercase tracking-[.08em] font-semibold text-[#9b9b9b]">Project</div>
@@ -381,16 +381,7 @@ function App() {
   }
 
   return (
-    <div
-      className="h-screen w-screen overflow-hidden bg-bg text-text"
-      onClick={(event) => {
-        // Dismiss project properties from any click outside the panel,
-        // including the chat, sidebar, and title bar. Keep panel controls usable.
-        if (rightOpen && !(event.target as HTMLElement).closest("[data-project-properties-panel]")) {
-          setRightOpen(false)
-        }
-      }}
-    >
+    <div className="h-screen w-screen overflow-hidden bg-bg text-text">
       <CoworkTitleBar
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
         onToggleRightPanel={() => setRightOpen((open) => !open)}
@@ -412,7 +403,7 @@ function App() {
         <main className="relative min-w-0 flex-1 pt-11 flex flex-col bg-bg">
           
           <div className="min-h-0 flex-1 flex">
-            <div className={`min-w-0 flex-1 flex flex-col transition-[margin] duration-150 ${page === 'chat' && rightOpen && ((codeMode && !!activeCodeProjectId) || (!codeMode && !!activeSessionId && activeSessionMessageCount > 0)) ? 'mr-[360px]' : ''}`}>
+            <div className="min-w-0 flex-1 flex flex-col">
               {/* Mount only the active chat workspace. Keeping both ChatViews hidden in
                   the DOM caused duplicate store subscriptions and duplicate message-tree
                   work on every chat/session update. Session history is persisted in SQLite. */}
