@@ -12,10 +12,9 @@ import { COLOR_SCHEMES } from '../../themes'
 import { ImportLibraryButton } from '../workspace/WorkspaceLibraryPage'
 import { useMCPStore } from '../../stores/mcpStore'
 import { useSkillStore } from '../../stores/skillStore'
-import { probeJCode } from '../../utils/jcodeClient'
+import { probeJCode, runDoctor, updateRuntimeSettings, type JCodeDoctorResult, type JCodeRuntimeInfo, type JCodeRuntimeSettings } from '../../utils/jcodeClient'
 
 type JCodeStatus = { installed: boolean; path?: string; error?: string }
-type JCodeRuntime = { provider?: string | null; model?: string | null; effort?: string | null }
 
 interface SettingsModalProps {
   onClose: () => void
@@ -26,7 +25,40 @@ interface SettingsModalProps {
 function JCodeRuntimeSettings() {
   const [status, setStatus] = useState<JCodeStatus | null>(null)
   const [checking, setChecking] = useState(false)
-  const [runtime, setRuntime] = useState<JCodeRuntime | null>(null)
+  const [runtime, setRuntime] = useState<JCodeRuntimeInfo | null>(null)
+  const [settings, setSettings] = useState<JCodeRuntimeSettings>({ defaultMode: 'approval', defaultContextLimit: 200000, compactionEnabled: false, compactionThreshold: 0.8 })
+  const [savingSettings, setSavingSettings] = useState(false)
+  const [settingsMessage, setSettingsMessage] = useState<string | null>(null)
+  const [doctor, setDoctor] = useState<JCodeDoctorResult | null>(null)
+  const [diagnosing, setDiagnosing] = useState(false)
+  const [doctorError, setDoctorError] = useState<string | null>(null)
+
+  const diagnose = async () => {
+    setDiagnosing(true)
+    setDoctorError(null)
+    try {
+      setDoctor(await runDoctor())
+    } catch (error) {
+      setDoctorError(error instanceof Error ? error.message : String(error))
+      setDoctor(null)
+    } finally {
+      setDiagnosing(false)
+    }
+  }
+
+  const saveSettings = async () => {
+    setSavingSettings(true)
+    setSettingsMessage(null)
+    try {
+      const next = await updateRuntimeSettings(settings)
+      setRuntime(next)
+      setSettingsMessage('JCode runtime preferences saved to its config.json.')
+    } catch (error) {
+      setSettingsMessage(error instanceof Error ? error.message : String(error))
+    } finally {
+      setSavingSettings(false)
+    }
+  }
 
   const check = async (force = false) => {
     setChecking(true)
@@ -34,6 +66,14 @@ function JCodeRuntimeSettings() {
       const result = await probeJCode(force)
       setStatus(result.status)
       setRuntime(result.runtime)
+      if (result.runtime) {
+        setSettings({
+          defaultMode: result.runtime.defaultMode === 'plan' || result.runtime.defaultMode === 'full_access' ? result.runtime.defaultMode : 'approval',
+          defaultContextLimit: result.runtime.defaultContextLimit ?? 200000,
+          compactionEnabled: result.runtime.compactionEnabled ?? false,
+          compactionThreshold: result.runtime.compactionThreshold ?? 0.8,
+        })
+      }
     } catch (error) {
       setStatus({
         installed: false,
@@ -101,6 +141,61 @@ function JCodeRuntimeSettings() {
           {runtime?.effort && (
             <div className="mt-3 text-[11px] text-text-tertiary">Reasoning effort: <span className="font-semibold text-text-secondary">{runtime.effort}</span></div>
           )}
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-[15px] font-semibold text-text">Runtime diagnostics</div>
+              <p className="mt-1 text-[12px] leading-5 text-text-tertiary">Run JCode's official doctor command to check model and MCP connectivity. This uses the installed CLI and does not change its configuration.</p>
+            </div>
+            <button onClick={() => void diagnose()} disabled={diagnosing || !status?.installed} className="shrink-0 rounded-lg border border-border px-3 py-2 text-[12px] font-semibold text-text-secondary hover:bg-surface-secondary disabled:opacity-50">
+              {diagnosing ? 'Running…' : 'Run jcode doctor'}
+            </button>
+          </div>
+          {doctorError && <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-[12px] text-red-600">{doctorError}</div>}
+          {doctor && (
+            <div className="mt-3 space-y-2">
+              <div className={`text-[12px] font-semibold ${doctor.success ? 'text-green-600' : 'text-amber-600'}`}>
+                {doctor.success ? 'Doctor completed successfully' : `Doctor reported issues${doctor.code == null ? '' : ` (exit code ${doctor.code})`}`}
+              </div>
+              {doctor.stdout && <pre className="max-h-56 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-border bg-surface-secondary p-3 text-[11px] leading-5 text-text-secondary">{doctor.stdout}</pre>}
+              {doctor.stderr && <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-border bg-surface-secondary p-3 text-[11px] leading-5 text-red-600">{doctor.stderr}</pre>}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="text-[15px] font-semibold text-text">JCode runtime preferences</div>
+          <p className="mt-1 text-[12px] leading-5 text-text-tertiary">These controls update supported fields in <span className="font-mono">~/.jcode/config.json</span>. Provider credentials and model definitions are left untouched.</p>
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label className="block text-[12px] font-medium text-text-secondary">
+              Default execution mode
+              <select value={settings.defaultMode} onChange={(event) => setSettings(current => ({ ...current, defaultMode: event.target.value as JCodeRuntimeSettings['defaultMode'] }))} className="mt-1.5 w-full rounded-lg border border-border bg-surface-secondary px-3 py-2.5 text-[13px] text-text">
+                <option value="approval">Ask for approval (recommended)</option>
+                <option value="plan">Plan mode</option>
+                <option value="full_access">Full access</option>
+              </select>
+            </label>
+            <label className="block text-[12px] font-medium text-text-secondary">
+              Default context limit (tokens)
+              <input type="number" min={1024} max={2000000} step={1024} value={settings.defaultContextLimit} onChange={(event) => setSettings(current => ({ ...current, defaultContextLimit: Number(event.target.value) }))} className="mt-1.5 w-full rounded-lg border border-border bg-surface-secondary px-3 py-2.5 text-[13px] text-text" />
+            </label>
+            <label className="flex items-center gap-3 rounded-lg border border-border bg-surface-secondary p-3 text-[12px] text-text-secondary">
+              <input type="checkbox" checked={settings.compactionEnabled} onChange={(event) => setSettings(current => ({ ...current, compactionEnabled: event.target.checked }))} className="accent-[var(--color-accent)]" />
+              Enable automatic context compaction
+            </label>
+            <label className="block text-[12px] font-medium text-text-secondary">
+              Compaction threshold ({Math.round(settings.compactionThreshold * 100)}%)
+              <input type="range" min={0.5} max={0.99} step={0.01} value={settings.compactionThreshold} onChange={(event) => setSettings(current => ({ ...current, compactionThreshold: Number(event.target.value) }))} className="mt-3 w-full accent-[var(--color-accent)]" />
+            </label>
+          </div>
+          {settingsMessage && <p className={`mt-3 text-[12px] ${settingsMessage.includes('saved') ? 'text-green-600' : 'text-red-600'}`}>{settingsMessage}</p>}
+          <div className="mt-4 flex justify-end">
+            <button onClick={() => void saveSettings()} disabled={savingSettings || !status?.installed || !Number.isFinite(settings.defaultContextLimit) || settings.defaultContextLimit < 1024 || settings.defaultContextLimit > 2000000} className="rounded-lg bg-accent px-4 py-2.5 text-[12px] font-semibold text-accent-foreground hover:bg-accent-light disabled:opacity-50">
+              {savingSettings ? 'Saving…' : 'Save JCode preferences'}
+            </button>
+          </div>
         </div>
 
         <div className="rounded-xl border border-border bg-surface p-5">

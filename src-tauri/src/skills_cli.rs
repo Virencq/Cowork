@@ -260,7 +260,7 @@ pub async fn skills_cli_remove(skill_name: String) -> Result<String, String> {
 
 /// Delete a skill's directory from disk.
 /// First tries the skill's actual location (extracted from the stored path),
-/// then falls back to ~/.pi/agent/skills/{name}/.
+/// then falls back to ~/.jcode/skills/{name}/.
 #[tauri::command]
 pub fn delete_skill_files(skill_name: String, skill_path: Option<String>) -> Result<String, String> {
     // Try the actual skill path first (from the stored location)
@@ -284,8 +284,8 @@ pub fn delete_skill_files(skill_name: String, skill_path: Option<String>) -> Res
         }
     }
 
-    // Fallback: try ~/.pi/agent/skills/{name}/
-    let dir = dirs_home().join(".pi").join("agent").join("skills").join(&skill_name);
+    // Fallback: try ~/.jcode/skills/{name}/
+    let dir = dirs_home().join(".jcode").join("skills").join(&skill_name);
     if dir.exists() {
         std::fs::remove_dir_all(&dir)
             .map_err(|e| format!("Failed to delete skill directory: {e}"))?;
@@ -300,7 +300,7 @@ pub fn delete_skill_files(skill_name: String, skill_path: Option<String>) -> Res
 #[tauri::command]
 pub fn create_skill_file(name: String, description: String, content: String) -> Result<String, String> {
     let safe_name = sanitize_dir_name(&name);
-    let skills_dir = dirs_home().join(".pi").join("agent").join("skills");
+    let skills_dir = dirs_home().join(".jcode").join("skills");
     let skill_dir = skills_dir.join(&safe_name);
     std::fs::create_dir_all(&skill_dir)
         .map_err(|e| format!("Failed to create skill directory: {e}"))?;
@@ -327,148 +327,161 @@ pub fn skills_mirror_config() -> serde_json::Value {
 // ─── Helpers ───
 
 /// Install a single skill from ClawHub (https://clawhub.ai).
-/// Downloads the ZIP archive and extracts it to ~/.pi/agent/skills/{name}/.
+/// Downloads the ZIP archive and extracts it to ~/.jcode/skills/{name}/.
 /// No npx, no git, no Node.js required.
 #[tauri::command]
 pub async fn clawhub_install_skill(
     slug: String,
     skill_name: Option<String>,
 ) -> Result<SkillInstallResult, String> {
+    let slug = slug.trim();
+    if slug.is_empty() || slug.contains("..") || slug.contains('/') || slug.contains('\\') {
+        return Err("Invalid ClawHub skill slug.".to_string());
+    }
+
     let client = reqwest::Client::builder()
-        .user_agent("S-Loop/0.1.0")
+        .user_agent("Orbito/0.1.0 (JCode skill installer)")
         .timeout(Duration::from_secs(60))
         .build()
         .map_err(|e| format!("HTTP client error: {e}"))?;
 
-    let bytes = client
-        .get(format!(
-            "https://clawhub.ai/api/v1/download?slug={}",
-            urlencoding::encode(&slug)
-        ))
+    let response = client
+        .get(format!("https://clawhub.ai/api/v1/download?slug={}", urlencoding::encode(slug)))
         .send()
         .await
-        .map_err(|e| format!("ClawHub download failed: {e}"))?
-        .error_for_status()
-        .map_err(|e| format!("ClawHub download failed: {e}"))?
-        .bytes()
-        .await
-        .map_err(|e| format!("Failed to read download: {e}"))?
+        .map_err(|e| format!("ClawHub download failed: {e}"))?;
+    let status = response.status();
+    if !status.is_success() {
+        let detail = response.text().await.unwrap_or_default();
+        return Err(format!("ClawHub download returned HTTP {status}: {}", detail.chars().take(500).collect::<String>()));
+    }
+    let mut bytes = response.bytes().await
+        .map_err(|e| format!("Failed to read ClawHub download: {e}"))?
         .to_vec();
+    if bytes.is_empty() {
+        return Err("ClawHub returned an empty skill archive.".to_string());
+    }
+
+    // ClawHub may return a public-github handoff descriptor instead of ZIP bytes
+    // for GitHub-backed skills. Resolve only the documented, trusted archive hosts.
+    if bytes.iter().copied().find(|byte| !byte.is_ascii_whitespace()) == Some(b'{') {
+        let descriptor: serde_json::Value = serde_json::from_slice(&bytes)
+            .map_err(|e| format!("ClawHub returned JSON instead of a ZIP archive: {e}"))?;
+        if descriptor.get("sourceRef").and_then(serde_json::Value::as_str) != Some("public-github") {
+            return Err("ClawHub returned an unsupported download descriptor.".to_string());
+        }
+        let archive_url = descriptor.get("archiveUrl").and_then(serde_json::Value::as_str)
+            .ok_or("ClawHub GitHub handoff did not include archiveUrl.")?;
+        let parsed_url = reqwest::Url::parse(archive_url)
+            .map_err(|e| format!("Invalid ClawHub archive URL: {e}"))?;
+        let host = parsed_url.host_str().unwrap_or_default();
+        if parsed_url.scheme() != "https" || !matches!(host, "github.com" | "codeload.github.com") {
+            return Err(format!("Refusing untrusted ClawHub archive host: {host}"));
+        }
+        let archive_response = client.get(parsed_url).send().await
+            .map_err(|e| format!("Failed to fetch the GitHub-backed skill archive: {e}"))?;
+        let final_host = archive_response.url().host_str().unwrap_or_default();
+        if !matches!(final_host, "github.com" | "codeload.github.com") {
+            return Err(format!("GitHub skill archive redirected to an untrusted host: {final_host}"));
+        }
+        let archive_status = archive_response.status();
+        if !archive_status.is_success() {
+            let detail = archive_response.text().await.unwrap_or_default();
+            return Err(format!("GitHub skill archive returned HTTP {archive_status}: {}", detail.chars().take(500).collect::<String>()));
+        }
+        bytes = archive_response.bytes().await
+            .map_err(|e| format!("Failed to read the GitHub skill archive: {e}"))?
+            .to_vec();
+        if bytes.is_empty() {
+            return Err("The GitHub skill archive was empty.".to_string());
+        }
+    }
 
     let cursor = Cursor::new(bytes.as_slice());
-    let mut archive =
-        zip::ZipArchive::new(cursor).map_err(|e| format!("Downloaded file is not a valid ZIP: {e}"))?;
+    let mut archive = zip::ZipArchive::new(cursor)
+        .map_err(|e| format!("ClawHub response was not a valid ZIP archive: {e}"))?;
 
-    // First pass: find all SKILL.md files and their frontmatter names
-    struct FoundSkill {
-        base_dir: String,
-        frontmatter_name: String,
-    }
+    struct FoundSkill { base_dir: String, frontmatter_name: String }
     let mut found_skills: Vec<FoundSkill> = Vec::new();
-
     for i in 0..archive.len() {
-        let mut entry = archive
-            .by_index(i)
-            .map_err(|e| format!("Failed to read ZIP entry: {e}"))?;
-        let path = entry.name().to_string();
-        let lower = path.replace('\\', "/").to_lowercase();
-
-        if !lower.ends_with("skill.md") {
-            continue;
+        let mut entry = archive.by_index(i).map_err(|e| format!("Failed to inspect ZIP entry: {e}"))?;
+        let path = entry.name().replace('\\', "/");
+        if path.split('/').any(|part| part == "..") || path.starts_with('/') {
+            return Err(format!("Unsafe path in downloaded skill archive: {path}"));
         }
-
+        if !path.to_ascii_lowercase().ends_with("skill.md") { continue; }
         let mut content = String::new();
         std::io::Read::read_to_string(&mut entry, &mut content)
-            .map_err(|e| format!("Failed to read SKILL.md: {e}"))?;
-
-        let (meta, _body) = crate::commands::parse_frontmatter(&content);
+            .map_err(|e| format!("Failed to read {path}: {e}"))?;
+        let (meta, _) = crate::commands::parse_frontmatter(&content);
         let frontmatter_name = meta.get("name").cloned().unwrap_or_else(|| {
-            std::path::Path::new(&path)
-                .parent()
-                .and_then(|p| p.file_name())
-                .map(|n| n.to_string_lossy().to_string())
-                .unwrap_or_else(|| slug.clone())
+            std::path::Path::new(&path).parent().and_then(|p| p.file_name())
+                .map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| slug.to_string())
         });
-
-        let base_dir = std::path::Path::new(&path)
-            .parent()
+        let base_dir = std::path::Path::new(&path).parent()
             .filter(|p| !p.as_os_str().is_empty())
-            .map(|p| format!("{}/", p.to_string_lossy()))
-            .unwrap_or_default();
-
+            .map(|p| format!("{}/", p.to_string_lossy())).unwrap_or_default();
         found_skills.push(FoundSkill { base_dir, frontmatter_name });
     }
-
     if found_skills.is_empty() {
-        return Err("No SKILL.md found in the downloaded archive.".to_string());
+        return Err("No SKILL.md found in the downloaded ClawHub archive. The published package may be invalid.".to_string());
     }
 
-    // Select the right skill: match by skill_name, or take the first one
-    let selected = if let Some(ref filter) = skill_name {
-        let lower_filter = filter.to_lowercase();
-        found_skills
-            .iter()
-            .find(|s| s.frontmatter_name.to_lowercase() == lower_filter)
+    let selected = if let Some(filter) = skill_name.as_deref() {
+        let filter = filter.trim().to_lowercase();
+        found_skills.iter().find(|s| s.frontmatter_name.to_lowercase() == filter)
             .or_else(|| found_skills.first())
-    } else {
-        found_skills.first()
-    };
+    } else { found_skills.first() }.ok_or("No skill found in archive.")?;
 
-    let selected = selected.ok_or("No skill found in archive.")?;
-    let skill_base_dir = &selected.base_dir;
-
-    // Use the frontmatter name — it's what refreshSkills will produce.
-    // The user-provided skill_name is only used for filtering which SKILL.md to pick.
     let display_name = selected.frontmatter_name.clone();
     let dir_name = sanitize_dir_name(&display_name);
-
-    // Install to ~/.pi/agent/skills/{dir_name}/
-    let skills_dir = dirs_home().join(".pi").join("agent").join("skills");
-    let dest_dir = skills_dir.join(&dir_name);
-    std::fs::create_dir_all(&dest_dir)
-        .map_err(|e| format!("Failed to create skill directory: {e}"))?;
-
-    // Second pass: extract all files belonging to this skill
-    for i in 0..archive.len() {
-        let mut entry = archive
-            .by_index(i)
-            .map_err(|e| format!("Failed to read ZIP entry: {e}"))?;
-        let entry_path = entry.name().to_string();
-
-        if entry.name().ends_with('/') {
-            continue;
-        }
-
-        let rel_path = if skill_base_dir.is_empty() {
-            std::path::Path::new(&entry_path)
-                .file_name()
-                .map(|n| n.to_string_lossy().to_string())
-                .unwrap_or_default()
-        } else if entry_path.starts_with(skill_base_dir) {
-            entry_path[skill_base_dir.len()..].to_string()
-        } else {
-            continue;
-        };
-
-        if rel_path.is_empty() {
-            continue;
-        }
-
-        let output = dest_dir.join(&rel_path);
-        if let Some(parent) = output.parent() {
-            std::fs::create_dir_all(parent).ok();
-        }
-
-        let mut buf = Vec::new();
-        if std::io::Read::read_to_end(&mut entry, &mut buf).is_ok() {
-            std::fs::write(&output, &buf).ok();
-        }
+    if dir_name.is_empty() || dir_name == "." || dir_name == ".." {
+        return Err("The skill package contains an invalid skill name.".to_string());
     }
 
+    // JCode's documented global skill directory is ~/.jcode/skills/{name}/SKILL.md.
+    let skills_dir = dirs_home().join(".jcode").join("skills");
+    let dest_dir = skills_dir.join(&dir_name);
+    std::fs::create_dir_all(&dest_dir)
+        .map_err(|e| format!("Failed to create JCode skill directory {}: {e}", dest_dir.display()))?;
+
+    let base = selected.base_dir.clone();
+    for i in 0..archive.len() {
+        let mut entry = archive.by_index(i).map_err(|e| format!("Failed to read ZIP entry: {e}"))?;
+        let path = entry.name().replace('\\', "/");
+        if entry.is_dir() || path.ends_with('/') { continue; }
+        if path.split('/').any(|part| part == "..") || path.starts_with('/') {
+            return Err(format!("Unsafe path in downloaded skill archive: {path}"));
+        }
+        let rel_path = if base.is_empty() {
+            std::path::Path::new(&path).file_name().map(PathBuf::from).unwrap_or_default()
+        } else if path.starts_with(&base) {
+            PathBuf::from(&path[base.len()..])
+        } else { continue };
+        if rel_path.as_os_str().is_empty() { continue; }
+        let output = dest_dir.join(&rel_path);
+        if !output.starts_with(&dest_dir) {
+            return Err(format!("Refusing to write outside the skill directory: {}", output.display()));
+        }
+        if let Some(parent) = output.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| format!("Failed to create skill subdirectory {}: {e}", parent.display()))?;
+        }
+        let mut buf = Vec::new();
+        std::io::Read::read_to_end(&mut entry, &mut buf)
+            .map_err(|e| format!("Failed to extract {}: {e}", path))?;
+        std::fs::write(&output, &buf)
+            .map_err(|e| format!("Failed to write skill file {}: {e}", output.display()))?;
+    }
+
+    let skill_md = dest_dir.join("SKILL.md");
+    if !skill_md.is_file() {
+        return Err(format!("Skill archive extraction finished but {} is missing.", skill_md.display()));
+    }
     Ok(SkillInstallResult {
         success: true,
-        message: format!("Installed {} from ClawHub", display_name),
+        message: format!("Installed {} to {}. JCode loads skills from ~/.jcode/skills.", display_name, dest_dir.display()),
         skill_name: Some(display_name),
-        skill_path: Some(skills_dir.to_string_lossy().to_string()),
+        skill_path: Some(dest_dir.to_string_lossy().to_string()),
     })
 }

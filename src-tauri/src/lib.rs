@@ -90,6 +90,8 @@ pub fn run() {
             jcode_acp::jcode_close_session,
             jcode_acp::jcode_status,
             jcode_acp::jcode_runtime_info,
+            jcode_acp::jcode_update_runtime_settings,
+            jcode_acp::jcode_doctor,
             jcode_acp::jcode_sync_mcp_config,
             jcode_acp::jcode_read_mcp_config,
             agent_profiles::save_agent_profile_files,
