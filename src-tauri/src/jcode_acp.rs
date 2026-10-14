@@ -16,6 +16,17 @@ pub(crate) struct SessionProcess {
 }
 pub struct JCodeState(pub Arc<Mutex<HashMap<String, SessionProcess>>>);
 
+#[cfg(windows)]
+fn configure_no_console(command: &mut Command) {
+    use std::os::windows::process::CommandExt;
+    // GUI-launched helper processes must not create a visible console window.
+    command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+}
+
+#[cfg(not(windows))]
+fn configure_no_console(_command: &mut Command) {}
+
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PromptImage {
@@ -105,10 +116,11 @@ fn find_jcode() -> Result<PathBuf, String> {
         } else {
             continue;
         };
-        if Command::new(&executable).arg("--version")
-            .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null())
-            .status().is_ok()
-        {
+        let mut version_command = Command::new(&executable);
+        version_command.arg("--version")
+            .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+        configure_no_console(&mut version_command);
+        if version_command.status().is_ok() {
             return Ok(executable);
         }
     }
@@ -158,6 +170,7 @@ fn start_reader(
 pub fn jcode_start_session(app: AppHandle, state: State<'_, JCodeState>, workspace_dir: Option<String>) -> Result<String, String> {
     let executable = find_jcode()?;
     let mut command = Command::new(executable);
+    configure_no_console(&mut command);
     command.arg("acp").stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null());
     if let Some(dir) = workspace_dir.as_deref() { command.current_dir(dir); }
     let mut child = command.spawn().map_err(|e| format!("Failed to start JCode ACP: {e}"))?;
@@ -337,9 +350,10 @@ pub fn jcode_status() -> Result<Value, String> {
 #[tauri::command]
 pub fn jcode_runtime_info() -> Result<Value, String> {
     let executable = find_jcode()?;
-    let output = Command::new(&executable)
-        .args(["--quiet", "--no-update", "--no-selfdev", "provider", "current", "--json"])
-        .output()
+    let mut runtime_command = Command::new(&executable);
+    runtime_command.args(["--quiet", "--no-update", "--no-selfdev", "provider", "current", "--json"]);
+    configure_no_console(&mut runtime_command);
+    let output = runtime_command.output()
         .map_err(|e| format!("Failed to query JCode provider: {e}"))?;
 
     let raw = String::from_utf8_lossy(&output.stdout).trim().to_string();
