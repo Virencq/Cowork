@@ -11,7 +11,8 @@ import i18n from '../../i18n'
 import { COLOR_SCHEMES } from '../../themes'
 import { ImportLibraryButton } from '../workspace/WorkspaceLibraryPage'
 import { useMCPStore } from '../../stores/mcpStore'
-import { JCodeModelControls } from './JCodeModelControls'\nimport { InstructionsMemorySettings } from './InstructionsMemorySettings'
+import { JCodeModelControls } from './JCodeModelControls'
+import { InstructionsMemorySettings } from './InstructionsMemorySettings'
 import { useSkillStore } from '../../stores/skillStore'
 import { probeJCode, runDoctor, updateRuntimeSettings, type JCodeDoctorResult, type JCodeRuntimeInfo, type JCodeRuntimeSettings } from '../../utils/jcodeClient'
 
@@ -208,7 +209,8 @@ export function SettingsModal({ onClose, initialTab = 'provider', open = true }:
 
           <nav className="flex-1 px-3 space-y-1 overflow-y-auto scrollbar-subtle">
             {[
-              { id: 'provider', icon: Cpu, label: 'JCode Runtime' },\n              { id: 'instructions', icon: BookOpen, label: 'Instructions & Memory' },
+              { id: 'provider', icon: Cpu, label: 'JCode Runtime' },
+              { id: 'instructions', icon: BookOpen, label: 'Instructions & Memory' },
               { id: 'mcp', icon: Server, label: 'MCP Servers' },
               { id: 'skills', icon: Sparkles, label: 'Skills' },
               { id: 'websearch', icon: Globe, label: 'Web Search' },
@@ -254,7 +256,8 @@ export function SettingsModal({ onClose, initialTab = 'provider', open = true }:
           <header className="shrink-0 flex items-center justify-between px-8 h-[76px] border-b border-border">
             <div className="flex flex-col">
               <h3 className="text-xl font-semibold text-text tracking-[-0.02em]">
-                {activeTab === 'provider' && 'JCode Runtime'}\n              {activeTab === 'instructions' && 'Instructions & Memory'}
+                {activeTab === 'provider' && 'JCode Runtime'}
+              {activeTab === 'instructions' && 'Instructions & Memory'}
               {activeTab === 'mcp' && 'MCP Servers'}
               {activeTab === 'skills' && 'Skills'}
               {activeTab === 'websearch' && 'Web Search'}
@@ -273,7 +276,8 @@ export function SettingsModal({ onClose, initialTab = 'provider', open = true }:
 
           {/* Content Area */}
           <div className="flex-1 overflow-hidden">
-            {activeTab === 'provider' && <JCodeRuntimeSettings />}\n            {activeTab === 'instructions' && <InstructionsMemorySettings />}
+            {activeTab === 'provider' && <JCodeRuntimeSettings />}
+            {activeTab === 'instructions' && <InstructionsMemorySettings />}
 
             {activeTab === 'library' && (
               <ScrollShadow className="h-full px-8 py-7 animate-fade-in">
