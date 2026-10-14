@@ -12,7 +12,7 @@ import { COLOR_SCHEMES } from '../../themes'
 import { ImportLibraryButton } from '../workspace/WorkspaceLibraryPage'
 import { useMCPStore } from '../../stores/mcpStore'
 import { useSkillStore } from '../../stores/skillStore'
-import { probeJCode } from '../../utils/jcodeClient'
+import { probeJCode, runDoctor, type JCodeDoctorResult } from '../../utils/jcodeClient'
 
 type JCodeStatus = { installed: boolean; path?: string; error?: string }
 type JCodeRuntime = { provider?: string | null; model?: string | null; effort?: string | null }
@@ -27,6 +27,22 @@ function JCodeRuntimeSettings() {
   const [status, setStatus] = useState<JCodeStatus | null>(null)
   const [checking, setChecking] = useState(false)
   const [runtime, setRuntime] = useState<JCodeRuntime | null>(null)
+  const [doctor, setDoctor] = useState<JCodeDoctorResult | null>(null)
+  const [diagnosing, setDiagnosing] = useState(false)
+  const [doctorError, setDoctorError] = useState<string | null>(null)
+
+  const diagnose = async () => {
+    setDiagnosing(true)
+    setDoctorError(null)
+    try {
+      setDoctor(await runDoctor())
+    } catch (error) {
+      setDoctorError(error instanceof Error ? error.message : String(error))
+      setDoctor(null)
+    } finally {
+      setDiagnosing(false)
+    }
+  }
 
   const check = async (force = false) => {
     setChecking(true)
@@ -100,6 +116,28 @@ function JCodeRuntimeSettings() {
           </div>
           {runtime?.effort && (
             <div className="mt-3 text-[11px] text-text-tertiary">Reasoning effort: <span className="font-semibold text-text-secondary">{runtime.effort}</span></div>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-[15px] font-semibold text-text">Runtime diagnostics</div>
+              <p className="mt-1 text-[12px] leading-5 text-text-tertiary">Run JCode's official doctor command to check model and MCP connectivity. This uses the installed CLI and does not change its configuration.</p>
+            </div>
+            <button onClick={() => void diagnose()} disabled={diagnosing || !status?.installed} className="shrink-0 rounded-lg border border-border px-3 py-2 text-[12px] font-semibold text-text-secondary hover:bg-surface-secondary disabled:opacity-50">
+              {diagnosing ? 'Running…' : 'Run jcode doctor'}
+            </button>
+          </div>
+          {doctorError && <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-[12px] text-red-600">{doctorError}</div>}
+          {doctor && (
+            <div className="mt-3 space-y-2">
+              <div className={`text-[12px] font-semibold ${doctor.success ? 'text-green-600' : 'text-amber-600'}`}>
+                {doctor.success ? 'Doctor completed successfully' : `Doctor reported issues${doctor.code == null ? '' : ` (exit code ${doctor.code})`}`}
+              </div>
+              {doctor.stdout && <pre className="max-h-56 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-border bg-surface-secondary p-3 text-[11px] leading-5 text-text-secondary">{doctor.stdout}</pre>}
+              {doctor.stderr && <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-border bg-surface-secondary p-3 text-[11px] leading-5 text-red-600">{doctor.stderr}</pre>}
+            </div>
           )}
         </div>
 
