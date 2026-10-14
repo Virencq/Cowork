@@ -335,7 +335,7 @@ pub async fn clawhub_install_skill(
     skill_name: Option<String>,
 ) -> Result<SkillInstallResult, String> {
     let slug = slug.trim();
-    if slug.is_empty() || slug.contains("..") || slug.contains('/') || slug.contains('\\\\') {
+    if slug.is_empty() || slug.contains("..") || slug.contains('/') || slug.contains('\\') {
         return Err("Invalid ClawHub skill slug.".to_string());
     }
 
@@ -369,7 +369,7 @@ pub async fn clawhub_install_skill(
     let mut found_skills: Vec<FoundSkill> = Vec::new();
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i).map_err(|e| format!("Failed to inspect ZIP entry: {e}"))?;
-        let path = entry.name().replace('\\\\', "/");
+        let path = entry.name().replace('\\', "/");
         if path.split('/').any(|part| part == "..") || path.starts_with('/') {
             return Err(format!("Unsafe path in downloaded skill archive: {path}"));
         }
@@ -412,7 +412,7 @@ pub async fn clawhub_install_skill(
     let base = selected.base_dir.clone();
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i).map_err(|e| format!("Failed to read ZIP entry: {e}"))?;
-        let path = entry.name().replace('\\\\', "/");
+        let path = entry.name().replace('\\', "/");
         if entry.is_dir() || path.ends_with('/') { continue; }
         if path.split('/').any(|part| part == "..") || path.starts_with('/') {
             return Err(format!("Unsafe path in downloaded skill archive: {path}"));
