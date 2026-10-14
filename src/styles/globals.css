@@ -912,3 +912,57 @@ button {
 .dark input::placeholder,
 .dark textarea::placeholder { color: #96928a; opacity: 1; }
 .dark [class*="border"] { border-color: var(--color-border); }
+
+
+/* Code workspace theme parity: the workspace uses legacy fixed light colors. */
+.dark .code-workspace {
+  background: var(--color-bg) !important;
+  color: var(--color-text) !important;
+}
+.dark .code-workspace header,
+.dark .code-workspace [class*="bg-white"] {
+  background-color: var(--color-surface) !important;
+}
+.dark .code-workspace main,
+.dark .code-workspace [class*="bg-[#fcfbfa]"],
+.dark .code-workspace [class*="bg-[#faf9f7]"],
+.dark .code-workspace [class*="bg-[#faf9f6]"] {
+  background-color: var(--color-bg) !important;
+}
+.dark .code-workspace [class*="bg-[#f3eee9]"],
+.dark .code-workspace [class*="bg-[#f8f1eb]"],
+.dark .code-workspace [class*="bg-[#f2f0ed]"],
+.dark .code-workspace [class*="bg-[#f1eee9]"],
+.dark .code-workspace [class*="bg-[#f6eee7]"] {
+  background-color: var(--color-surface-secondary) !important;
+}
+.dark .code-workspace [class*="text-[#201b17]"],
+.dark .code-workspace [class*="text-[#302c28]"],
+.dark .code-workspace [class*="text-[#c66d3c]"],
+.dark .code-workspace [class*="text-[#a85d35]"] {
+  color: var(--color-text) !important;
+}
+.dark .code-workspace [class*="text-[#9a938c]"],
+.dark .code-workspace [class*="text-[#8b837b]"],
+.dark .code-workspace [class*="text-[#8d857d]"],
+.dark .code-workspace [class*="text-[#a49b92]"],
+.dark .code-workspace [class*="text-[#8e877f]"],
+.dark .code-workspace [class*="text-[#756b62]"],
+.dark .code-workspace [class*="text-[#71675e]"] {
+  color: var(--color-text-tertiary) !important;
+}
+.dark .code-workspace [class*="border-[#e3dfda]"],
+.dark .code-workspace [class*="border-[#e8e3de]"],
+.dark .code-workspace [class*="border-[#eee9e4]"],
+.dark .code-workspace [class*="border-[#e2ddd7]"],
+.dark .code-workspace [class*="border-[#e6dfd8]"],
+.dark .code-workspace [class*="border-[#eee2d8]"],
+.dark .code-workspace [class*="border-[#d8c5b5]"] {
+  border-color: var(--color-border) !important;
+}
+.dark .code-workspace button:hover {
+  background-color: var(--color-surface-hover) !important;
+}
+.dark .code-workspace button:disabled {
+  color: var(--color-text-tertiary);
+}
