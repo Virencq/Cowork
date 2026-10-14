@@ -8,6 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 ICON_DIR = ROOT / "src-tauri" / "icons"
 ICON_DIR.mkdir(parents=True, exist_ok=True)
 
+def write_if_changed(path: Path, data: bytes) -> None:
+    """Preserve timestamps when generated icon content is unchanged."""
+    if path.exists() and path.read_bytes() == data:
+        return
+    path.write_bytes(data)
+
 def rgba_at(x, y, size, circle=False, transparent_bg=False):
     s = size / 512
     X, Y = (x + .5) / s, (y + .5) / s
@@ -72,11 +78,11 @@ def png_bytes(size, circle=False):
 sizes={"32x32.png":32,"64x64.png":64,"128x128.png":128,"128x128@2x.png":256,"icon.png":512}
 images={}
 for name,size in sizes.items():
-    data=png_bytes(size); (ICON_DIR/name).write_bytes(data); images[size]=data
+    data=png_bytes(size); write_if_changed(ICON_DIR / name, data); images[size]=data
 # Windows Store tiles and store logo
 for side in (30,44,71,89,107,142,150,284,310):
-    (ICON_DIR/f"Square{side}x{side}Logo.png").write_bytes(png_bytes(side))
-(ICON_DIR/"StoreLogo.png").write_bytes(png_bytes(50))
+    write_if_changed(ICON_DIR / f"Square{side}x{side}Logo.png", png_bytes(side))
+write_if_changed(ICON_DIR / "StoreLogo.png", png_bytes(50))
 # Multi-resolution Windows ICO using classic 32-bit DIB frames.
 # Tauri's icon decoder rejects indexed PNG payloads in ICO files; DIB frames
 # avoid that decoder incompatibility and preserve alpha transparency.
@@ -105,11 +111,11 @@ for size, data in frames:
                                len(data), offset))
     payload.extend(data)
     offset += len(data)
-(ICON_DIR / "icon.ico").write_bytes(struct.pack("<HHH", 0, 1, len(frames)) +
-                                    b"".join(entries) + payload)
+write_if_changed(ICON_DIR / "icon.ico", struct.pack("<HHH", 0, 1, len(frames)) +
+                  b"".join(entries) + payload)
 # Standard ICNS PNG chunks for macOS
 chunks=[]
 for code,size in [(b"icp4",16),(b"icp5",32),(b"icp6",64),(b"ic07",128),(b"ic08",256),(b"ic09",512),(b"ic10",1024)]:
     data=png_bytes(size); chunks.append(code+struct.pack(">I",len(data)+8)+data)
-body=b"".join(chunks); (ICON_DIR/"icon.icns").write_bytes(b"icns"+struct.pack(">I",len(body)+8)+body)
+body=b"".join(chunks); write_if_changed(ICON_DIR / "icon.icns", b"icns"+struct.pack(">I",len(body)+8)+body)
 print("Generated Orbit Dot icons for Orbito.")
