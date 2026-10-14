@@ -217,6 +217,28 @@ export async function runDoctor(): Promise<JCodeDoctorResult> {
   return invoke<JCodeDoctorResult>('jcode_doctor')
 }
 
+export interface JCodeModelOption { id: string; name: string }
+export interface JCodeProviderOption { id: string; name: string; models: JCodeModelOption[] }
+export interface JCodeModelCatalog {
+  activeModel: string
+  providers: JCodeProviderOption[]
+  effortOverrides: Record<string, string>
+  configPath: string
+  modelStatePath: string
+}
+
+export async function getModelCatalog(): Promise<JCodeModelCatalog> {
+  return invoke<JCodeModelCatalog>('jcode_model_catalog')
+}
+
+export async function setActiveModel(provider: string, model: string): Promise<JCodeModelCatalog> {
+  return invoke<JCodeModelCatalog>('jcode_set_active_model', { provider, model })
+}
+
+export async function setModelEffort(provider: string, model: string, effort: '' | 'low' | 'medium' | 'high'): Promise<JCodeModelCatalog> {
+  return invoke<JCodeModelCatalog>('jcode_set_model_effort', { provider, model, effort })
+}
+
 export function getBaseUrl() { return ''; }
 export async function waitForServer(..._args: any[]) { return true; }
 
