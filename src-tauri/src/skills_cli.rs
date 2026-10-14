@@ -355,13 +355,45 @@ pub async fn clawhub_install_skill(
         let detail = response.text().await.unwrap_or_default();
         return Err(format!("ClawHub download returned HTTP {status}: {}", detail.chars().take(500).collect::<String>()));
     }
-    let bytes = response.bytes().await
-        .map_err(|e| format!("Failed to read ClawHub download: {e}"))?;
+    let mut bytes = response.bytes().await
+        .map_err(|e| format!("Failed to read ClawHub download: {e}"))?
+        .to_vec();
     if bytes.is_empty() {
         return Err("ClawHub returned an empty skill archive.".to_string());
     }
 
-    let cursor = Cursor::new(bytes.as_ref());
+    // ClawHub may return a public-github handoff descriptor instead of ZIP bytes
+    // for GitHub-backed skills. Resolve only the documented, trusted archive hosts.
+    if bytes.first() == Some(&b'{') {
+        let descriptor: serde_json::Value = serde_json::from_slice(&bytes)
+            .map_err(|e| format!("ClawHub returned JSON instead of a ZIP archive: {e}"))?;
+        if descriptor.get("sourceRef").and_then(serde_json::Value::as_str) != Some("public-github") {
+            return Err("ClawHub returned an unsupported download descriptor.".to_string());
+        }
+        let archive_url = descriptor.get("archiveUrl").and_then(serde_json::Value::as_str)
+            .ok_or("ClawHub GitHub handoff did not include archiveUrl.")?;
+        let parsed_url = reqwest::Url::parse(archive_url)
+            .map_err(|e| format!("Invalid ClawHub archive URL: {e}"))?;
+        let host = parsed_url.host_str().unwrap_or_default();
+        if parsed_url.scheme() != "https" || !matches!(host, "github.com" | "codeload.github.com") {
+            return Err(format!("Refusing untrusted ClawHub archive host: {host}"));
+        }
+        let archive_response = client.get(parsed_url).send().await
+            .map_err(|e| format!("Failed to fetch the GitHub-backed skill archive: {e}"))?;
+        let archive_status = archive_response.status();
+        if !archive_status.is_success() {
+            let detail = archive_response.text().await.unwrap_or_default();
+            return Err(format!("GitHub skill archive returned HTTP {archive_status}: {}", detail.chars().take(500).collect::<String>()));
+        }
+        bytes = archive_response.bytes().await
+            .map_err(|e| format!("Failed to read the GitHub skill archive: {e}"))?
+            .to_vec();
+        if bytes.is_empty() {
+            return Err("The GitHub skill archive was empty.".to_string());
+        }
+    }
+
+    let cursor = Cursor::new(bytes.as_slice());
     let mut archive = zip::ZipArchive::new(cursor)
         .map_err(|e| format!("ClawHub response was not a valid ZIP archive: {e}"))?;
 
