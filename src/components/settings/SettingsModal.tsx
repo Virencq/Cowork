@@ -17,10 +17,10 @@ import * as Pi from '../../utils/jcodeClient'
 type JCodeStatus = { installed: boolean; path?: string; error?: string }
 type JCodeRuntime = { provider?: string | null; model?: string | null; effort?: string | null }
 
-// Keep the last runtime probe across SettingsModal unmounts. Opening Settings
-// should not check the CLI on every visit; users can force a fresh probe.
+// Keep the startup runtime probe across SettingsModal unmounts. Opening Settings
+// must never probe the CLI again; only the explicit Check JCode button refreshes it.
 let cachedJCodeProbe: { status: JCodeStatus; runtime: JCodeRuntime | null; checkedAt: number } | null = null
-const JCODE_PROBE_CACHE_MS = 60_000
+const JCODE_PROBE_CACHE_MS = Number.POSITIVE_INFINITY
 
 interface SettingsModalProps {
   onClose: () => void
@@ -35,7 +35,7 @@ function JCodeRuntimeSettings() {
 
   const check = async (force = false) => {
     const cache = cachedJCodeProbe
-    if (!force && cache && Date.now() - cache.checkedAt < JCODE_PROBE_CACHE_MS) {
+    if (!force && cache) {
       setStatus(cache.status)
       setRuntime(cache.runtime)
       return
@@ -69,7 +69,12 @@ function JCodeRuntimeSettings() {
     }
   }
 
-  useEffect(() => { void check() }, [])
+  useEffect(() => {
+    // Startup discovery is owned by App.tsx. Do not launch another CLI probe
+    // just because this settings panel mounts. Only probe if no cached result
+    // exists yet (e.g. Settings was opened before startup discovery completed).
+    if (!cachedJCodeProbe) void check()
+  }, [])
 
   return (
     <ScrollShadow className="h-full px-8 py-7">
