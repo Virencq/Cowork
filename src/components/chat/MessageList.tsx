@@ -87,13 +87,6 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
     }
   }, [groupedMessages, scrollToBottom])
 
-  // When switching conversations, start at the bottom without intercepting wheel input.
-  useEffect(() => {
-    // Scroll only when the conversation ID changes. scrollToBottom is stable;
-    // message/stream updates must not retrigger this effect or yank the viewport.
-    requestAnimationFrame(() => scrollToBottom('auto'))
-  }, [sessionId, scrollToBottom])
-
   if (groupedMessages.length === 0) {
     return null
   }
