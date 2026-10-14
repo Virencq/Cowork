@@ -176,6 +176,18 @@ export async function runtimeInfo(): Promise<JCodeRuntimeInfo> {
   return invoke<JCodeRuntimeInfo>('jcode_runtime_info')
 }
 
+export interface JCodeDoctorResult {
+  success: boolean
+  code?: number | null
+  stdout: string
+  stderr: string
+  command: string
+}
+
+export async function runDoctor(): Promise<JCodeDoctorResult> {
+  return invoke<JCodeDoctorResult>('jcode_doctor')
+}
+
 export function getBaseUrl() { return ''; }
 export async function waitForServer(..._args: any[]) { return true; }
 
