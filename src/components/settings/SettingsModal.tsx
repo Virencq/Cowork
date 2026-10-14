@@ -12,15 +12,10 @@ import { COLOR_SCHEMES } from '../../themes'
 import { ImportLibraryButton } from '../workspace/WorkspaceLibraryPage'
 import { useMCPStore } from '../../stores/mcpStore'
 import { useSkillStore } from '../../stores/skillStore'
-import * as Pi from '../../utils/jcodeClient'
+import { probeJCode } from '../../utils/jcodeClient'
 
 type JCodeStatus = { installed: boolean; path?: string; error?: string }
 type JCodeRuntime = { provider?: string | null; model?: string | null; effort?: string | null }
-
-// Keep the startup runtime probe across SettingsModal unmounts. Opening Settings
-// must never probe the CLI again; only the explicit Check JCode button refreshes it.
-let cachedJCodeProbe: { status: JCodeStatus; runtime: JCodeRuntime | null; checkedAt: number } | null = null
-const JCODE_PROBE_CACHE_MS = Number.POSITIVE_INFINITY
 
 interface SettingsModalProps {
   onClose: () => void
@@ -29,51 +24,30 @@ interface SettingsModalProps {
 }
 
 function JCodeRuntimeSettings() {
-  const [status, setStatus] = useState<JCodeStatus | null>(cachedJCodeProbe?.status ?? null)
+  const [status, setStatus] = useState<JCodeStatus | null>(null)
   const [checking, setChecking] = useState(false)
-  const [runtime, setRuntime] = useState<JCodeRuntime | null>(cachedJCodeProbe?.runtime ?? null)
+  const [runtime, setRuntime] = useState<JCodeRuntime | null>(null)
 
   const check = async (force = false) => {
-    const cache = cachedJCodeProbe
-    if (!force && cache) {
-      setStatus(cache.status)
-      setRuntime(cache.runtime)
-      return
-    }
-
     setChecking(true)
     try {
-      const nextStatus = await Pi.status()
-      let nextRuntime: JCodeRuntime | null = null
-      if (nextStatus.installed) {
-        try {
-          nextRuntime = await Pi.runtimeInfo()
-        } catch {
-          // Runtime metadata is optional; executable detection remains valid
-          // even when provider/model introspection is slow or unsupported.
-        }
-      }
-      setStatus(nextStatus)
-      setRuntime(nextRuntime)
-      cachedJCodeProbe = { status: nextStatus, runtime: nextRuntime, checkedAt: Date.now() }
+      const result = await probeJCode(force)
+      setStatus(result.status)
+      setRuntime(result.runtime)
     } catch (error) {
-      const nextStatus: JCodeStatus = {
+      setStatus({
         installed: false,
         error: error instanceof Error ? error.message : String(error),
-      }
-      setStatus(nextStatus)
+      })
       setRuntime(null)
-      cachedJCodeProbe = { status: nextStatus, runtime: null, checkedAt: Date.now() }
     } finally {
       setChecking(false)
     }
   }
 
   useEffect(() => {
-    // Startup discovery is owned by App.tsx. Do not launch another CLI probe
-    // just because this settings panel mounts. Only probe if no cached result
-    // exists yet (e.g. Settings was opened before startup discovery completed).
-    if (!cachedJCodeProbe) void check()
+    // Read the shared startup promise/cache; only the explicit button forces a probe.
+    void check()
   }, [])
 
   return (
@@ -258,7 +232,7 @@ export function SettingsModal({ onClose, initialTab = 'provider', open = true }:
                     <button
                       onClick={() => {
                         void useSkillStore.getState().refreshSkills()
-                        void useMCPStore.getState().refreshAllServers()
+                        void useMCPStore.getState().refreshAllServers(true)
                       }}
                       className="mt-4 rounded-lg border border-border bg-surface-secondary px-4 py-2.5 text-[12px] font-semibold text-text-secondary hover:text-text"
                     >
