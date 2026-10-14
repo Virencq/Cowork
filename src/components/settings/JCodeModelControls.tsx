@@ -63,6 +63,7 @@ export function JCodeModelControls({ compact = false }: JCodeModelControlsProps)
     try {
       const next = await setActiveModel(provider.trim(), model.trim())
       setCatalog(next)
+      setEffort((next.effortOverrides[provider.trim() + '/' + model.trim()] || '') as '' | 'low' | 'medium' | 'high')
       setMessage('Default model saved to JCode. New sessions will use this model.')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason))
