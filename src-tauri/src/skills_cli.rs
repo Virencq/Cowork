@@ -260,7 +260,7 @@ pub async fn skills_cli_remove(skill_name: String) -> Result<String, String> {
 
 /// Delete a skill's directory from disk.
 /// First tries the skill's actual location (extracted from the stored path),
-/// then falls back to ~/.pi/agent/skills/{name}/.
+/// then falls back to ~/.jcode/skills/{name}/.
 #[tauri::command]
 pub fn delete_skill_files(skill_name: String, skill_path: Option<String>) -> Result<String, String> {
     // Try the actual skill path first (from the stored location)
@@ -284,8 +284,8 @@ pub fn delete_skill_files(skill_name: String, skill_path: Option<String>) -> Res
         }
     }
 
-    // Fallback: try ~/.pi/agent/skills/{name}/
-    let dir = dirs_home().join(".pi").join("agent").join("skills").join(&skill_name);
+    // Fallback: try ~/.jcode/skills/{name}/
+    let dir = dirs_home().join(".jcode").join("skills").join(&skill_name);
     if dir.exists() {
         std::fs::remove_dir_all(&dir)
             .map_err(|e| format!("Failed to delete skill directory: {e}"))?;
@@ -300,7 +300,7 @@ pub fn delete_skill_files(skill_name: String, skill_path: Option<String>) -> Res
 #[tauri::command]
 pub fn create_skill_file(name: String, description: String, content: String) -> Result<String, String> {
     let safe_name = sanitize_dir_name(&name);
-    let skills_dir = dirs_home().join(".pi").join("agent").join("skills");
+    let skills_dir = dirs_home().join(".jcode").join("skills");
     let skill_dir = skills_dir.join(&safe_name);
     std::fs::create_dir_all(&skill_dir)
         .map_err(|e| format!("Failed to create skill directory: {e}"))?;
@@ -327,7 +327,7 @@ pub fn skills_mirror_config() -> serde_json::Value {
 // ─── Helpers ───
 
 /// Install a single skill from ClawHub (https://clawhub.ai).
-/// Downloads the ZIP archive and extracts it to ~/.pi/agent/skills/{name}/.
+/// Downloads the ZIP archive and extracts it to ~/.jcode/skills/{name}/.
 /// No npx, no git, no Node.js required.
 #[tauri::command]
 pub async fn clawhub_install_skill(
