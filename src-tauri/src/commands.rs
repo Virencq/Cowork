@@ -187,8 +187,8 @@ fn walk_skill_files(dir: &std::path::Path, entries: &mut Vec<SkillFileEntry>, vi
 #[tauri::command]
 pub async fn scan_skill_files(paths: Vec<String>) -> Result<Vec<SkillFileEntry>, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let home = std::env::var("HOME")
-            .or_else(|_| std::env::var("USERPROFILE"))
+        let home = std::env::var("USERPROFILE")
+            .or_else(|_| std::env::var("HOME"))
             .unwrap_or_default();
         let default_skills = std::path::Path::new(&home).join(".jcode").join("skills");
 
