@@ -20,6 +20,8 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
   const [atBottom, setAtBottom] = useState(true)
   const wasAtBottomRef = useRef(true)
   const previousMessageCountRef = useRef(0)
+  const groupedMessagesLengthRef = useRef(0)
+  groupedMessagesLengthRef.current = groupedMessages.length
 
   const groupedMessages = useMemo(() => {
     const rawMessages = [...messages]
@@ -55,15 +57,16 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
   }, [messages, streamingMessage, sessionId])
 
   const scrollToBottom = useCallback((behavior: 'auto' | 'smooth' = 'auto') => {
-    if (groupedMessages.length === 0) return
+    const length = groupedMessagesLengthRef.current
+    if (length === 0) return
     listRef.current?.scrollToIndex({
-      index: groupedMessages.length - 1,
+      index: length - 1,
       align: 'end',
       behavior,
     })
     wasAtBottomRef.current = true
     setAtBottom(true)
-  }, [groupedMessages.length])
+  }, [])
 
   // Only jump when a new user message is added. While reading older messages,
   // normal mouse-wheel scrolling stays entirely under the user's control.
@@ -78,6 +81,8 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
 
   // When switching conversations, start at the bottom without intercepting wheel input.
   useEffect(() => {
+    // Scroll only when the conversation ID changes. scrollToBottom is stable;
+    // message/stream updates must not retrigger this effect or yank the viewport.
     requestAnimationFrame(() => scrollToBottom('auto'))
   }, [sessionId, scrollToBottom])
 
