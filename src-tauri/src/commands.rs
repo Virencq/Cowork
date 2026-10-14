@@ -190,7 +190,7 @@ pub async fn scan_skill_files(paths: Vec<String>) -> Result<Vec<SkillFileEntry>,
         let home = std::env::var("HOME")
             .or_else(|_| std::env::var("USERPROFILE"))
             .unwrap_or_default();
-        let default_skills = std::path::Path::new(&home).join(".pi").join("agent").join("skills");
+        let default_skills = std::path::Path::new(&home).join(".jcode").join("skills");
 
         let mut results = Vec::new();
         let mut scanned = std::collections::HashSet::new();
