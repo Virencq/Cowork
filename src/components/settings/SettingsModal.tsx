@@ -14,6 +14,14 @@ import { useMCPStore } from '../../stores/mcpStore'
 import { useSkillStore } from '../../stores/skillStore'
 import * as Pi from '../../utils/jcodeClient'
 
+type JCodeStatus = { installed: boolean; path?: string; error?: string }
+type JCodeRuntime = { provider?: string | null; model?: string | null; effort?: string | null }
+
+// Keep the last runtime probe across SettingsModal unmounts. Opening Settings
+// should not check the CLI on every visit; users can force a fresh probe.
+let cachedJCodeProbe: { status: JCodeStatus; runtime: JCodeRuntime | null; checkedAt: number } | null = null
+const JCODE_PROBE_CACHE_MS = 60_000
+
 interface SettingsModalProps {
   onClose: () => void
   initialTab?: string
@@ -21,37 +29,43 @@ interface SettingsModalProps {
 }
 
 function JCodeRuntimeSettings() {
-  const [status, setStatus] = useState<{ installed: boolean; path?: string; error?: string } | null>(null)
+  const [status, setStatus] = useState<JCodeStatus | null>(cachedJCodeProbe?.status ?? null)
   const [checking, setChecking] = useState(false)
-  const [runtime, setRuntime] = useState<{ provider?: string | null; model?: string | null; effort?: string | null } | null>(null)
+  const [runtime, setRuntime] = useState<JCodeRuntime | null>(cachedJCodeProbe?.runtime ?? null)
 
-  const check = async () => {
-    setChecking(true)
-    setStatus(null)
-    // Show executable detection as soon as it returns. Provider/model inspection
-    // is a separate CLI call and must not keep the connection indicator stuck.
-    try {
-      const nextStatus = await Pi.status()
-      setStatus(nextStatus)
-      if (!nextStatus.installed) {
-        setRuntime(null)
-        return
-      }
-    } catch (error) {
-      setStatus({ installed: false, error: error instanceof Error ? error.message : String(error) })
-      setRuntime(null)
+  const check = async (force = false) => {
+    const cache = cachedJCodeProbe
+    if (!force && cache && Date.now() - cache.checkedAt < JCODE_PROBE_CACHE_MS) {
+      setStatus(cache.status)
+      setRuntime(cache.runtime)
       return
-    } finally {
-      setChecking(false)
     }
 
+    setChecking(true)
     try {
-      const nextRuntime = await Pi.runtimeInfo()
+      const nextStatus = await Pi.status()
+      let nextRuntime: JCodeRuntime | null = null
+      if (nextStatus.installed) {
+        try {
+          nextRuntime = await Pi.runtimeInfo()
+        } catch {
+          // Runtime metadata is optional; executable detection remains valid
+          // even when provider/model introspection is slow or unsupported.
+        }
+      }
+      setStatus(nextStatus)
       setRuntime(nextRuntime)
-    } catch {
-      // Runtime metadata is optional; executable detection remains valid even
-      // when provider/model introspection is slow or unsupported by this CLI.
+      cachedJCodeProbe = { status: nextStatus, runtime: nextRuntime, checkedAt: Date.now() }
+    } catch (error) {
+      const nextStatus: JCodeStatus = {
+        installed: false,
+        error: error instanceof Error ? error.message : String(error),
+      }
+      setStatus(nextStatus)
       setRuntime(null)
+      cachedJCodeProbe = { status: nextStatus, runtime: null, checkedAt: Date.now() }
+    } finally {
+      setChecking(false)
     }
   }
 
@@ -77,7 +91,7 @@ function JCodeRuntimeSettings() {
             </div>
           )}
           {status?.error && <div className="mt-4 text-[12px] text-red-600">{status.error}</div>}
-          <button onClick={() => void check()} disabled={checking} className="mt-4 rounded-lg border border-border px-4 py-2 text-[12px] font-semibold text-text-secondary hover:bg-surface-secondary">
+          <button onClick={() => void check(true)} disabled={checking} className="mt-4 rounded-lg border border-border px-4 py-2 text-[12px] font-semibold text-text-secondary hover:bg-surface-secondary">
             {checking ? 'Checking…' : 'Check JCode'}
           </button>
         </div>
