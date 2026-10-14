@@ -54,6 +54,9 @@ async function saveServerSecrets(config: MCPServerConfig): Promise<MCPServerConf
   return split.config;
 }
 
+// Share startup discovery across app remounts; explicit user refreshes bypass this cache.
+let mcpStartupDiscovery: Promise<void> | null = null;
+
 interface MCPState {
   servers: MCPServerConfig[];
   serverStatuses: Record<string, MCPServerStatus>;
@@ -67,7 +70,7 @@ interface MCPState {
   // Status
   setServerStatus: (name: string, status: Partial<MCPServerStatus>) => void;
   refreshServer: (name: string) => Promise<void>;
-  refreshAllServers: () => Promise<void>;
+  refreshAllServers: (force?: boolean) => Promise<void>;
 
   // Direct MCP operations (via Tauri)
   connectServer: (name: string) => Promise<void>;
@@ -305,7 +308,9 @@ export const useMCPStore = create<MCPState>()(
         }
       },
 
-      refreshAllServers: async () => {
+      refreshAllServers: async (force = false) => {
+        if (!force && mcpStartupDiscovery) return mcpStartupDiscovery;
+        const discovery = (async () => {
         // Import servers configured directly in JCode's ~/.jcode/mcp.json first.
         // Merge by name so existing Cowork entries and secrets are not overwritten.
         try {
@@ -394,6 +399,9 @@ export const useMCPStore = create<MCPState>()(
             get().setServerStatus(server.name, { status: 'disabled', tools: [], resources: [] });
           }
         }
+        })();
+        mcpStartupDiscovery = discovery;
+        await discovery;
       },
     }),
     {
