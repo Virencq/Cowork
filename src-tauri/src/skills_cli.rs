@@ -2,6 +2,17 @@ use serde::{Deserialize, Serialize};
 use std::io::Cursor;
 use std::path::PathBuf;
 use std::process::Command;
+
+#[cfg(windows)]
+fn configure_no_console(command: &mut Command) {
+    use std::os::windows::process::CommandExt;
+    // GUI-launched helper processes must not create a visible console window.
+    command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+}
+
+#[cfg(not(windows))]
+fn configure_no_console(_command: &mut Command) {}
+
 use std::time::Duration;
 
 /// Search result from skills.sh API
@@ -81,7 +92,10 @@ fn find_npx_cmd() -> Option<PathBuf> {
 
     // 1. Try the system's command locator
     let locator = if cfg!(target_os = "windows") { "where" } else { "which" };
-    if let Ok(output) = Command::new(locator).arg(npx_name).output() {
+    let mut locate_npx = Command::new(locator);
+    locate_npx.arg(npx_name);
+    configure_no_console(&mut locate_npx);
+    if let Ok(output) = locate_npx.output() {
         let stdout = String::from_utf8_lossy(&output.stdout);
         if let Some(line) = stdout.lines().next() {
             let p = line.trim();
@@ -121,7 +135,10 @@ fn find_npx_cmd() -> Option<PathBuf> {
     }
 
     // 3. Search for node and derive npx path
-    if let Ok(output) = Command::new(locator).arg(if cfg!(target_os = "windows") { "node.exe" } else { "node" }).output() {
+    let mut locate_node = Command::new(locator);
+    locate_node.arg(if cfg!(target_os = "windows") { "node.exe" } else { "node" });
+    configure_no_console(&mut locate_node);
+    if let Ok(output) = locate_node.output() {
         let stdout = String::from_utf8_lossy(&output.stdout);
         for line in stdout.lines() {
             let node_path = PathBuf::from(line.trim());
@@ -152,11 +169,13 @@ fn find_npx_cmd() -> Option<PathBuf> {
 
 /// Build a Command for npx, using resolved path when available
 fn npx_command() -> Command {
-    if let Some(npx_path) = find_npx_cmd() {
+    let mut command = if let Some(npx_path) = find_npx_cmd() {
         Command::new(npx_path)
     } else {
         Command::new("npx")
-    }
+    };
+    configure_no_console(&mut command);
+    command
 }
 
 // ─── Skills CLI commands ───
