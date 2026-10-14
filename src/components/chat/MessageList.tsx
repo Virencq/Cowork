@@ -54,7 +54,7 @@ export function MessageList({ sessionId, onEdit, onDelete }: MessageListProps) {
     return result
   }, [messages, streamingMessage, sessionId])
 
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+  const scrollToBottom = useCallback((behavior: 'auto' | 'smooth' = 'auto') => {
     if (groupedMessages.length === 0) return
     listRef.current?.scrollToIndex({
       index: groupedMessages.length - 1,
