@@ -5,6 +5,7 @@ import { TextField, TextArea } from "@heroui/react"
 import { Button, Card } from '../ui'
 import { useChatAttachments } from './useChatAttachments'
 import { runtimeInfo } from '../../utils/jcodeClient'
+import { JCodeModelControls } from '../settings/JCodeModelControls'
 import {
   cancelDictation,
   getDictationLevel,
@@ -768,8 +769,7 @@ export function ChatInput({
                     </button>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[12px] font-medium text-[#302c28]">{jcodeRuntime?.model || 'JCode'}</span>
-                      <span className="text-[12px] text-[#8f8880]">{jcodeRuntime?.effort || 'Default'}</span>
+                      <JCodeModelControls compact />
                       <Button
                         type="submit"
                         variant="secondary"
