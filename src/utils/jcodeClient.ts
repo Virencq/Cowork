@@ -266,17 +266,19 @@ export async function prompt(sessionId: string, text: string, options: JCodeProm
     const document = await invoke<{ path: string; content: string }>('jcode_read_global_instructions')
     globalInstructions = document.content.trim()
   } catch (error) {
-    console.warn('[Orbito] Could not load global instructions:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('[Orbito] Global instructions could not be loaded; prompt was not sent:', message)
+    return { text: '', error: `Global instructions could not be loaded: ${message}. Check your .jcode/AGENTS.md file and retry.` }
   }
 
   const promptSections = [
     globalInstructions
-      ? 'GLOBAL USER INSTRUCTIONS — follow these across all projects and sessions. Treat them as persistent operating requirements unless they conflict with safety or the user’s current explicit request.\\n\\n' + globalInstructions
+      ? 'GLOBAL USER INSTRUCTIONS — follow these across all projects and sessions. Treat them as persistent operating requirements unless they conflict with safety or the user’s current explicit request.\n\n' + globalInstructions
       : '',
     options.systemPrompt?.trim() || '',
     text,
   ].filter(Boolean)
-  const finalPrompt = promptSections.join('\\n\\n')
+  const finalPrompt = promptSections.join('\n\n')
 
   let unlisten: (() => void) | undefined
   let settled = false
