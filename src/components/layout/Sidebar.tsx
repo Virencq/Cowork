@@ -353,8 +353,13 @@ export function Sidebar({
                   isActive ? 'font-semibold text-text' : 'font-medium text-text-secondary group-hover:text-text'
                 }`}>
                   <span className="truncate">{title}</span>
-                  {isStreaming && (
-                    <span title="Agent is working" aria-label="Agent is working" role="status" className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse flex-shrink-0 shadow-[0_0_6px_rgba(34,197,94,0.55)]" />
+                  {(isActive || isStreaming) && (
+                    <span
+                      title={isStreaming ? "Agent is working" : "Active chat"}
+                      aria-label={isStreaming ? "Agent is working" : "Active chat"}
+                      role="status"
+                      className={`h-1.5 w-1.5 rounded-full bg-green-500 flex-shrink-0 ${isStreaming ? 'animate-pulse shadow-[0_0_6px_rgba(34,197,94,0.55)]' : ''}`}
+                    />
                   )}
                 </p>
                 {sessionBadge && (
