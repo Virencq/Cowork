@@ -349,18 +349,18 @@ export function Sidebar({
               </div>
 
               <div className="min-w-0 flex-1 text-left">
-                <p className={`truncate text-[12px] transition-colors duration-150 flex items-center gap-1.5 ${
+                <p className={`min-w-0 text-[12px] transition-colors duration-150 flex items-center gap-1.5 ${
                   isActive ? 'font-semibold text-text' : 'font-medium text-text-secondary group-hover:text-text'
                 }`}>
-                  <span className="truncate">{title}</span>
                   {(isActive || isStreaming) && (
                     <span
                       title={isStreaming ? "Agent is working" : "Active chat"}
                       aria-label={isStreaming ? "Agent is working" : "Active chat"}
                       role="status"
-                      className={`h-1.5 w-1.5 rounded-full bg-green-500 flex-shrink-0 ${isStreaming ? 'animate-pulse shadow-[0_0_6px_rgba(34,197,94,0.55)]' : ''}`}
+                      className={`h-2 w-2 rounded-full bg-green-500 flex-shrink-0 ring-1 ring-green-400/30 ${isStreaming ? 'animate-pulse shadow-[0_0_7px_rgba(34,197,94,0.7)]' : 'shadow-[0_0_4px_rgba(34,197,94,0.4)]'}`}
                     />
                   )}
+                  <span className="min-w-0 truncate">{title}</span>
                 </p>
                 {sessionBadge && (
                   <div className="mt-1 flex items-center gap-2">
