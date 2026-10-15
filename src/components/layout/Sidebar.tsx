@@ -322,8 +322,8 @@ export function Sidebar({
                     P
                   </div>
                 )}
-                {isStreaming && !isActive && (
-                  <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-accent border-2 border-white dark:border-[#1a1a1a] animate-pulse shadow-sm" />
+                {isStreaming && (
+                  <div title="Agent is working" aria-label="Agent is working" role="status" className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white dark:border-[#1a1a1a] animate-pulse shadow-sm" />
                 )}
                 {isActive && (
                   <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-accent rounded-r-full z-20" />
@@ -354,7 +354,7 @@ export function Sidebar({
                 }`}>
                   <span className="truncate">{title}</span>
                   {isStreaming && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse flex-shrink-0 shadow-[0_0_6px_rgba(var(--color-accent-rgb),0.5)]" />
+                    <span title="Agent is working" aria-label="Agent is working" role="status" className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse flex-shrink-0 shadow-[0_0_6px_rgba(34,197,94,0.55)]" />
                   )}
                 </p>
                 {sessionBadge && (
