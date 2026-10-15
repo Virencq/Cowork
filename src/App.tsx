@@ -85,7 +85,7 @@ function RightPanel({ width, onWidth, onClose, onAddScheduled, codeMode }: {
 
   return (
     <aside data-project-properties-panel style={{ width }} className="relative h-full shrink-0 border-l border-border bg-surface text-text pt-0 overflow-auto">
-      <ResizeHandle side="right" onDrag={(d) => onWidth(Math.max(200, Math.min(Math.floor(window.innerWidth * 0.45), width + d)))} />
+      <ResizeHandle side="right" onDrag={(d) => onWidth(Math.min(Math.max(200, Math.floor(window.innerWidth * 0.45)), Math.max(200, width + d)))} />
       <div className="h-12 px-3 flex items-center justify-between border-b border-border">
         <div>
           <div className="text-[11px] uppercase tracking-[.08em] font-semibold text-text-tertiary">Project</div>
@@ -194,7 +194,11 @@ function App() {
   }, [])
   const [showSettings, setShowSettings] = useState(false)
   const [leftWidth, setLeftWidth] = useState(() => Number(localStorage.getItem('cowork-left-width')) || 200)
-  const [rightWidth, setRightWidth] = useState(() => Math.min(360, Math.max(200, Number(localStorage.getItem('cowork-right-width')) || 280)))
+  const [rightWidth, setRightWidth] = useState(() => {
+    const saved = Number(localStorage.getItem('cowork-right-width')) || 280
+    const maxWidth = Math.max(200, Math.floor(window.innerWidth * 0.45))
+    return Math.min(maxWidth, Math.max(200, saved))
+  })
   const [rightOpen, setRightOpen] = useState(() => localStorage.getItem('cowork-right-open-v2') !== 'false')
   const [sidebarOpen, setSidebarOpen] = useState(() => localStorage.getItem('cowork-sidebar-open') !== 'false')
   const [codeMode, setCodeMode] = useState(() => localStorage.getItem('cowork-code-mode') === 'true')
