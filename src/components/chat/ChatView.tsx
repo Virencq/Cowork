@@ -309,7 +309,18 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPr
 
       usePetStore.getState().onThinking()
 
-      const agentSystemPrompt = assembleAgentRuntimePrompt(
+      // Read global instructions from the same AGENTS.md file managed by Settings.
+      // Do not rely on the ACP runtime implicitly discovering this file: inject it
+      // into every prompt so it applies to Cowork and Code sessions consistently.
+      let globalInstructions = ''
+      try {
+        const globalDocument = await invoke<{ path: string; content: string }>('jcode_read_global_instructions')
+        globalInstructions = globalDocument.content.trim()
+      } catch (instructionError) {
+        console.warn('[Orbito] Could not load global instructions:', instructionError)
+      }
+
+      const agentSpecificPrompt = assembleAgentRuntimePrompt(
         activeAgent
           ? assembleAgentSystemPrompt(activeAgent, {
             userProfile: agentStore.userProfile,
@@ -319,6 +330,12 @@ export function ChatView({ embedded = false, workspaceMode = 'cowork', initialPr
           : undefined,
         agentSkillsBlock,
       )
+      const agentSystemPrompt = [
+        globalInstructions
+          ? 'GLOBAL USER INSTRUCTIONS (follow these across all projects and sessions):\\n' + globalInstructions
+          : '',
+        agentSpecificPrompt,
+      ].filter(Boolean).join('\\n\\n')
 
       const promptOptions = {
         systemPrompt: agentSystemPrompt,
