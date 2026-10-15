@@ -50,6 +50,7 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
 }) {
   const allSessions = useAppStore((s) => s.sessions)
   const codeSessionIds = useAppStore((s) => s.codeSessionIds)
+  const streamingMessage = useAppStore((s) => s.streamingMessage)
   const coworkActiveSessionId = useAppStore((s) => s.activeSessionId)
   const codeActiveSessionId = useAppStore((s) => s.codeActiveSessionId)
   const codeProjects = useWorkspaceStore((s) => s.codeProjects)
@@ -280,7 +281,7 @@ export function LeftNav({ width, onWidth, page, onPage, onNew, onSettings, codeM
                   <button onClick={()=>{onPage('chat');if(codeMode){setCodeActiveSessionId(s.id);useAppStore.getState().markCodeSession(s.id);void useAppStore.getState().loadMessages(s.id)}else{setActiveSession(s.id)}setUnread(p=>{const n=new Set(p);n.delete(s.id);return n})}}
                     className={`w-full text-left rounded-md px-2 py-1.5 text-[13px] leading-5 truncate text-text-secondary hover:bg-surface-hover hover:text-text ${activeSessionId===s.id?'bg-accent-subtle text-text':''}`}>
                     <span className="inline-flex items-center gap-1.5 max-w-full">
-                      <span aria-label={activeSessionId === s.id ? 'Active chat' : unread.has(s.id) ? 'Unread chat' : 'Chat'} className={`h-1.5 w-1.5 rounded-full shrink-0 ${activeSessionId === s.id ? 'bg-[#22c55e] ring-2 ring-[#22c55e]/20' : unread.has(s.id) ? 'bg-[#3b82f6]' : 'border border-[#bcb6b0]'}`}/>
+                      <span title={streamingMessage[s.id]?.isStreaming ? 'Agent is working' : unread.has(s.id) ? 'Unread chat' : undefined} aria-label={streamingMessage[s.id]?.isStreaming ? 'Agent is working' : unread.has(s.id) ? 'Unread chat' : 'Idle chat'} role={streamingMessage[s.id]?.isStreaming ? 'status' : undefined} className={`h-1.5 w-1.5 rounded-full shrink-0 ${streamingMessage[s.id]?.isStreaming ? 'bg-[#22c55e] ring-2 ring-[#22c55e]/20 animate-pulse' : unread.has(s.id) ? 'bg-[#3b82f6]' : 'border border-[#bcb6b0]'}`}/>
                       <span className="truncate">{s.title || 'Untitled task'}</span>
                     </span>
                   </button>
