@@ -323,7 +323,13 @@ export function Sidebar({
                   </div>
                 )}
                 {isStreaming && (
-                  <div title="Agent is working" aria-label="Agent is working" role="status" className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white dark:border-[#1a1a1a] animate-pulse shadow-sm" />
+                  <span
+                    title="Agent is working"
+                    aria-label="Agent is working"
+                    role="status"
+                    className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 animate-pulse shadow-sm"
+                    style={{ backgroundColor: '#22c55e', borderColor: 'var(--sidebar-status-border, var(--color-surface, #ffffff))' }}
+                  />
                 )}
                 {isActive && (
                   <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-accent rounded-r-full z-20" />
@@ -348,7 +354,8 @@ export function Sidebar({
                     title={isStreaming ? "Agent is working" : "Active chat"}
                     aria-label={isStreaming ? "Agent is working" : "Active chat"}
                     role="status"
-                    className={`h-2 w-2 rounded-full bg-green-500 ring-1 ring-green-400/30 ${isStreaming ? 'animate-pulse shadow-[0_0_7px_rgba(34,197,94,0.7)]' : 'shadow-[0_0_4px_rgba(34,197,94,0.4)]'}`}
+                    className={`h-2 w-2 rounded-full ring-1 ring-green-400/30 ${isStreaming ? 'animate-pulse shadow-[0_0_7px_rgba(34,197,94,0.7)]' : 'shadow-[0_0_4px_rgba(34,197,94,0.4)]'}`}
+                    style={{ backgroundColor: '#22c55e' }}
                   />
                 ) : (
                   <MessageSquare size={13} className="text-text-quaternary group-hover:text-text-secondary" strokeWidth={1.5} />
