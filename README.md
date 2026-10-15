@@ -53,13 +53,6 @@ jcode doctor
 
 Then follow the [JCode setup guide](https://www.j-code.net/docs/get-started) to configure your model/provider and authentication. Keep API keys and credentials in JCode's local configuration; never commit them to Orbito.
 
-## Get Orbito
-
-- [GitHub Releases](https://github.com/Virencq/Orbito/releases)
-- [GitHub Actions builds](https://github.com/Virencq/Orbito/actions)
-
-Use a published, tested GitHub Release for production distribution. Actions artifacts are temporary CI outputs, not stable releases.
-
 ## Development
 
 Install Node.js LTS, Rust stable, and the Tauri 2 Windows prerequisites. Then run in PowerShell:
