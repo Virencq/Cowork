@@ -342,24 +342,23 @@ export function Sidebar({
                   : 'bg-transparent border-transparent hover:bg-surface cursor-pointer'
               }`}
             >
-              <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-colors duration-150 ${
-                isActive ? 'text-accent' : 'text-text-quaternary group-hover:text-text-secondary'
-              }`}>
-                <MessageSquare size={13} strokeWidth={isActive ? 2.5 : 1.5} />
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center">
+                {(isActive || isStreaming) ? (
+                  <span
+                    title={isStreaming ? "Agent is working" : "Active chat"}
+                    aria-label={isStreaming ? "Agent is working" : "Active chat"}
+                    role="status"
+                    className={`h-2 w-2 rounded-full bg-green-500 ring-1 ring-green-400/30 ${isStreaming ? 'animate-pulse shadow-[0_0_7px_rgba(34,197,94,0.7)]' : 'shadow-[0_0_4px_rgba(34,197,94,0.4)]'}`}
+                  />
+                ) : (
+                  <MessageSquare size={13} className="text-text-quaternary group-hover:text-text-secondary" strokeWidth={1.5} />
+                )}
               </div>
 
               <div className="min-w-0 flex-1 text-left">
                 <p className={`min-w-0 text-[12px] transition-colors duration-150 flex items-center gap-1.5 ${
                   isActive ? 'font-semibold text-text' : 'font-medium text-text-secondary group-hover:text-text'
                 }`}>
-                  {(isActive || isStreaming) && (
-                    <span
-                      title={isStreaming ? "Agent is working" : "Active chat"}
-                      aria-label={isStreaming ? "Agent is working" : "Active chat"}
-                      role="status"
-                      className={`h-2 w-2 rounded-full bg-green-500 flex-shrink-0 ring-1 ring-green-400/30 ${isStreaming ? 'animate-pulse shadow-[0_0_7px_rgba(34,197,94,0.7)]' : 'shadow-[0_0_4px_rgba(34,197,94,0.4)]'}`}
-                    />
-                  )}
                   <span className="min-w-0 truncate">{title}</span>
                 </p>
                 {sessionBadge && (
