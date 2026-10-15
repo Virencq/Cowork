@@ -259,7 +259,24 @@ export async function fetchModelCapabilities(..._args: any[]): Promise<any> {
 }
 
 export async function prompt(sessionId: string, text: string, options: JCodePromptOptions = {}) {
-  const finalPrompt = options.systemPrompt ? options.systemPrompt + '\n\n' + text : text
+  // Centralize global instruction injection so every JCode prompt path uses the
+  // same saved file (chat, Code, and scheduled/background prompts).
+  let globalInstructions = ''
+  try {
+    const document = await invoke<{ path: string; content: string }>('jcode_read_global_instructions')
+    globalInstructions = document.content.trim()
+  } catch (error) {
+    console.warn('[Orbito] Could not load global instructions:', error)
+  }
+
+  const promptSections = [
+    globalInstructions
+      ? 'GLOBAL USER INSTRUCTIONS — follow these across all projects and sessions. Treat them as persistent operating requirements unless they conflict with safety or the user’s current explicit request.\\n\\n' + globalInstructions
+      : '',
+    options.systemPrompt?.trim() || '',
+    text,
+  ].filter(Boolean)
+  const finalPrompt = promptSections.join('\\n\\n')
 
   let unlisten: (() => void) | undefined
   let settled = false
