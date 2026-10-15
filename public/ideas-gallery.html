@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orbito - Ideas Gallery</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3d3e);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      overflow-x: hidden;
+    }
+    .container {
+      width: 100%;
+      max-width: 1400px;
+      padding: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .title {
+      font-size: 3rem;
+      font-weight: 300;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(90deg, #ffd700, #ffed4e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      font-size: 1.2rem;
+      color: #94a3b8;
+      margin-bottom: 2rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+    .card:hover::before {
+      transform: scaleX(1);
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    .card.expanded {
+      grid-column: span 2;
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(102, 126, 234, 0.5);
+    }
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: rgba(102, 126, 234, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+    .title-text {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .description {
+      color: #cbd5e0;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .tags {
+      display: flex;
+      gap: 0.5rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+    }
+    .tag {
+      background: rgba(102, 126, 234, 0.1);
+      border: 1px solid rgba(102, 126, 234, 0.3);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: #93c5fd;
+    }
+    .expanded-content {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .card.expanded .expanded-content {
+      max-height: 1000px;
+    }
+    .steps {
+      margin-top: 1rem;
+    }
+    .step {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .step-number {
+      color: #667eea;
+      font-weight: 600;
+    }
+    .action-btn {
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 0.5rem 1.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+      transition: all 0.2s ease;
+    }
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    .no-results {
+      text-align: center;
+      color: #94a3b8;
+      font-style: italic;
+      padding: 3rem;
+    }
+    .loading {
+      text-align: center;
+      padding: 3rem;
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(102, 126, 234, 0.3);
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #667eea;
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="title">Ideas Gallery</h1>
+      <p class="subtitle">Explore and activate real workflows for Orbito with JCode</p>
+    </div>
+    
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-value">15</div>
+        <div class="stat-label">Available Workflows</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">0%</div>
+        <div class="stat-label">Activated</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">2025</div>
+        <div class="stat-label">Innovation Index</div>
+      </div>
+    </div>
+    
+    <div id="ideas-container" class="grid">
+      <div class="loading">
+        <div class="loading-spinner"></div>
+        <p>Loading ideas...</p>
+      </div>
+    </div>
+    
+    <div id="empty-state" class="no-results" style="display: none;">
+      <p>No ideas found. Try adjusting your search or filters.</p>
+    </div>
+  </div>
+  
+  <script type="module">
+    // Load ideas from the actual component
+    import { IdeasGallery } from './src/components/ideas/IdeasGallery.js';
+    
+    // Simple mock data for now - will be replaced by actual IdeasGallery
+    const mockIdeas = [
+      {
+        id: 'acp-lifecycle',
+        title: 'ACP Lifecycle Management',
+        tagline: 'Initialize, prompt, cancel, and configure agent sessions',
+        category: 'agent',
+        icon: '⚡',
+        steps: 'Initialize a new agent session via ACP\nSend the first prompt and observe streamed response\nCancel or pause mid-execution\nConfigure model/provider changes mid-session\nResume interrupted sessions',
+        keyCapability: 'Agent communication',
+        estimatedDuration: '~5 min setup',
+        requiresMcp: false,
+      },
+      {
+        id: 'mcp-integration',
+        title: 'MCP Tool Integration',
+        tagline: 'Connect and use MCP servers like Exa, Firecrawl, and more',
+        category: 'mcp',
+        icon: '🌐',
+        steps: 'Add and configure MCP servers (Exa, Firecrawl, filesystem, etc.)\nTest connections and discover available tools\nUse tools directly from the chat composer\nMonitor tool activity and results in the event stream\nSecurely manage credentials per-server',
+        keyCapability: 'Tool integration',
+        estimatedDuration: '~10 min',
+        requiresMcp: true,
+        mcpTool: 'Exa, Firecrawl, Slack, GitHub',
+      }
+    ];
+    
+    function renderIdeas(ideas) {
+      const container = document.getElementById('ideas-container');
+      const empty = document.getElementById('empty-state');
+      
+      if (!ideas.length) {
+        container.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      
+      empty.style.display = 'none';
+      
+      const expandedId = null;
+      
+      container.innerHTML = ideas.map(idea => {
+        const isExpanded = idea.id === expandedId;
+        return `
+          <article class="card ${isExpanded ? 'expanded' : ''}" data-id="${idea.id}">
+            <div class="card-header">
+              <div class="icon">${idea.icon}</div>
+              <div>
+                <h2 class="title-text">${idea.title}</h2>
+                <p class="description">${idea.tagline}</p>
+              </div>
+            </div>
+            
+            <div class="tags">
+              <span class="tag">${idea.category}</span>
+              <span class="tag">${idea.estimatedDuration}</span>
+              ${idea.requiresMcp ? `<span class="tag">MCP Required</span>` : ''}
+            </div>
+            
+            <div class="expanded-content">
+              <div class="steps">
+                ${idea.steps.split('\n').map((step, i) => `
+                  <div class="step">
+                    <span class="step-number">${i + 1}.</span>
+                    <span>${step}</span>
+                  </div>
+                ").join('')}
+              </div>
+              
+              <button class="action-btn" onclick="console.log('Open idea:', '${idea.id}')">Open in Chat</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+      
+      // Add click handlers for cards
+      document.querySelectorAll('.card').forEach(card => {
+        card.addEventListener('click', function() {
+          this.classList.toggle('expanded');
+        });
+      });
+    }
+    
+    // Initialize with mock data (to be replaced with real IdeasGallery)
+    renderIdeas(mockIdeas);
+  </script>
+</body>
+</html>
