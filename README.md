@@ -1,42 +1,38 @@
 # Orbito — AI Workspace for Real Work
 
-Orbito is a Windows desktop AI workspace that brings projects, conversations, agents, tools, and tasks together in one place.
+**A desktop workspace for projects, conversations, agents, tools, and persistent work context.**
 
-**AI Workspace for Real Work**
+Orbito brings AI-assisted work into one Windows desktop app. Organize work by project, continue conversations with context, connect tools through MCP, and use the JCode agent runtime from a focused workspace.
 
-## Features
+![Orbito desktop workspace](public/home.png)
 
-- Project-based workspaces and conversation history
-- Agent conversations and tool execution
-- Contextual sidebars and workspace files
-- MCP integrations and Skills
-- Scheduled tasks and artifacts
-- Browser integration
-- Compact desktop UI with clear agent activity feedback
+**Repository:** [Virencq/Orbito](https://github.com/Virencq/Orbito) · **Issues and bug reports:** [GitHub Issues](https://github.com/Virencq/Orbito/issues)
 
-## Architecture
+> **Important:** Orbito is the desktop client, not a bundled AI model or agent runtime. You must install **JCode CLI** separately and configure a supported model/provider before agent features can work.
 
-- **Desktop shell:** Tauri 2 (Rust)
-- **UI:** React, TypeScript, and Vite
-- **Agent runtime:** JCode CLI through the Agent Client Protocol (ACP)
-- **Local data:** SQLite where appropriate
+## What Orbito includes
 
-Orbito is a desktop client. It does not bundle JCode or provide model access by itself. Install JCode separately and configure at least one supported model/provider before using agent features.
+- **Project-based work:** Keep conversations and workspace context organized around projects.
+- **Agent conversations:** Work through the JCode CLI using the Agent Client Protocol (ACP).
+- **Tools and integrations:** Connect MCP servers and use Skills where configured.
+- **Persistent workspace context:** Keep relevant workspace files and conversation history available to your work.
+- **Tasks and artifacts:** Use scheduled tasks and create or work with artifacts supported by the app.
+- **Desktop workflow:** A compact interface with contextual sidebars and visible agent activity.
+- **Browser and voice capabilities:** Use the integrations supported by your current Orbito/JCode configuration.
 
-## Requirements
+## Get started
 
-- Windows 10/11 x64 for the current desktop target
-- [JCode CLI](https://github.com/cnjack/jcode) installed and available on `PATH`
+### 1. Install the prerequisites
+
+- Windows 10/11 x64
+- [JCode CLI](https://github.com/cnjack/jcode)
 - A model/provider configured for JCode
-- For development: Node.js LTS, npm, Rust stable, and Tauri's Windows build prerequisites
 
-## Install JCode
+JCode source and releases: **[github.com/cnjack/jcode](https://github.com/cnjack/jcode)** · [JCode documentation](https://www.j-code.net/docs)
 
-JCode source and releases: **[github.com/cnjack/jcode](https://github.com/cnjack/jcode)** · [Documentation](https://www.j-code.net/docs)
+### 2. Install JCode on Windows
 
-### Windows
-
-JCode's quick installer is a shell script, not a PowerShell script. Use a supported Bash environment such as **WSL2** or **Git Bash** and run:
+JCode's quick installer is a shell script, not a PowerShell script. Run it from a supported Bash environment such as **WSL2** or **Git Bash**:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/cnjack/jcode/main/script/install.sh | sh
@@ -44,18 +40,24 @@ curl -fsSL https://raw.githubusercontent.com/cnjack/jcode/main/script/install.sh
 
 Alternatively, follow the current [JCode installation instructions](https://github.com/cnjack/jcode#install) for the method supported by your environment. Do not paste the Bash installer command directly into PowerShell.
 
-Open a new terminal after installation and verify:
+Open a new terminal and verify the installation:
 
 ```bash
 jcode --version
 jcode doctor
 ```
 
-Then follow the [JCode setup guide](https://www.j-code.net/docs/get-started) to configure your model/provider and authentication. Keep API keys and credentials in JCode's local configuration; never commit them to Orbito.
+Then follow the [JCode setup guide](https://www.j-code.net/docs/get-started) to configure your model/provider and authentication. Keep API keys and credentials in JCode's local configuration; **never commit them to Orbito**.
+
+### 3. Launch Orbito
+
+Use a trusted Orbito Windows installer when one is available from the project's official release page. The repository currently has no published GitHub release, so there is no verified release download linked here yet.
+
+If you are building from source, follow the development steps below.
 
 ## Development
 
-Install Node.js LTS, Rust stable, and the Tauri 2 Windows prerequisites. Then run in PowerShell:
+Install Node.js LTS, Rust stable, and the [Tauri 2 Windows prerequisites](https://v2.tauri.app/start/prerequisites/). Then run in PowerShell:
 
 ```powershell
 git clone https://github.com/Virencq/Orbito.git
@@ -74,11 +76,20 @@ Installer output is written under `src-tauri/target/release/bundle/`. The build 
 
 ### Validation
 
+Run the checks relevant to your change before submitting a pull request:
+
 ```powershell
 npm run build
 npm test
-cargo check --manifest-path src-tauri/Cargo.toml
+npm run native:check
 ```
+
+## Architecture
+
+- **Desktop shell:** Tauri 2 (Rust)
+- **UI:** React, TypeScript, and Vite
+- **Agent runtime:** JCode CLI through the Agent Client Protocol (ACP)
+- **Local data:** SQLite where appropriate
 
 ## Branding
 
@@ -92,7 +103,11 @@ The selected identity is **Orbit Dot (Option 10)**: an orange open orbital ring 
 
 ## Reporting issues
 
-Report reproducible bugs through [GitHub Issues](https://github.com/Virencq/Orbito/issues). Include the OS, Orbito version, relevant sanitized logs, and steps to reproduce.
+Report reproducible bugs through [GitHub Issues](https://github.com/Virencq/Orbito/issues). Include the OS, Orbito version or commit, relevant sanitized logs, and clear steps to reproduce.
+
+## Contributing
+
+Contributions, bug reports, and focused improvement proposals are welcome. Before opening a pull request, describe the problem being solved, keep changes scoped, and run the applicable validation commands above. Never include secrets, private workspace data, or unsanitized logs.
 
 ## Thanks
 
